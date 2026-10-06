@@ -1,0 +1,14 @@
+{
+  "name": "pixel-pets",
+  "description": "Pixel-art pets for Claude Code, and the packs to dress them in",
+  "owner": {
+    "name": "Henrique Schroeder"
+  },
+  "plugins": [
+    {
+      "name": "pixel-pets",
+      "source": "./",
+      "description": "Pixel-art pets above the prompt that react to what Claude and each subagent are doing"
+    }
+  ]
+}
