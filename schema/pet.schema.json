@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/HenriqueSchroeder/pixel-pets/main/schema/pet.schema.json",
+  "title": "pixel-pets pet pack",
+  "description": "A pet for the pixel-pets Claude Code plugin. Sprites are rows of palette letters; '.' is see-through. The plugin checks the same rules at load time (hooks/pack.ts).",
+  "type": "object",
+  "required": [
+    "name",
+    "palette",
+    "main",
+    "mini"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "description": "Matches the file name without .json.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,40}$"
+    },
+    "author": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "palette": {
+      "description": "One-character letters to #rrggbb colors. '.' is reserved for see-through.",
+      "type": "object",
+      "maxProperties": 16,
+      "propertyNames": {
+        "minLength": 1,
+        "maxLength": 1,
+        "not": {
+          "const": "."
+        }
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+      }
+    },
+    "fps": {
+      "description": "Animation frames per second.",
+      "type": "number",
+      "minimum": 1,
+      "maximum": 12,
+      "default": 4
+    },
+    "main": {
+      "type": "object",
+      "required": [
+        "moods"
+      ],
+      "properties": {
+        "moods": {
+          "description": "Frames per mood. Only sleeping is required; a missing mood borrows its nearest drawn parent's frames (see README). Every frame of the main pet has the same size, at most 24x24.",
+          "type": "object",
+          "required": [
+            "sleeping"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sleeping": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "deepSleep": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "waking": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "thinking": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "typing": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "running": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "writing": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "reading": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "searching": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "waiting": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "compacting": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "sweating": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "happy": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "sad": {
+              "$ref": "#/$defs/mainFrames"
+            }
+          }
+        }
+      }
+    },
+    "mini": {
+      "description": "The small pet drawn for each subagent, at most 12x12.",
+      "type": "object",
+      "required": [
+        "moods"
+      ],
+      "properties": {
+        "tint": {
+          "description": "The palette letter recolored per subagent.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1,
+          "default": "b"
+        },
+        "moods": {
+          "description": "Only working is required; happy and sad (shown for a moment when the agent ends) fall back to it.",
+          "type": "object",
+          "required": [
+            "working"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "working": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/miniFrame"
+              }
+            },
+            "happy": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/miniFrame"
+              }
+            },
+            "sad": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/miniFrame"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "mainFrames": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 24,
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        }
+      }
+    },
+    "miniFrame": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 12
+      }
+    }
+  }
+}
