@@ -1,0 +1,30 @@
+{
+  "name": "pixel-pets",
+  "version": "0.1.0",
+  "description": "Pixel-art pets above the prompt that react to what Claude and each subagent are doing",
+  "author": {
+    "name": "Henrique Schroeder"
+  },
+  "repository": "https://github.com/HenriqueSchroeder/pixel-pets",
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "pet": {
+      "type": "string",
+      "title": "Pet",
+      "description": "Name of the pet pack: a file in ~/.claude/pets/ or one shipped in pets/ (without .json)",
+      "default": "cat"
+    },
+    "language": {
+      "type": "string",
+      "title": "Language",
+      "description": "Language of the pet's labels. auto follows Claude Code's language setting, then $LANG",
+      "default": "auto",
+      "options": [
+        "auto",
+        "en",
+        "pt-BR"
+      ]
+    }
+  }
+}
