@@ -17,6 +17,8 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | `sleeping` | no turn is running | (required) |
 | `deepSleep` | nothing has happened for 10 minutes | sleeping |
 | `idle` | awake with nothing to do, for a while after Claude finishes (see `awakeMinutes`) | thinking |
+| `sleepy` | idle at night, from 22h to 6h | idle |
+| `tired` | idle after 3 hours of work with no break of an hour | sleepy |
 | `walking` | strolling around while idle and alone; a pack without it never walks | idle |
 | `watching` | you are typing in the prompt while Claude is idle | reading |
 | `waking` | for a moment when a prompt wakes it from a deep sleep | thinking |
@@ -29,12 +31,19 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | `supervising` | Claude is waiting for its agents, or only thinking while they run, or they still run in the background after the turn | thinking |
 | `compacting` | the conversation is being compacted | thinking |
 | `sweating` | a turn has run for over 2 minutes and Claude is thinking or running a command | thinking |
+| `worried` | idle after a few failures in a row | sweating |
+| `grumpy` | idle after many failures in a row | sad |
+| `proud` | idle after a streak of turns that went well | happy |
 | `happy` | for two seconds after a turn ends, or after you allow a permission prompt ("thanks!") | sleeping |
 | `sad` | for two seconds after a tool fails, a turn errors, or you deny a permission prompt ("okay, I won't") | sleeping |
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
 
 The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. Only a pack that draws `walking` moves: leave it out and the pet stays put at the left, as the slime does. Packs draw their pet facing right; pixel-pets mirrors it to walk left.
+
+It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. These last for the session only.
+
+The time of day is your local time. At night it is sleepy and dozes off in half of `awakeMinutes`. On the first session of the day, in the morning, it says good morning.
 
 Each subagent gets a mini pet with its type (`Explore`, `Plan`, ...) and its current action. When the agent ends, its pet is happy (or sad, if it failed) for a moment and then leaves.
 
@@ -69,7 +78,7 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 | --- | --- | --- |
 | `pet` | `cat` | Which pet to show: a pack in `~/.claude/pets/` or one shipped in [`pets/`](pets/) |
 | `language` | `auto` | `auto` follows Claude Code's `language` setting, then `$LANG`. Or pick `en`, `pt-BR` |
-| `awakeMinutes` | `1` | How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep. `0` sends it straight to sleep |
+| `awakeMinutes` | `1` | How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep (half as long at night). `0` sends it straight to sleep |
 
 ## Use another pet
 

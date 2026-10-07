@@ -17,6 +17,8 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | `sleeping` | nenhum turno rodando | (obrigatório) |
 | `deepSleep` | nada aconteceu por 10 minutos | sleeping |
 | `idle` | acordado sem nada para fazer, por um tempo depois que o Claude termina (veja `awakeMinutes`) | thinking |
+| `sleepy` | à toa à noite, das 22h às 6h | idle |
+| `tired` | à toa depois de 3 horas de trabalho sem uma pausa de uma hora | sleepy |
 | `walking` | passeando quando está à toa e sozinho; um pack sem ele nunca anda | idle |
 | `watching` | você está digitando no prompt enquanto o Claude está parado | reading |
 | `waking` | por um instante, quando um prompt o acorda de um sono profundo | thinking |
@@ -29,12 +31,19 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | `supervising` | o Claude está esperando os agents, ou só pensando enquanto eles rodam, ou eles ainda rodam em background depois do turno | thinking |
 | `compacting` | a conversa está sendo compactada | thinking |
 | `sweating` | o turno passou de 2 minutos e o Claude está pensando ou rodando um comando | thinking |
+| `worried` | à toa depois de algumas falhas seguidas | sweating |
+| `grumpy` | à toa depois de muitas falhas seguidas | sad |
+| `proud` | à toa depois de uma sequência de turnos que deram certo | happy |
 | `happy` | por dois segundos depois que um turno termina, ou depois que você aprova um pedido de permissão ("valeu!") | sleeping |
 | `sad` | por dois segundos depois que uma tool falha, um turno dá erro ou você nega um pedido de permissão ("tá bom, não vou") | sleeping |
 
 Um pack só precisa desenhar `sleeping`. Todo humor que faltar usa os quadros do pai desenhado mais próximo: `running` cai em `typing`, depois `thinking`, depois `sleeping`.
 
 O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Só anda o pack que desenha `walking`: sem ele, o pet fica parado à esquerda, como o slime. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele andar para a esquerda.
+
+Ele acompanha como a sessão está indo. Uma tool ou um turno que falha o deixa preocupado, e um turno que dá certo o deixa orgulhoso; um turno que falha encerra a sequência de orgulho. Os dois perdem um ponto a cada cinco minutos, e quando ele está à toa aparece o sentimento mais forte: emburrado, depois preocupado, depois cansado, depois orgulhoso, depois com sono à noite. Isso vale só para a sessão.
+
+A hora do dia é a sua hora local. À noite ele fica com sono e cochila na metade do `awakeMinutes`. Na primeira sessão do dia, de manhã, ele dá bom dia.
 
 Cada subagent ganha um mini pet com o tipo dele (`Explore`, `Plan`, ...) e a ação atual. Quando o agent termina, o pet fica feliz (ou triste, se falhou) por um instante e sai.
 
@@ -69,7 +78,7 @@ Rode `/plugin configure pixel-pets@pixel-pets`, ou procure **pixel-pets** no `/c
 | --- | --- | --- |
 | `pet` | `cat` | Qual pet mostrar: um pack em `~/.claude/pets/` ou um que vem em [`pets/`](pets/) |
 | `language` | `auto` | `auto` segue o setting `language` do Claude Code, depois o `$LANG`. Ou escolha `en`, `pt-BR` |
-| `awakeMinutes` | `1` | Quanto tempo o pet fica acordado, passeando, depois que o Claude termina, antes de dormir. `0` manda direto dormir |
+| `awakeMinutes` | `1` | Quanto tempo o pet fica acordado, passeando, depois que o Claude termina, antes de dormir (metade à noite). `0` manda direto dormir |
 
 ## Usar outro pet
 
