@@ -1,6 +1,9 @@
 export type Mood =
   | 'sleeping'
   | 'deepSleep'
+  | 'idle'
+  | 'walking'
+  | 'watching'
   | 'waking'
   | 'thinking'
   | 'typing'
@@ -9,6 +12,7 @@ export type Mood =
   | 'reading'
   | 'searching'
   | 'waiting'
+  | 'supervising'
   | 'compacting'
   | 'sweating'
   | 'happy'
@@ -61,6 +65,9 @@ export type Text =
   | 'deepSleep'
   | 'waitingForYou'
   | 'compacting'
+  | 'idle'
+  | 'strolling'
+  | 'watching'
 
 // What a pet says, kept as a locale key so a language change redraws it right.
 export type Label = { text: Text; detail: string }
@@ -90,6 +97,8 @@ declare module 'claude-code' {
       override: Activity | null
       turnStartedAt: number | null
       lastActiveAt: number | null
+      // When the person last edited the prompt.
+      typingAt: number | null
       agents: AgentPet[]
       isHidden: boolean
     }

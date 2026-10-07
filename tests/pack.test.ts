@@ -27,6 +27,11 @@ describe('parsePack', () => {
     expect(pack.moods.waiting).toEqual([['oo']])
   })
 
+  test('only a pack that draws walking walks', () => {
+    expect(parsePack(tiny()).walks).toBe(false)
+    expect(parsePack({ ...tiny(), main: { moods: { sleeping: [['oo']], walking: [['bb']] } } }).walks).toBe(true)
+  })
+
   test('mini happy and sad fall back to working', () => {
     expect(parsePack(tiny()).mini.happy).toEqual([['ob', 'bo']])
   })

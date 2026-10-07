@@ -25,6 +25,12 @@
         "en",
         "pt-BR"
       ]
+    },
+    "awakeMinutes": {
+      "type": "number",
+      "title": "Awake minutes",
+      "description": "How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep",
+      "default": 1
     }
   }
 }

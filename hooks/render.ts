@@ -29,3 +29,6 @@ export const encode = (frame: Frame, colors: Colors) => {
   const bytes = new Uint8Array(Uint32Array.from(words).buffer) as Uint8Array & { toBase64(): string }
   return bytes.toBase64()
 }
+
+// The same frame facing the other way. Packs draw their pet facing right.
+export const mirror = (frame: Frame): Frame => frame.map(row => [...row].reverse().join(''))

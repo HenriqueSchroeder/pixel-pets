@@ -1,4 +1,5 @@
 import type { On } from 'claude-code'
+import type { TestBody } from 'claude-code/testing'
 import { expect, mock, test } from 'claude-code/testing'
 
 const HOME = '/home/someone'
@@ -254,4 +255,116 @@ test('shows it is compacting, even between turns', async ($, on) => {
   await pending
   const after = await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(await after.find({ text: /sleeping/ })).toBeDefined()
+})
+
+test('stays awake, hanging around, for a while after a turn, then naps', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await clock.advance(3000)
+  expect(await label()).toBe('· hanging around')
+
+  await clock.advance(2 * 60_000)
+  expect(await label()).toBe('· sleeping')
+})
+
+test('how long it stays awake comes from the config', { options: { awakeMinutes: 0 } }, async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+
+  await clock.advance(3000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: '· sleeping' })).toBeDefined()
+})
+
+test("agents' pets stand to the right with their labels in full", async ($, on) => {
+  setup(on)
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.agent.spawn(spawn)
+  await $.tool.call({ tool: 'Grep', pattern: 'pet', agentId: 'a1' } as never)
+
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.find({ text: 'searching (Grep)' })).toBeDefined()
+})
+
+test('on a narrow terminal it shows the agents that fit and counts the rest', async ($, on) => {
+  setup(on)
+  let spawned = 0
+  on('agent.spawn', () => ({ model: 'haiku', agentId: `a${(spawned += 1)}` }))
+  for (let i = 0; i < 3; i++) await $.agent.spawn({ ...spawn, tool_use_id: `toolu_${i}` })
+
+  const narrow = { ...band(true), props: { ...band(true).props, bodyColumns: 30 } }
+  const ui = await $.ui.mount({ ...narrow, surface: 'terminal' })
+  // 30 columns leave room beside the 2-column test pet for one slot and the " +N".
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(2)
+  expect(await ui.find({ key: 'mini-a1' })).toBeDefined()
+  expect(await ui.find({ text: '+2' })).toBeDefined()
+})
+
+// Labels seen over 30 idle seconds, with the frame clock running.
+const idleLabels = async ($: Parameters<TestBody>[0], on: On, petFile: string) => {
+  const { clock } = setup(on, { '/pets/cat.json': petFile })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  const seen = new Set<string | undefined>()
+  for (let second = 0; second < 30; second++) {
+    await clock.advance(1000)
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    seen.add((await ui.find({ text: /^· / }))?.text)
+  }
+  return seen
+}
+
+test('a pet that draws walking strolls while idle', async ($, on) => {
+  const walker = JSON.parse(pack('cat'))
+  walker.main.moods.walking = [['bo', 'ob']]
+  expect(await idleLabels($, on, JSON.stringify(walker))).toContain('· strolling around')
+})
+
+test('a pet that draws no walking stays put', async ($, on) => {
+  expect([...(await idleLabels($, on, pack('cat')))]).toEqual(['· hanging around'])
+})
+
+test('keeps an eye on background agents after the turn ends, then hangs around', async ($, on) => {
+  const { clock } = setup(on)
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.agent.spawn({ ...spawn, background: true })
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await clock.advance(5 * 60_000)
+  expect(await label()).toBe('· waiting for agents')
+
+  await $.turn.complete({ ...finished, agentId: 'a1' })
+  await clock.advance(3000)
+  expect(await label()).toBe('· hanging around')
+})
+
+test('a pet keeping an eye on background agents is not startled by a prompt', async ($, on) => {
+  const { clock } = setup(on)
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.agent.spawn({ ...spawn, background: true })
+  await $.turn.complete(finished)
+
+  await clock.advance(11 * 60_000)
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.find({ text: /waking up/ })).toBeUndefined()
 })

@@ -7,6 +7,9 @@ import type { Colors } from './render'
 export const PARENT: Record<Mood, Mood | null> = {
   sleeping: null,
   deepSleep: 'sleeping',
+  idle: 'thinking',
+  walking: 'idle',
+  watching: 'reading',
   thinking: 'sleeping',
   waking: 'thinking',
   typing: 'thinking',
@@ -15,6 +18,7 @@ export const PARENT: Record<Mood, Mood | null> = {
   reading: 'thinking',
   searching: 'reading',
   waiting: 'thinking',
+  supervising: 'thinking',
   compacting: 'thinking',
   sweating: 'thinking',
   happy: 'sleeping',
@@ -53,6 +57,8 @@ export type Pack = {
   actions: Action[]
   mini: Record<MiniMood, Frame[]>
   tint: string
+  // Only a pack that draws `walking` leaves its spot: the rest stay put.
+  walks: boolean
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -207,7 +213,7 @@ export const parsePack = (raw: unknown): Pack => {
   const tint = file.mini.tint ?? 'b'
   if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error('mini.tint: must be a palette letter')
 
-  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint }
+  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking') }
 }
 
 const SAFE_NAME = /^[a-z0-9][a-z0-9_-]{0,40}$/

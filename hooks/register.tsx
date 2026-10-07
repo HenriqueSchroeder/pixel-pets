@@ -8,7 +8,9 @@ import { step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
-import { encode, sizeOf } from './render'
+import { encode, mirror, sizeOf } from './render'
+import { gather, walkStep } from './walk'
+import type { Plan, Side, Walk } from './walk'
 
 const asleep: Activity = { mood: 'sleeping', label: { text: 'sleeping', detail: '' } }
 
@@ -17,6 +19,7 @@ const reaction = atom({ plugin: 'pixel-pets', key: 'reaction' } as const, null a
 const override = atom({ plugin: 'pixel-pets', key: 'override' } as const, null as Activity | null)
 const turnStartedAt = atom({ plugin: 'pixel-pets', key: 'turnStartedAt' } as const, null as number | null)
 const lastActiveAt = atom({ plugin: 'pixel-pets', key: 'lastActiveAt' } as const, null as number | null)
+const typingAt = atom({ plugin: 'pixel-pets', key: 'typingAt' } as const, null as number | null)
 const agents = atom({ plugin: 'pixel-pets', key: 'agents' } as const, [] as AgentPet[])
 const isHidden = atom({ plugin: 'pixel-pets', key: 'isHidden' } as const, false)
 
@@ -25,6 +28,11 @@ const WAKING_MS = 1200
 const LEAVING_MS = 1500
 const LONG_TURN_MS = 2 * 60_000
 const DEEP_SLEEP_MS = 10 * 60_000
+// How long the pet keeps watching the prompt after the last key.
+const TYPING_MS = 2000
+const AGENT_SLOT = 20
+// Room kept for the " +N" that stands for agents with no slot.
+const OVERFLOW_COLUMNS = 4
 const MAX_AGENTS = 6
 
 // One body color per subagent, picked in spawn order.
@@ -33,7 +41,7 @@ const AGENT_COLORS = [0x7cc4f2, 0x9bd57a, 0xc69af2, 0xf2d16b, 0xf28fb0, 0x6fd8c8
 const SEARCHERS = new Set(['Grep', 'Glob', 'WebFetch', 'WebSearch', 'LSP'])
 
 // Waiting on something slow: these turn into sweating when a turn runs long.
-const PATIENT: readonly Mood[] = ['thinking', 'running']
+const PATIENT: readonly Mood[] = ['thinking', 'running', 'supervising']
 
 const short = (text: string, max = 32) => (text.length > max ? `${text.slice(0, max - 1)}…` : text)
 const basename = (path: string) => path.split('/').pop() ?? path
@@ -50,7 +58,7 @@ const describe = (e: ToolCallInput): Activity => {
     case 'Read':
       return { mood: 'reading', label: label('reading', basename(e.file_path)) }
     case 'Agent':
-      return { mood: 'thinking', label: label('waitingForAgents') }
+      return { mood: 'supervising', label: label('waitingForAgents') }
   }
   const tool = String(e.tool)
   return SEARCHERS.has(tool)
@@ -113,9 +121,13 @@ async function release($: EngineInterface, mood: Mood) {
 export const register: Register = (on, options) => {
   const petName = typeof options.pet === 'string' && options.pet !== '' ? options.pet : DEFAULT_PET
   const language = typeof options.language === 'string' ? options.language : 'auto'
+  const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
-  // What the main pet is playing between draws; a reload starts it fresh.
+  // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
   let motion: Motion | undefined
+  let walk: Walk | undefined
+  // The side each agent's pet stands on, kept so none hops over when another leaves.
+  let sides = new Map<string, Side>()
 
   on('session.start', async ($, e, next) => {
     const locale = await localeOf($, language)
@@ -136,12 +148,21 @@ export const register: Register = (on, options) => {
     return { text: say(locale, hidden ? 'hidden' : 'shown') }
   })
 
-  // Only a pet in deep sleep is startled awake; a dozing one just starts thinking.
+  // The pet looks at the prompt while the person types in it.
+  on('prompt.edit', async ($, e, next) => {
+    const now = await $.clock.now()
+    await update($, typingAt, () => now)
+    return next(e)
+  }).catch(($, e, next) => next(e))
+
+  // Only a pet in deep sleep is startled awake; a dozing one just starts thinking,
+  // and one keeping an eye on background agents was awake all along.
   on('prompt.submit', async ($, e, next) => {
     const now = await $.clock.now()
     const idleSince = await read($, lastActiveAt)
     const busySince = await read($, turnStartedAt)
-    if (busySince === null && idleSince !== null && now - idleSince > DEEP_SLEEP_MS) {
+    const isSupervising = stillHere(await read($, agents), now).some(one => one.leaving === undefined)
+    if (busySince === null && !isSupervising && idleSince !== null && now - idleSince > DEEP_SLEEP_MS) {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
     return next(e)
@@ -162,6 +183,7 @@ export const register: Register = (on, options) => {
       const id = e.agentId
       const leaving = { mood: (isBad || e.isAborted ? 'sad' : 'happy') as MiniMood, until: now + LEAVING_MS }
       await update($, agents, list => stillHere(list, now).map(pet => (pet.id === id ? { ...pet, leaving } : pet)))
+      await update($, lastActiveAt, () => now)
       return next(e)
     }
 
@@ -246,6 +268,7 @@ export const register: Register = (on, options) => {
     const doing = await read($, activity)
     const startedAt = await read($, turnStartedAt)
     const idleSince = await read($, lastActiveAt)
+    const typedAt = await read($, typingAt)
     const list = stillHere(await read($, agents), now)
     const words = (one: Label) => say(locale, one.text, one.detail)
 
@@ -261,50 +284,97 @@ export const register: Register = (on, options) => {
       shown = isLong ? { ...doing, mood: 'sweating' } : doing
       if (isLong) extra = ` · ${Math.floor(elapsed / 60_000)}m`
     } else {
-      const isDeep = idleSince !== null && now - idleSince > DEEP_SLEEP_MS
-      shown = isDeep ? { mood: 'deepSleep', label: label('deepSleep') } : asleep
+      // Unknown idle time (nothing has run yet) counts as a plain nap.
+      const idleFor = idleSince === null ? awakeMs + 1 : now - idleSince
+      const isTyping = typedAt !== null && now - typedAt < TYPING_MS
+      if (isTyping && idleFor <= DEEP_SLEEP_MS) shown = { mood: 'watching', label: label('watching') }
+      // Background agents still at work: it keeps an eye on them rather than dozing off.
+      else if (list.some(one => one.leaving === undefined)) shown = { mood: 'supervising', label: label('waitingForAgents') }
+      else if (idleSince !== null && idleFor > DEEP_SLEEP_MS) shown = { mood: 'deepSleep', label: label('deepSleep') }
+      else if (idleFor > awakeMs) shown = asleep
+      else shown = { mood: 'idle', label: label('idle') }
     }
 
-    const moved = step(pack, motion, shown.mood, frame, Math.random)
-    motion = moved.motion
-    const body = moved.frame
-    const mainSize = sizeOf(body)
+    const miniSize = sizeOf(pack.mini.working[0] ?? [])
+    const slot = Math.max(miniSize.columns, AGENT_SLOT)
+    const petColumns = pack.moods.sleeping[0]?.[0]?.length ?? 0
+    // As many agents as fit beside the pet; the rest are a "+N" that needs room too.
+    const room = e.props.bodyColumns - petColumns - 2
+    const fits = (count: number) => count * (slot + 1) + (count < list.length ? OVERFLOW_COLUMNS : 0) <= room
+    let shownAgents = Math.min(list.length, MAX_AGENTS)
+    while (shownAgents > 0 && !fits(shownAgents)) shownAgents -= 1
+    const visible = list.slice(0, shownAgents)
+    const hidden = list.length - visible.length
     const agentWords = (one: AgentPet) =>
       one.leaving === undefined ? words(one.label) : say(locale, one.leaving.mood === 'sad' ? 'wentWrong' : 'done')
 
-    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows) {
+    // Every frame is one size, so the sleeping one tells whether the stage fits.
+    // A line of text has no stage, and must not move the pet on the one that has.
+    const mainSize = sizeOf(pack.moods.sleeping[0] ?? [])
+    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + 1) {
       const { Text } = $.ui.resolve(e)
       const others = list.map(one => ` · ${one.type}: ${agentWords(one)}`).join('')
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>
     }
 
+    // It only strolls alone; with agents around it stays and they gather on both sides.
+    const wants: Plan = list.length === 0 && shown.mood === 'idle' ? 'wander' : 'stay'
+    const walked = walkStep(walk, pack.walks ? wants : 'stay', frame, room, pack.fps, Math.random)
+    const width = slot + 1
+    const extraColumns = hidden > 0 ? OVERFLOW_COLUMNS : 0
+    const placed = gather(walked.walk.x, room, visible.length, width, extraColumns, visible.map(one => sides.get(one.id)))
+    walk = placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
+    const sideOf = (index: number): Side => (placed.right.includes(index) ? 1 : -1)
+    sides = new Map(visible.map((one, i) => [one.id, sideOf(i)]))
+    const isStrolling = walked.moving && shown.mood === 'idle'
+    const mood: Mood = walked.moving ? 'walking' : shown.mood
+    const labelShown = isStrolling ? label('strolling') : shown.label
+
+    const moved = step(pack, motion, mood, frame, Math.random)
+    motion = moved.motion
+    // It faces the first agent while there are any.
+    const facing = visible.length === 0 ? walk.facing : sideOf(0)
+    const body = facing === 1 ? moved.frame : mirror(moved.frame)
+
     const { Box, Raster, Text } = $.ui.resolve(e)
-    const visible = list.slice(0, MAX_AGENTS)
-    const miniSize = sizeOf(pack.mini.working[0] ?? [])
+    const agentPet = (index: number, side: Side) => {
+      const one = visible[index]
+      if (one === undefined) return null
+      const miniFrames = pack.mini[one.leaving?.mood ?? 'working']
+      const mini = miniFrames[frame % miniFrames.length] ?? []
+      return (
+        // On the left the slot hugs the pet too: its pet and words lean right.
+        <Box
+          key={one.id}
+          flexDirection="column"
+          width={slot}
+          alignItems={side === 1 ? 'flex-start' : 'flex-end'}
+          marginLeft={side === 1 ? 1 : 0}
+          marginRight={side === 1 ? 0 : 1}
+        >
+          <Raster key={`mini-${one.id}`} {...miniSize} cells={encode(mini, { ...pack.colors, [pack.tint]: one.color })} />
+          <Text bold>{short(one.type, slot)}</Text>
+          <Text dimColor>{short(agentWords(one), slot)}</Text>
+        </Box>
+      )
+    }
+    const leftColumns = placed.left.length * width + (placed.more === -1 ? extraColumns : 0)
 
     return (
-      <Box flexDirection="row" gap={2}>
-        <Raster key="main" {...mainSize} cells={encode(body, pack.colors)} />
-        <Box flexDirection="column">
-          <Text>
-            <Text bold>Claude</Text> <Text dimColor>· {words(shown.label)}{extra}</Text>
-          </Text>
-          <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
-            {visible.map(one => {
-              const miniFrames = pack.mini[one.leaving?.mood ?? 'working']
-              const mini = miniFrames[frame % miniFrames.length] ?? []
-              return (
-                <Box key={one.id} flexDirection="row" gap={1}>
-                  <Raster key={`mini-${one.id}`} {...miniSize} cells={encode(mini, { ...pack.colors, [pack.tint]: one.color })} />
-                  <Box flexDirection="column">
-                    <Text bold>{short(one.type, 16)}</Text>
-                    <Text dimColor>{short(agentWords(one), 22)}</Text>
-                  </Box>
-                </Box>
-              )
-            })}
-            {list.length > visible.length && <Text dimColor>+{list.length - visible.length}</Text>}
-          </Box>
+      <Box flexDirection="column">
+        <Text>
+          <Text bold>Claude</Text> <Text dimColor>· {words(labelShown)}{extra}</Text>
+        </Text>
+        <Box flexDirection="row" marginLeft={walk.x - leftColumns}>
+          {hidden > 0 && placed.more === -1 && (
+            <Box width={OVERFLOW_COLUMNS}>
+              <Text dimColor>+{hidden}</Text>
+            </Box>
+          )}
+          {[...placed.left].reverse().map(i => agentPet(i, -1))}
+          <Raster key="main" {...mainSize} cells={encode(body, pack.colors)} />
+          {placed.right.map(i => agentPet(i, 1))}
+          {hidden > 0 && placed.more === 1 && <Text dimColor> +{hidden}</Text>}
         </Box>
       </Box>
     )
