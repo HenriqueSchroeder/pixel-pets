@@ -7,9 +7,16 @@ import { join } from 'node:path'
 import { MINI_MOODS, MOODS, PARENT, parsePack } from '../hooks/pack'
 import type { Frame } from '../types'
 
-const arg = process.argv[2] ?? 'cat'
+const args = process.argv.slice(2)
+const arg = args.find(one => !one.startsWith('--')) ?? 'cat'
 const path = existsSync(arg) ? arg : join(import.meta.dirname, '..', 'pets', `${arg}.json`)
 const pack = parsePack(JSON.parse(readFileSync(path, 'utf8')))
+
+// The pack as the plugin sees it, every mood filled in: what render-gif.py draws from.
+if (args.includes('--json')) {
+  console.log(JSON.stringify(pack))
+  process.exit(0)
+}
 
 const rgb = (color: number) => `${(color >> 16) & 255};${(color >> 8) & 255};${color & 255}`
 
