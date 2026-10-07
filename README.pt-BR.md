@@ -100,8 +100,9 @@ Pets que vêm junto:
 - [`ghost`](pets/ghost.json), que flutua em vez de andar, dá um "buu" de vez em quando, vai sumindo enquanto dorme e reaparece em outro lugar com um "buu".
 - [`owl`](pets/owl.json), que pisca devagar e gira a cabeça até dar a volta.
 - [`clawd`](pets/clawd.json), o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
+- [`fox`](pets/fox.json), que balança o rabo, pula de cabeça nos ratos sob a neve e fica de lado para andar.
 
-![O dog, o ghost, a owl e o clawd, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
+![O dog, o ghost, a owl, o clawd e a fox, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
 
 ## Desenhe o seu
 

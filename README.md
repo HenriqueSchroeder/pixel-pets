@@ -100,8 +100,9 @@ Shipped pets:
 - [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
 - [`clawd`](pets/clawd.json), the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
+- [`fox`](pets/fox.json), which sways its brush, pounces on mice under the snow and turns side on to walk.
 
-![The dog, ghost, owl and clawd, idle, thinking, happy and asleep](screenshots/gallery.gif)
+![The dog, ghost, owl, clawd and fox, idle, thinking, happy and asleep](screenshots/gallery.gif)
 
 ## Draw your own
 
