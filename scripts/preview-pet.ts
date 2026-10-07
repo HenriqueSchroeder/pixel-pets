@@ -17,17 +17,11 @@ const arg = args.find(one => !one.startsWith('--')) ?? 'cat'
 const path = existsSync(arg) ? arg : join(import.meta.dirname, '..', 'pets', `${arg}.json`)
 const pack = parsePack(JSON.parse(readFileSync(path, 'utf8')))
 
-// The pack as the plugin sees it, every mood filled in: what render-gif.py draws from.
-if (args.includes('--json')) {
-  console.log(JSON.stringify(pack))
-  process.exit(0)
-}
-
 // Reads a JSON list of ticks, each `{ mood, plan, room, agents, width }` (the
 // agents by id, each `width` columns), and prints the main pet's frame, column
 // and the agents on each side for each, as the plugin would play, walk and
 // gather them. Seeded, so a GIF renders the same twice.
-if (args.includes('--play')) {
+const play = () => {
   let seed = 14
   const random = () => {
     seed = (seed * 1664525 + 1013904223) % 4294967296
@@ -50,8 +44,7 @@ if (args.includes('--play')) {
     const frame = facing === 1 ? moved.frame : mirror(moved.frame)
     return { frame, x: walk.x, left: placed.left, right: placed.right, moving: walked.moving }
   })
-  console.log(JSON.stringify(played))
-  process.exit(0)
+  return played
 }
 
 const rgb = (color: number) => `${(color >> 16) & 255};${(color >> 8) & 255};${color & 255}`
@@ -80,18 +73,27 @@ const row = (title: string, frames: Frame[], colors: Record<string, number>) => 
   console.log()
 }
 
-console.log(`\n${pack.name} · ${pack.fps} fps\n`)
-for (const mood of MOODS) {
-  const parent = PARENT[mood]
-  const borrowed = parent !== null && pack.moods[mood] === pack.moods[parent] ? ` → borrows from ${parent}` : ''
-  row(`${mood}${borrowed}`, pack.moods[mood], pack.colors)
-}
-for (const [mood, loops] of Object.entries(pack.variants)) {
-  // Variants follow the borrowing, so only show them on the mood that drew them.
-  if (loops.length > 0 && pack.moods[mood as Mood] !== pack.moods[PARENT[mood as Mood] ?? 'sleeping']) {
-    loops.forEach((loop, i) => row(`${mood} variant ${i + 1}`, loop, pack.colors))
+const preview = () => {
+  console.log(`\n${pack.name} · ${pack.fps} fps\n`)
+  for (const mood of MOODS) {
+    const parent = PARENT[mood]
+    const borrowed = parent !== null && pack.moods[mood] === pack.moods[parent] ? ` → borrows from ${parent}` : ''
+    row(`${mood}${borrowed}`, pack.moods[mood], pack.colors)
   }
+  for (const [mood, loops] of Object.entries(pack.variants)) {
+    // Variants follow the borrowing, so only show them on the mood that drew them.
+    if (loops.length > 0 && pack.moods[mood as Mood] !== pack.moods[PARENT[mood as Mood] ?? 'sleeping']) {
+      loops.forEach((loop, i) => row(`${mood} variant ${i + 1}`, loop, pack.colors))
+    }
+  }
+  for (const [key, frames] of Object.entries(pack.transitions)) row(`transition ${key}`, frames, pack.colors)
+  for (const action of pack.actions) row(`action ${action.name} (${action.moods.join(', ')}, every ${action.every.join('-')}s)`, action.frames, pack.colors)
+  if (pack.mini !== null) for (const mood of MINI_MOODS) row(`mini ${mood} (tint "${pack.tint}")`, pack.mini[mood], { ...pack.colors, [pack.tint]: 0x7cc4f2 })
 }
-for (const [key, frames] of Object.entries(pack.transitions)) row(`transition ${key}`, frames, pack.colors)
-for (const action of pack.actions) row(`action ${action.name} (${action.moods.join(', ')}, every ${action.every.join('-')}s)`, action.frames, pack.colors)
-if (pack.mini !== null) for (const mood of MINI_MOODS) row(`mini ${mood} (tint "${pack.tint}")`, pack.mini[mood], { ...pack.colors, [pack.tint]: 0x7cc4f2 })
+
+// --json prints the pack as the plugin sees it, every mood filled in: what the
+// render scripts draw from. No process.exit after printing: stdout to a pipe is
+// asynchronous, and exiting straight away cut a big pack off at 64 KB.
+if (args.includes('--json')) console.log(JSON.stringify(pack))
+else if (args.includes('--play')) console.log(JSON.stringify(play()))
+else preview()
