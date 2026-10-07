@@ -47,6 +47,8 @@ F={
  'compacting':[DOWN+MOUTH+w((0,3),(1,8))]*2+[DOWN+MOUTH+w((1,3),(0,8))]*2,
  'sweating':[OPEN+FROWN+t(r,10) for r in (3,3,4,4,5,5)],
  'happy':[SMILE+GRIN]*2+[SMILE+GRIN+hop(2)+hop(9)]*2,
+ # a long job done: hopping on both feet in falling confetti
+ 'celebrating':[SMILE+GRIN+hop(2)+hop(9)+[(0,3,'p'),(1,6,'t'),(0,8,'w')], SMILE+GRIN+[(1,4,'w'),(0,6,'p'),(1,8,'t')]]*4,
  # sitting around, awake
  'idle':[OPEN+MOUTH],
  # drawn facing right; the core mirrors it to walk left
@@ -82,6 +84,8 @@ T={
  'deepSleep>waking':[OPEN+OMOUTH],
  'sleeping>deepSleep':[asleep],
 }
+# celebrating winds down to sleep the way happy does
+T['celebrating>sleeping']=T['happy>sleeping']
 MOUTH_FACES=['idle','thinking','supervising','running','searching','reading','compacting','watching']
 A={
  'blink':{'frames':[SHUT+MOUTH],'moods':MOUTH_FACES,'every':[2,6]},
@@ -123,6 +127,10 @@ pack={
    'happy':[paint(MINI,MINI_HAPPY)]*2+[paint(MINI,MINI_HAPPY+MINI_STEP[0]+MINI_STEP[1])]*2,
    'sad':[paint(MINI,MINI_SAD+t(4,2))]*2+[paint(MINI,MINI_SAD+t(5,2))]*2,
  }},
+ 'speech':{
+   'en':{'longThink':['mrrp… hmm','hmm… *tail flick*'],'manyReads':['so many files… mrow!'],'manyAgents':['a whole litter of agents!'],'lateNight':["*yawn* it's late…"]},
+   'pt-BR':{'longThink':['mrrp… hmm','hmm… *mexe o rabo*'],'manyReads':['quanto arquivo… miau!'],'manyAgents':['uma ninhada de agents!'],'lateNight':['*boceja* já tá tarde…']},
+ },
 }
 for m,fr in pack['main']['moods'].items(): assert len(fr)<=8,(m,len(fr))
 out = Path(__file__).resolve().parent.parent / 'pets' / 'cat.json'

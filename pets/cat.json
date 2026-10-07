@@ -948,6 +948,120 @@
           "............"
         ]
       ],
+      "celebrating": [
+        [
+          ".o.p....w.o.",
+          "obo...t..obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "............"
+        ],
+        [
+          ".o....p...o.",
+          "obo.w...tobo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o.p....w.o.",
+          "obo...t..obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "............"
+        ],
+        [
+          ".o....p...o.",
+          "obo.w...tobo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o.p....w.o.",
+          "obo...t..obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "............"
+        ],
+        [
+          ".o....p...o.",
+          "obo.w...tobo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o.p....w.o.",
+          "obo...t..obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "............"
+        ],
+        [
+          ".o....p...o.",
+          "obo.w...tobo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ]
+      ],
       "idle": [
         [
           ".o........o.",
@@ -2447,6 +2561,92 @@
           "..oooooooo..",
           "..o......o.."
         ]
+      ],
+      "celebrating>sleeping": [
+        [
+          ".o........o.",
+          "obo......obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o........o.",
+          "obo......obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obpbbbbbbpbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o........o.",
+          "obo......obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbebbbbebbo",
+          "obbebbbbebbo",
+          "obpbbbbbbpbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o........o.",
+          "obo......obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbbbbbbbbbo",
+          "obbebbbbebbo",
+          "obpbbbbbbpbo",
+          "obbbboobbbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o........o.",
+          "obo......obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbbbbbbbbbo",
+          "obboobboobbo",
+          "obpbbbbbbpbo",
+          "obbbboobbbbo",
+          "obbbboobbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ],
+        [
+          ".o........o.",
+          "obo......obo",
+          "obboooooobbo",
+          "obbbbbbbbbbo",
+          "obbbbbbbbbbo",
+          "obboobboobbo",
+          "obpbbbbbbpbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          ".obbbbbbbbo.",
+          "..oooooooo..",
+          "..o......o.."
+        ]
       ]
     },
     "actions": {
@@ -3315,6 +3515,38 @@
           ".obbbbo.",
           ".o....o."
         ]
+      ]
+    }
+  },
+  "speech": {
+    "en": {
+      "longThink": [
+        "mrrp\u2026 hmm",
+        "hmm\u2026 *tail flick*"
+      ],
+      "manyReads": [
+        "so many files\u2026 mrow!"
+      ],
+      "manyAgents": [
+        "a whole litter of agents!"
+      ],
+      "lateNight": [
+        "*yawn* it's late\u2026"
+      ]
+    },
+    "pt-BR": {
+      "longThink": [
+        "mrrp\u2026 hmm",
+        "hmm\u2026 *mexe o rabo*"
+      ],
+      "manyReads": [
+        "quanto arquivo\u2026 miau!"
+      ],
+      "manyAgents": [
+        "uma ninhada de agents!"
+      ],
+      "lateNight": [
+        "*boceja* j\u00e1 t\u00e1 tarde\u2026"
       ]
     }
   }

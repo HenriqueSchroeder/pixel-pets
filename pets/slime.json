@@ -1075,6 +1075,104 @@
           "............"
         ]
       ],
+      "celebrating": [
+        [
+          ".w..oooo..t.",
+          "t.oobbbboo..",
+          ".obbbbbbbbow",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "...........t",
+          "w...oooo...w",
+          ".toobbbboo..",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          "oooooooooooo",
+          "............"
+        ],
+        [
+          ".w..oooo..t.",
+          "t.oobbbboo..",
+          ".obbbbbbbbow",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "...........t",
+          "w...oooo...w",
+          ".toobbbboo..",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          "oooooooooooo",
+          "............"
+        ],
+        [
+          ".w..oooo..t.",
+          "t.oobbbboo..",
+          ".obbbbbbbbow",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "...........t",
+          "w...oooo...w",
+          ".toobbbboo..",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          "oooooooooooo",
+          "............"
+        ],
+        [
+          ".w..oooo..t.",
+          "t.oobbbboo..",
+          ".obbbbbbbbow",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "...........t",
+          "w...oooo...w",
+          ".toobbbboo..",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          "oooooooooooo",
+          "............"
+        ]
+      ],
       "sad": [
         [
           "............",
@@ -2070,6 +2168,56 @@
           "oooooooooooo",
           "............"
         ]
+      ],
+      "celebrating>sleeping": [
+        [
+          "...oooooo...",
+          "..obbbbbbo..",
+          "..obbbbbbo..",
+          ".obwbbbbbbo.",
+          ".obobbbbobo.",
+          ".oobobboboo.",
+          ".obbbbbbbbo.",
+          ".obbboobbbo.",
+          "..oooooooo..",
+          "............"
+        ],
+        [
+          "....oooo....",
+          "..oobbbboo..",
+          ".obbbbbbbbo.",
+          ".obwbbbbbbo.",
+          "obbobbbbobbo",
+          "obobobbobobo",
+          "obbbbbbbbbbo",
+          "obbbboobbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "............",
+          "....oooo....",
+          "..oobbbboo..",
+          ".obwbbbbbbo.",
+          "obbbbbbbbbbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          "obbbboobbbbo",
+          "oooooooooooo",
+          "............"
+        ],
+        [
+          "............",
+          "....oooo....",
+          "..oobbbboo..",
+          ".obwbbbbbbo.",
+          "obbbbbbbbbbo",
+          "obbbobbobbbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          "oooooooooooo",
+          "............"
+        ]
       ]
     },
     "actions": {
@@ -2779,6 +2927,36 @@
           "oooooooo",
           "........"
         ]
+      ]
+    }
+  },
+  "speech": {
+    "en": {
+      "longThink": [
+        "blub\u2026 hmm"
+      ],
+      "manyReads": [
+        "so many files\u2026 blub!"
+      ],
+      "manyAgents": [
+        "the whole goo gang!"
+      ],
+      "lateNight": [
+        "*melts a little* late\u2026"
+      ]
+    },
+    "pt-BR": {
+      "longThink": [
+        "blub\u2026 hmm"
+      ],
+      "manyReads": [
+        "quanto arquivo\u2026 blub!"
+      ],
+      "manyAgents": [
+        "a gosmada toda!"
+      ],
+      "lateNight": [
+        "*derrete um pouco* t\u00e1 tarde\u2026"
       ]
     }
   }

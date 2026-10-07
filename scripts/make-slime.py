@@ -90,6 +90,8 @@ F = {
     'compacting': [f('base', shut, small), f('squish', shut, small), f('flat', shut, small), f('flat', shut, small), f('squish', shut, small)],
     'sweating': [f('base', open_, frown, t((r, 11))) for r in (1, 1, 2, 2, 3, 3)],
     'happy': [f('tall', joy, smile)] * 2 + [f('squish', joy, smile)] * 2,
+    # a long job done: springing up and down in confetti on both sides
+    'celebrating': [f('base', joy, smile, w((0, 1), (2, 11)) + t((1, 0), (0, 10))), f('squish', joy, smile, t((2, 1), (0, 11)) + w((1, 0), (1, 11)))] * 4,
     'sad': [f('squish', open_, frown, t((r, 3))) for r in (6, 6, 7, 7)],
     # at night it sags, lids heavy
     'sleepy': [f('base', half, small)] * 3 + [f('squish', half, small)] * 3 + [f('squish', shut, small)] * 2,
@@ -119,6 +121,8 @@ T = {
     'deepSleep>waking': [f('flat', shut, small), f('squish', open_, omouth)],
     'happy>sleeping': [f('tall', joy, smile), f('base', joy, smile), f('squish', shut, omouth), f('squish', shut, small)],
 }
+# celebrating winds down to sleep the way happy does
+T['celebrating>sleeping'] = T['happy>sleeping']
 
 EYES_OPEN = ['idle', 'thinking', 'supervising', 'searching', 'reading', 'watching']
 # its shine slides along the top as it wobbles
@@ -174,6 +178,10 @@ pack = {
         'happy': [mini(MINI, [(2, 2, 'o'), (2, 5, 'o')])] * 2 + [mini(MINI_SQ, [(2, 2, 'o'), (2, 5, 'o')])] * 2,
         'sad': [mini(MINI_SQ, me(2) + [(3, 2, 't')])] * 2 + [mini(MINI_SQ, me(2) + [(3, 1, 't')])] * 2,
     }},
+    'speech': {
+        'en': {'longThink': ['blub… hmm'], 'manyReads': ['so many files… blub!'], 'manyAgents': ['the whole goo gang!'], 'lateNight': ['*melts a little* late…']},
+        'pt-BR': {'longThink': ['blub… hmm'], 'manyReads': ['quanto arquivo… blub!'], 'manyAgents': ['a gosmada toda!'], 'lateNight': ['*derrete um pouco* tá tarde…']},
+    },
 }
 for m, fr in F.items():
     assert len(fr) <= 8, (m, len(fr))
