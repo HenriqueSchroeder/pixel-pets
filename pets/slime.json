@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/HenriqueSchroeder/pixel-pets/main/schema/pet.schema.json",
   "name": "slime",
   "author": "Henrique Schroeder",
-  "description": "A green slime that bounces. Draws four moods; thinking and reading fall back to sleeping.",
+  "description": "A green slime that bounces. Draws five moods; the rest fall back to them.",
   "palette": {
     "o": "#14381c",
     "b": "#5fd068",
@@ -210,6 +210,56 @@
           "obbbboobbbbo",
           "obbtobbobbbo",
           ".oooooooooo.",
+          "............"
+        ]
+      ],
+      "idle": [
+        [
+          "....oooo....",
+          "..oobbbboo..",
+          ".obbbbbbbbo.",
+          ".obwbbbbbbo.",
+          "obbbebbebbbo",
+          "obbbebbebbbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "....oooo....",
+          "..oobbbboo..",
+          ".obbbbbbbbo.",
+          ".obwbbbbbbo.",
+          "obbbebbebbbo",
+          "obbbebbebbbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          ".oooooooooo.",
+          "............"
+        ],
+        [
+          "............",
+          "....oooo....",
+          "..oobbbboo..",
+          ".obwbbbbbbo.",
+          "obbbebbebbbo",
+          "obbbebbebbbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          "oooooooooooo",
+          "............"
+        ],
+        [
+          "............",
+          "....oooo....",
+          "..oobbbboo..",
+          ".obwbbbbbbo.",
+          "obbbebbebbbo",
+          "obbbebbebbbo",
+          "obbbboobbbbo",
+          "obbbbbbbbbbo",
+          "oooooooooooo",
           "............"
         ]
       ]
