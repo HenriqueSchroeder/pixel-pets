@@ -43,7 +43,7 @@ Run everything before you open a pull request:
 claude plugin validate .
 claude plugin test .
 npx tsx scripts/check-pets.ts
-npx tsc -p .
+npx -p typescript tsc -p .
 ```
 
-`npx tsc -p .` needs the types Claude Code lays in `.claude-plugin/types/`. They appear the first time you run `claude --plugin-dir .`, and git ignores them.
+`tsc` needs the types Claude Code lays in `.claude-plugin/types/`. They appear the first time you run `claude --plugin-dir .`, and git ignores them.
