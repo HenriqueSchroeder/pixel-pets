@@ -126,6 +126,15 @@ test('falls back to a line of text off the terminal', async ($, on) => {
   expect(await ui.find({ text: /Claude: sleeping/ })).toBeDefined()
 })
 
+test('falls back to a line of text on a terminal narrower than the pet', async ($, on) => {
+  setup(on)
+  // The test pet is 2 columns wide.
+  const narrow = { ...band(false), props: { ...band(false).props, bodyColumns: 1 } }
+  const ui = await $.ui.mount({ ...narrow, surface: 'terminal' })
+  expect(await ui.find({ type: 'Raster', key: 'main' })).toBeUndefined()
+  expect(await ui.find({ text: /Claude: sleeping/ })).toBeDefined()
+})
+
 test("the person's own pets folder wins over the shipped pack", async ($, on) => {
   const { reads } = setup(on, { [`${HOME}/.claude/pets/cat.json`]: pack('my-cat'), '/pets/cat.json': pack('cat') })
 

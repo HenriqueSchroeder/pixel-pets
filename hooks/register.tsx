@@ -471,10 +471,10 @@ export const register: Register = (on, options) => {
     const agentWords = (one: AgentPet) =>
       one.leaving === undefined ? words(one.label) : say(locale, one.leaving.mood === 'sad' ? 'wentWrong' : 'done')
 
-    // Every frame is one size, so the sleeping one tells whether the stage fits.
+    // Every frame is one size, so the sleeping one tells whether the stage fits, tall and wide.
     // A line of text has no stage, and must not move the pet on the one that has.
     const mainSize = sizeOf(pack.moods.sleeping[0] ?? [])
-    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + 1) {
+    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + 1 || e.props.bodyColumns < mainSize.columns) {
       const { Text } = $.ui.resolve(e)
       const others = list.map(one => ` · ${one.type}: ${agentWords(one)}`).join('')
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>

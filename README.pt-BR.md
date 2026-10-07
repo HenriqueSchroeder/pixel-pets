@@ -107,7 +107,7 @@ Um pack é uma paleta e alguns quadros. Cada quadro são linhas de letras da pal
 
 - Só `sleeping` é obrigatório. Um humor que faltar herda do pai, como a tabela em [O que ele mostra](#o-que-ele-mostra) lista.
 - Um humor com vários quadros toca em loop a `fps` quadros por segundo (1–12, padrão 4). Repita um quadro para segurar a pose: a 4 fps, o mesmo quadro quatro vezes seguidas segura por um segundo.
-- Todos os quadros do pet principal têm o mesmo tamanho, até 24×24 pixels. O mini pet vai até 12×12.
+- Todos os quadros do pet principal têm o mesmo tamanho, até 48×32 pixels. O mini pet vai até 12×12.
 - Duas linhas de pixel cabem numa linha do terminal, então um pet de 12×12 ocupa 12 colunas e 6 linhas.
 - O mini pet precisa de `working`. O `happy` e o `sad` dele, mostrados quando um agent termina, caem em `working`.
 - `mini.tint` (padrão `b`) é a letra recolorida para cada subagent.

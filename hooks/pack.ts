@@ -38,7 +38,7 @@ export const MINI_MOODS: readonly MiniMood[] = ['working', 'happy', 'sad']
 export const DEFAULT_PET = 'cat'
 
 const LIMITS = {
-  main: { columns: 24, pixelRows: 24 },
+  main: { columns: 48, pixelRows: 32 },
   mini: { columns: 12, pixelRows: 12 },
   framesPerMood: 16,
   variantsPerMood: 4,

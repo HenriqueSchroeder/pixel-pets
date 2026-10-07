@@ -92,8 +92,12 @@ describe('parsePack', () => {
   })
 
   test('refuses a sprite over the size limit', () => {
-    const raw = { ...tiny(), main: { moods: { sleeping: [['o'.repeat(25)]] } } }
-    expect(() => parsePack(raw)).toThrow(/at most 24x24/)
+    const wide = { ...tiny(), main: { moods: { sleeping: [['o'.repeat(49)]] } } }
+    expect(() => parsePack(wide)).toThrow(/at most 48x32/)
+    const tall = { ...tiny(), main: { moods: { sleeping: [Array.from({ length: 33 }, () => 'o')] } } }
+    expect(() => parsePack(tall)).toThrow(/at most 48x32/)
+    const biggest = Array.from({ length: 32 }, () => 'o'.repeat(48))
+    expect(parsePack({ ...tiny(), main: { moods: { sleeping: [biggest] } } }).moods.sleeping[0]).toEqual(biggest)
   })
 
   test('refuses a tint outside the palette', () => {

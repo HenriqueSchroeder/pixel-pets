@@ -123,7 +123,7 @@ A pack is a palette and some frames. Each frame is rows of palette letters, and 
 
 - Only `sleeping` is required. A mood you leave out borrows from its parent, as the table in [What it shows](#what-it-shows) lists.
 - Give a mood several frames and they play in a loop at `fps` frames per second (1–12, default 4). Repeat a frame to hold a pose: at 4 fps, the same frame four times in a row holds it for a second.
-- Every frame of the main pet has the same size, up to 24×24 pixels. The mini pet goes up to 12×12.
+- Every frame of the main pet has the same size, up to 48×32 pixels. The mini pet goes up to 12×12.
 - Two pixel rows fit in one terminal row, so a 12×12 pet takes 12 columns and 6 rows.
 - The mini pet needs `working`. Its `happy` and `sad`, shown when an agent ends, fall back to `working`.
 - `mini.tint` (default `b`) is the letter recolored for each subagent.
