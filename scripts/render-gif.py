@@ -2,8 +2,9 @@
 
     python3 scripts/render-gif.py cat screenshots/band.gif
 
-Needs Pillow (pip install pillow) and npx. The pack is resolved by
-scripts/preview-pet.ts --json, so the moods fall back exactly as in the plugin.
+Needs Pillow (pip install pillow) and npx. The pack is resolved and
+played by scripts/preview-pet.ts (--json, --play), so moods fall back and move
+exactly as in the plugin.
 The scene is scripted below; the labels are the English locale's.
 """
 
@@ -44,9 +45,9 @@ SCENE = [
 ]
 
 
-def load_pack(name):
-    out = subprocess.run(['npx', '-y', 'tsx', str(ROOT / 'scripts/preview-pet.ts'), name, '--json'],
-                         check=True, capture_output=True, text=True, cwd=ROOT)
+def preview(name, flag, stdin=None):
+    out = subprocess.run(['npx', '-y', 'tsx', str(ROOT / 'scripts/preview-pet.ts'), name, flag],
+                         check=True, capture_output=True, text=True, cwd=ROOT, input=stdin)
     return json.loads(out.stdout)
 
 
@@ -62,7 +63,8 @@ def draw_sprite(draw, frame, colors, x, y):
                 draw.rectangle([x + c * px, y + r * px, x + (c + 1) * px - 1, y + (r + 1) * px - 1], fill=rgb(colors[letter]))
 
 
-def render(pack, out):
+def render(name, out):
+    pack = preview(name, '--json')
     try:
         font, bold = ImageFont.truetype(FONT, 16), ImageFont.truetype(BOLD, 16)
     except OSError:  # no DejaVu (macOS, Windows): Pillow's own font
@@ -76,6 +78,10 @@ def render(pack, out):
     band_h = max(main_h * CELL_W, CELL_H + mini_h * CELL_W + CELL_H // 2)
     height = CELL_H + band_h + CELL_H * 3
 
+    # The main pet moves as in the plugin: random blinks, actions and transitions.
+    moods = [mood for seconds, mood, _, _ in SCENE for _ in range(round(seconds * fps))]
+    bodies = preview(name, '--play', json.dumps(moods))
+
     frames, tick = [], 0
     for seconds, mood, label, agents in SCENE:
         for _ in range(round(seconds * fps)):
@@ -83,10 +89,10 @@ def render(pack, out):
             d = ImageDraw.Draw(img)
             top = CELL_H
 
-            body = pack['moods'][mood]
-            draw_sprite(d, body[tick % len(body)], pack['colors'], CELL_W * 2, top)
+            body = bodies[tick]
+            draw_sprite(d, body, pack['colors'], CELL_W * 2, top)
 
-            text_x = CELL_W * 2 + len(body[0][0]) * CELL_W + CELL_W * 2
+            text_x = CELL_W * 2 + len(body[0]) * CELL_W + CELL_W * 2
             d.text((text_x, top), 'Claude', font=bold, fill=FG)
             d.text((text_x + 7 * CELL_W, top), f'· {label}', font=font, fill=DIM)
 
@@ -113,4 +119,4 @@ if __name__ == '__main__':
     name = sys.argv[1] if len(sys.argv) > 1 else 'cat'
     out = Path(sys.argv[2] if len(sys.argv) > 2 else ROOT / 'screenshots/band.gif')
     out.parent.mkdir(parents=True, exist_ok=True)
-    render(load_pack(name), out)
+    render(name, out)
