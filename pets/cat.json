@@ -746,120 +746,6 @@
           "..o......o.."
         ]
       ],
-      "waiting": [
-        [
-          ".o...w....o.",
-          "obo..w...obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o...w....o.",
-          "obo..w...obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o...w....o.",
-          "obo..w...obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o...w....o.",
-          "obo..w...obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o........o.",
-          "obo......obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o........o.",
-          "obo......obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o........o.",
-          "obo......obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ],
-        [
-          ".o........o.",
-          "obo......obo",
-          "obboooooobbo",
-          "obbbbbbbbbbo",
-          "obbebbbbebbo",
-          "obbebbbbebbo",
-          "obpbbbbbbpbo",
-          "obbbboobbbbo",
-          "obbbbbbbbbbo",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "..o......o.."
-        ]
-      ],
       "compacting": [
         [
           ".o.w......o.",
@@ -2014,7 +1900,6 @@
         "moods": [
           "idle",
           "thinking",
-          "waiting",
           "supervising",
           "running",
           "searching",
@@ -2075,7 +1960,6 @@
         "moods": [
           "idle",
           "thinking",
-          "waiting",
           "supervising",
           "running",
           "searching",
@@ -2186,7 +2070,6 @@
         ],
         "moods": [
           "idle",
-          "waiting",
           "thinking",
           "reading",
           "supervising"
@@ -2285,7 +2168,6 @@
         ],
         "moods": [
           "idle",
-          "waiting",
           "compacting"
         ],
         "every": [

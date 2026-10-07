@@ -791,104 +791,6 @@
           "............"
         ]
       ],
-      "waiting": [
-        [
-          "...oooooo.w.",
-          "..obbbbbbow.",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo.w.",
-          "..obbbbbbow.",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo.w.",
-          "..obbbbbbow.",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo.w.",
-          "..obbbbbbow.",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo...",
-          "..obbbbbbo..",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo...",
-          "..obbbbbbo..",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo...",
-          "..obbbbbbo..",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ],
-        [
-          "...oooooo...",
-          "..obbbbbbo..",
-          "..obbbbbbo..",
-          ".obwbbbbbbo.",
-          ".obbebbebbo.",
-          ".obbbbbbbbo.",
-          ".obbboobbbo.",
-          ".obbbbbbbbo.",
-          "..oooooooo..",
-          "............"
-        ]
-      ],
       "supervising": [
         [
           "....oooo....",
@@ -1699,7 +1601,6 @@
         "moods": [
           "idle",
           "thinking",
-          "waiting",
           "supervising",
           "searching",
           "reading",
@@ -1752,7 +1653,6 @@
         "moods": [
           "idle",
           "thinking",
-          "waiting",
           "supervising",
           "searching",
           "reading",
@@ -1863,8 +1763,7 @@
         ],
         "moods": [
           "idle",
-          "supervising",
-          "waiting"
+          "supervising"
         ],
         "every": [
           7,
