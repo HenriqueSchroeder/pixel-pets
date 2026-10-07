@@ -135,6 +135,56 @@ test('falls back to a line of text on a terminal narrower than the pet', async (
   expect(await ui.find({ text: /Claude: sleeping/ })).toBeDefined()
 })
 
+// Two shipped pets, `cat` (the settings' pet) and `dog`, in a project at /repo.
+const inProject = (on: On, stored: Record<string, unknown> = {}) => {
+  // What the plugin keeps of the projects' pets, as last written; seen before the store takes it.
+  const kept: { projectPets?: unknown } = {}
+  on('store.set', { key: 'projectPets' }, (_$, e, next) => {
+    kept.projectPets = e.value
+    return next(e)
+  })
+  const found = setup(on, { '/pets/cat.json': pack('cat'), '/pets/dog.json': pack('dog') }, {}, at(14), stored)
+  on('session.root', () => ({ value: '/repo' }))
+  return { ...found, kept }
+}
+const loaded = (reads: string[], name: string) => reads.some(path => path.endsWith(`/pets/${name}.json`))
+
+test("/pet <name> picks this project's pet and keeps it", async ($, on) => {
+  const { reads, kept } = inProject(on)
+  expect(await $.command.run({ ...runPet, args: 'dog' })).toEqual({ text: "This project's pet: dog." })
+  expect(loaded(reads, 'dog')).toBe(true)
+  expect(kept.projectPets).toEqual({ '/repo': 'dog' })
+})
+
+test("a session opens with its project's pet", async ($, on) => {
+  const { reads } = inProject(on, { projectPets: { '/repo': 'dog', '/other': 'cat' } })
+  await opens($, on)
+  expect(loaded(reads, 'dog')).toBe(true)
+  expect(loaded(reads, 'cat')).toBe(false)
+})
+
+test("the project's pet wins even when the band was drawn before the session started", async ($, on) => {
+  const { reads } = inProject(on, { projectPets: { '/repo': 'dog' } })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(loaded(reads, 'cat')).toBe(true)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  expect(loaded(reads, 'dog')).toBe(true)
+})
+
+test('/pet with a pet that does not load changes nothing', async ($, on) => {
+  const { kept } = inProject(on)
+  expect(await $.command.run({ ...runPet, args: 'nope' })).toEqual({ text: `Couldn't change the pet: pet "nope" not found.` })
+  expect(kept.projectPets).toBeUndefined()
+})
+
+test("/pet default goes back to the settings' pet", async ($, on) => {
+  const { kept } = inProject(on, { projectPets: { '/repo': 'dog', '/other': 'dog' } })
+  expect(await $.command.run({ ...runPet, args: 'default' })).toEqual({ text: "This project is back to your settings' pet: cat." })
+  expect(kept.projectPets).toEqual({ '/other': 'dog' })
+})
+
 test("the person's own pets folder wins over the shipped pack", async ($, on) => {
   const { reads } = setup(on, { [`${HOME}/.claude/pets/cat.json`]: pack('my-cat'), '/pets/cat.json': pack('cat') })
 

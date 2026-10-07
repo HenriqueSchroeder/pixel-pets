@@ -26,6 +26,10 @@ if (shipped.includes('custom')) {
   failed = true
   console.log('FAIL custom.json: "custom" is the picker\'s own choice for a pack of your own; name the pet otherwise')
 }
+if (shipped.includes('default')) {
+  failed = true
+  console.log('FAIL default.json: "/pet default" goes back to the settings\' pet; name the pet otherwise')
+}
 for (const name of shipped.filter(one => !picker.includes(one))) {
   failed = true
   console.log(`FAIL ${name}.json: add "${name}" to the pet option's options in .claude-plugin/plugin.json`)

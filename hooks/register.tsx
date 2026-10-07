@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
+import type { EngineInterface, Register, Timer, ToolCallInput } from 'claude-code'
 
 import type { Activity, AgentPet, Feelings, Frame, Label, MiniMood, Mood, Reaction, Situation, Traits } from '../types'
 import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, USUAL } from './drives'
@@ -103,7 +103,9 @@ const reason = (error: unknown) => (error instanceof Error ? error.message : Str
 // The language and the pack are read once per module load: a settings change
 // reloads the module, and with it these.
 let choosing: Promise<Locale> | undefined
-let loading: Promise<Pack> | undefined
+// Kept with the name it is for: a draw can ask before `session.start` has read the
+// project's own pet, and the settings' pet must not stand in for it after.
+let loading: { name: string; pack: Promise<Pack> } | undefined
 
 function localeOf($: EngineInterface, choice: string) {
   choosing ??= (async () => {
@@ -113,9 +115,8 @@ function localeOf($: EngineInterface, choice: string) {
   return choosing
 }
 
-// The first pack found wins; a broken or missing one falls back to the shipped
-// default, and the toast says why.
-async function readPack($: EngineInterface, name: string, locale: Locale): Promise<Pack> {
+// The first pack found wins; a broken or missing one is why not, in words.
+async function findPack($: EngineInterface, name: string, locale: Locale): Promise<Pack | string> {
   const home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE'))
   const paths = packPaths(name, home, $.plugin.root)
   let problem = say(locale, paths === undefined ? 'invalidName' : 'notFound', name)
@@ -134,15 +135,45 @@ async function readPack($: EngineInterface, name: string, locale: Locale): Promi
       break
     }
   }
+  return problem
+}
 
+// A broken or missing pack falls back to the shipped default, and the toast says why.
+async function readPack($: EngineInterface, name: string, locale: Locale): Promise<Pack> {
+  const found = await findPack($, name, locale)
+  if (typeof found !== 'string') return found
   const fallback = parsePack(JSON.parse(await $.fs.read(`${$.plugin.root}/pets/${DEFAULT_PET}.json`)))
-  $.ui.toast(say(locale, 'fallback', problem))
+  $.ui.toast(say(locale, 'fallback', found))
   return fallback
 }
 
 function packOf($: EngineInterface, name: string, locale: Locale) {
-  loading ??= readPack($, name, locale)
-  return loading
+  if (loading?.name !== name) loading = { name, pack: readPack($, name, locale) }
+  return loading.pack
+}
+
+// `/pet <name>` picks a project's own pet, kept by project root; `/pet default`
+// goes back to the one in the settings.
+const DEFAULT_ARG = 'default'
+
+async function projectPets($: EngineInterface): Promise<Record<string, string>> {
+  const kept = await $.store.get('projectPets')
+  return typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? (kept as Record<string, string>) : {}
+}
+
+// This session's project's pet, if one was picked.
+async function projectPet($: EngineInterface) {
+  try {
+    const name = (await projectPets($))[await $.session.root()]
+    return typeof name === 'string' ? name : undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function keepProjectPet($: EngineInterface, root: string, name: string | undefined) {
+  const { [root]: _, ...others } = await projectPets($)
+  await $.store.set('projectPets', name === undefined ? others : { ...others, [root]: name })
 }
 
 const hourOf = (now: number) => new Date(now).getHours()
@@ -244,7 +275,12 @@ async function release($: EngineInterface, mood: Mood) {
 export const register: Register = (on, options) => {
   // The picker names a shipped pet, or `custom` for the person's own pack named in `customPet`.
   const picked = options.pet === 'custom' ? options.customPet : options.pet
-  const petName = typeof picked === 'string' && picked !== '' ? picked : DEFAULT_PET
+  const configured = typeof picked === 'string' && picked !== '' ? picked : DEFAULT_PET
+  // The project's own pet, if `/pet <name>` picked one, else the settings'.
+  let petName = configured
+  // The pack the frame clock plays, and a way to start it again at another pack's pace.
+  let playing: Pack | undefined
+  let restartClock = () => {}
   const language = typeof options.language === 'string' ? options.language : 'auto'
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
@@ -307,13 +343,16 @@ export const register: Register = (on, options) => {
 
   on('session.start', async ($, e, next) => {
     const locale = await localeOf($, language)
-    await $.command.register({ name: 'pet', description: say(locale, 'commandDescription') })
-    const pack = await packOf($, petName, locale)
+    await $.command.register({ name: 'pet', description: say(locale, 'commandDescription'), argumentHint: '[name | default]' })
+    petName = (await projectPet($)) ?? configured
+    playing = await packOf($, petName, locale)
     const now = await $.clock.now()
     await update($, lastActiveAt, () => now)
-    $.clock.every(Math.round(1000 / pack.fps), () => {
+    let timer: Timer | undefined
+    const tick = () => {
+      const pack = playing
       frame += 1
-      if (isOff) return
+      if (isOff || pack === undefined) return
       const scene = still
       const isAsleep = scene?.mood === 'sleeping' || scene?.mood === 'deepSleep'
       const every = pack.fps * (isAsleep ? REDRAW_ASLEEP_S : REDRAW_AWAKE_S)
@@ -330,17 +369,43 @@ export const register: Register = (on, options) => {
       void $.ui.blit({ requestId: scene.requestId, key: 'main', cells }).then(done => {
         if (done.deny !== undefined) $.ui.invalidate('ui.render')
       })
-    })
+    }
+    restartClock = () => {
+      timer?.cancel()
+      timer = $.clock.every(Math.round(1000 / (playing?.fps ?? 4)), tick)
+    }
+    restartClock()
     isInteractive = e.isInteractive
     if (isInteractive) await atThePrompt($, now)
     else await update($, restedAt, at => at ?? now)
     return next(e)
   })
 
-  on('command.run', { command: 'pet' }, async $ => {
+  on('command.run', { command: 'pet' }, async ($, e) => {
     const locale = await localeOf($, language)
-    const hidden = await update($, isHidden, value => !value)
-    return { text: `${say(locale, hidden ? 'hidden' : 'shown')}${await together($, locale)}` }
+    const asked = (e.args ?? '').trim()
+    if (asked === '') {
+      const hidden = await update($, isHidden, value => !value)
+      return { text: `${say(locale, hidden ? 'hidden' : 'shown')}${await together($, locale)}` }
+    }
+
+    // Tried before it is kept: a pack that does not load leaves things as they were.
+    const name = asked === DEFAULT_ARG ? configured : asked
+    const found = await findPack($, name, locale)
+    if (typeof found === 'string') return { text: say(locale, 'projectPetFailed', found) }
+    try {
+      await keepProjectPet($, await $.session.root(), asked === DEFAULT_ARG ? undefined : name)
+    } catch {
+      // No store: the pet changes for this session alone.
+    }
+    petName = name
+    loading = { name, pack: Promise.resolve(found) }
+    playing = found
+    motion = undefined
+    still = null
+    restartClock()
+    $.ui.invalidate('ui.render')
+    return { text: say(locale, asked === DEFAULT_ARG ? 'projectPetDefault' : 'projectPet', name) }
   })
 
   // The pet looks at the prompt while the person types in it, glad at the first key

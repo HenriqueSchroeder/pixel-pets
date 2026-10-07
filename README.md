@@ -73,7 +73,7 @@ claude plugin marketplace add HenriqueSchroeder/pixel-pets
 claude plugin install pixel-pets@pixel-pets
 ```
 
-`/pet` hides the pets and brings them back.
+`/pet` hides the pets and brings them back. `/pet <name>` gives the current project a pet of its own, so each of your Claude Code windows can tell which project it is in; it is kept for the project's next sessions too, and `/pet default` goes back to the one in your settings.
 
 ## Configure
 
