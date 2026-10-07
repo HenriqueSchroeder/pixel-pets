@@ -30,16 +30,27 @@ export const DEFAULT_PET = 'cat'
 const LIMITS = {
   main: { columns: 24, pixelRows: 24 },
   mini: { columns: 12, pixelRows: 12 },
-  framesPerMood: 8,
+  framesPerMood: 16,
+  variantsPerMood: 4,
+  transitions: 32,
+  actions: 16,
+  everySeconds: { min: 1, max: 600 },
   paletteSize: 16,
   fps: { min: 1, max: 12 },
 }
+
+export type Action = { name: string; frames: Frame[]; moods: Mood[]; every: [number, number] }
 
 export type Pack = {
   name: string
   colors: Colors
   fps: number
+  // The loop each mood plays, borrowed from a parent when the pack leaves it out.
   moods: Record<Mood, Frame[]>
+  // More loops for a mood, following the same borrowing as `moods`.
+  variants: Record<Mood, Frame[][]>
+  transitions: Record<string, Frame[]>
+  actions: Action[]
   mini: Record<MiniMood, Frame[]>
   tint: string
 }
@@ -69,6 +80,69 @@ const sameSize = (frames: Frame[], where: string) => {
   if (frames.some(f => f.length !== first?.length || f[0]?.length !== first?.[0]?.length)) {
     throw new Error(`${where}: every frame needs the same size`)
   }
+}
+
+const isMood = (value: unknown): value is Mood => typeof value === 'string' && MOODS.includes(value as Mood)
+
+// Variants hang off a mood the pack draws: one on a borrowed mood would never show.
+const parseVariants = (raw: unknown, drawn: Map<Mood, Frame[]>) => {
+  const out = new Map<Mood, Frame[][]>()
+  if (raw === undefined) return out
+  if (!isRecord(raw)) throw new Error('main.variants: an object of mood to loops')
+  for (const [mood, loops] of Object.entries(raw)) {
+    if (!isMood(mood)) throw new Error(`main.variants: unknown mood ${mood}`)
+    if (!drawn.has(mood)) throw new Error(`main.variants.${mood}: draw main.moods.${mood} first`)
+    if (!Array.isArray(loops) || loops.length === 0 || loops.length > LIMITS.variantsPerMood) {
+      throw new Error(`main.variants.${mood}: 1 to ${LIMITS.variantsPerMood} loops`)
+    }
+    out.set(mood, loops.map((loop, i) => checkFrames(loop, `main.variants.${mood}[${i}]`, LIMITS.main)))
+  }
+  return out
+}
+
+const TRANSITION = /^(\*|[a-zA-Z]+)>(\*|[a-zA-Z]+)$/
+
+const parseTransitions = (raw: unknown) => {
+  const out: Record<string, Frame[]> = {}
+  if (raw === undefined) return out
+  if (!isRecord(raw)) throw new Error('main.transitions: an object of "from>to" to frames')
+  const entries = Object.entries(raw)
+  if (entries.length > LIMITS.transitions) throw new Error(`main.transitions: at most ${LIMITS.transitions}`)
+  for (const [key, frames] of entries) {
+    const [, from, to] = TRANSITION.exec(key) ?? []
+    const known = (side: string | undefined) => side === '*' || isMood(side)
+    if (!known(from) || !known(to) || key === '*>*') {
+      throw new Error(`main.transitions: "${key}" must be "from>to" with moods or one "*"`)
+    }
+    out[key] = checkFrames(frames, `main.transitions.${key}`, LIMITS.main)
+  }
+  return out
+}
+
+const ACTION_NAME = /^[a-zA-Z][a-zA-Z0-9_-]{0,31}$/
+
+const parseActions = (raw: unknown): Action[] => {
+  if (raw === undefined) return []
+  if (!isRecord(raw)) throw new Error('main.actions: an object of name to action')
+  const entries = Object.entries(raw)
+  if (entries.length > LIMITS.actions) throw new Error(`main.actions: at most ${LIMITS.actions}`)
+  return entries.map(([name, action]) => {
+    const where = `main.actions.${name}`
+    if (!ACTION_NAME.test(name)) throw new Error(`${where}: name with letters, digits, - or _ (up to 32)`)
+    if (!isRecord(action)) throw new Error(`${where}: needs frames, moods and every`)
+    const { moods, every } = action
+    if (!Array.isArray(moods) || moods.length === 0 || !moods.every(isMood)) throw new Error(`${where}.moods: a list of moods`)
+    const { min, max } = LIMITS.everySeconds
+    if (
+      !Array.isArray(every) ||
+      every.length !== 2 ||
+      !every.every(n => typeof n === 'number' && n >= min && n <= max) ||
+      every[0] > every[1]
+    ) {
+      throw new Error(`${where}.every: [min, max] seconds, ${min} to ${max}`)
+    }
+    return { name, frames: checkFrames(action.frames, `${where}.frames`, LIMITS.main), moods, every: [every[0], every[1]] }
+  })
 }
 
 // Packs come from anyone, so everything is checked before it reaches the renderer.
@@ -103,13 +177,21 @@ export const parsePack = (raw: unknown): Pack => {
   for (const mood of MOODS) {
     if (given[mood] !== undefined) drawn.set(mood, checkFrames(given[mood], `main.moods.${mood}`, LIMITS.main))
   }
+  const extra = parseVariants(file.main.variants, drawn)
   const moods = {} as Record<Mood, Frame[]>
+  const variants = {} as Record<Mood, Frame[][]>
   for (const mood of MOODS) {
     let source: Mood | null = mood
     while (source !== null && !drawn.has(source)) source = PARENT[source]
     moods[mood] = drawn.get(source ?? 'sleeping') ?? []
+    variants[mood] = extra.get(source ?? 'sleeping') ?? []
   }
-  sameSize([...drawn.values()].flat(), 'main')
+  const transitions = parseTransitions(file.main.transitions)
+  const actions = parseActions(file.main.actions)
+  sameSize(
+    [...drawn.values(), ...[...extra.values()].flat(), ...Object.values(transitions), ...actions.map(a => a.frames)].flat(),
+    'main',
+  )
 
   if (!isRecord(file.mini) || !isRecord(file.mini.moods)) throw new Error('mini.moods: required')
   const miniGiven = file.mini.moods as Record<string, unknown>
@@ -125,7 +207,7 @@ export const parsePack = (raw: unknown): Pack => {
   const tint = file.mini.tint ?? 'b'
   if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error('mini.tint: must be a palette letter')
 
-  return { name: file.name, colors, fps, moods, mini, tint }
+  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint }
 }
 
 const SAFE_NAME = /^[a-z0-9][a-z0-9_-]{0,40}$/

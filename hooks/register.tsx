@@ -4,6 +4,8 @@ import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 import type { Activity, AgentPet, Label, MiniMood, Mood, Reaction } from '../types'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
+import { step } from './motion'
+import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
 import { encode, sizeOf } from './render'
@@ -112,6 +114,8 @@ export const register: Register = (on, options) => {
   const petName = typeof options.pet === 'string' && options.pet !== '' ? options.pet : DEFAULT_PET
   const language = typeof options.language === 'string' ? options.language : 'auto'
   let frame = 0
+  // What the main pet is playing between draws; a reload starts it fresh.
+  let motion: Motion | undefined
 
   on('session.start', async ($, e, next) => {
     const locale = await localeOf($, language)
@@ -261,8 +265,9 @@ export const register: Register = (on, options) => {
       shown = isDeep ? { mood: 'deepSleep', label: label('deepSleep') } : asleep
     }
 
-    const frames = pack.moods[shown.mood]
-    const body = frames[frame % frames.length] ?? []
+    const moved = step(pack, motion, shown.mood, frame, Math.random)
+    motion = moved.motion
+    const body = moved.frame
     const mainSize = sizeOf(body)
     const agentWords = (one: AgentPet) =>
       one.leaving === undefined ? words(one.label) : say(locale, one.leaving.mood === 'sad' ? 'wentWrong' : 'done')

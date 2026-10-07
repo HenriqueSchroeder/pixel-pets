@@ -31,6 +31,31 @@ describe('parsePack', () => {
     expect(parsePack(tiny()).mini.happy).toEqual([['ob', 'bo']])
   })
 
+  test('variants, transitions and actions are optional and checked', () => {
+    const moods = { sleeping: [['oo']], thinking: [['bb']] }
+    const ok = parsePack({
+      ...tiny(),
+      main: {
+        moods,
+        variants: { thinking: [[['ob']]] },
+        transitions: { '*>sleeping': [['bo']] },
+        actions: { blink: { frames: [['oo']], moods: ['thinking'], every: [2, 6] } },
+      },
+    })
+    expect(ok.variants.thinking).toEqual([[['ob']]])
+    expect(ok.variants.typing).toEqual([[['ob']]])
+    expect(ok.actions[0]?.every).toEqual([2, 6])
+
+    const bad = (main: object) => () => parsePack({ ...tiny(), main: { moods, ...main } })
+    expect(bad({ transitions: { 'sleeping>dancing': [['oo']] } })).toThrow(/from>to/)
+    expect(bad({ transitions: { '*>*': [['oo']] } })).toThrow(/from>to/)
+    expect(bad({ variants: { dancing: [[['oo']]] } })).toThrow(/unknown mood dancing/)
+    expect(bad({ variants: { typing: [[['oo']]] } })).toThrow(/draw main.moods.typing first/)
+    expect(bad({ actions: { __proto__x: { frames: [['oo']], moods: ['thinking'], every: [2, 6] } } })).toThrow(/name with letters/)
+    expect(bad({ actions: { blink: { frames: [['oo']], moods: ['thinking'], every: [6, 2] } } })).toThrow(/every/)
+    expect(bad({ actions: { blink: { frames: [['ooo']], moods: ['thinking'], every: [2, 6] } } })).toThrow(/same size/)
+  })
+
   test('needs a sleeping mood', () => {
     const raw = { ...tiny(), main: { moods: { typing: [['oo']] } } }
     expect(() => parsePack(raw)).toThrow(/sleeping: required/)

@@ -26,7 +26,15 @@ export type PackFile = {
   description?: string
   palette: Record<string, string>
   fps?: number
-  main: { moods: Partial<Record<Mood, Frame[]>> }
+  main: {
+    moods: Partial<Record<Mood, Frame[]>>
+    // Extra loops for a mood; one is picked at random each time the mood starts.
+    variants?: Partial<Record<Mood, Frame[][]>>
+    // Played once on a mood change, keyed "from>to"; either side may be "*".
+    transitions?: Record<string, Frame[]>
+    // Played once at random while in one of `moods`, every `every` seconds [min, max].
+    actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number] }>
+  }
   mini: { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }
 }
 
