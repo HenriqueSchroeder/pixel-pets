@@ -28,7 +28,7 @@ if (args.includes('--json')) {
 // and the agents on each side for each, as the plugin would play, walk and
 // gather them. Seeded, so a GIF renders the same twice.
 if (args.includes('--play')) {
-  let seed = 4
+  let seed = 14
   const random = () => {
     seed = (seed * 1664525 + 1013904223) % 4294967296
     return seed / 4294967296

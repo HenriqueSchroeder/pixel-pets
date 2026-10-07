@@ -27,16 +27,22 @@ BG, FG, DIM = (24, 24, 27), (230, 230, 230), (140, 140, 150)
 AGENT_COLORS = [0x7CC4F2, 0x9BD57A, 0xC69AF2]  # the first three of hooks/register.tsx
 
 # (seconds, main mood, label, agents). An agent is (type, mini mood, label).
+# A label that is a Said is a line the pet says: the pack's own English one, or the locale's.
 # The plan follows the plugin: wander while idle and alone; the agents gather beside it.
 EXPLORE, PLAN, GENERAL = 'Explore', 'Plan', 'general-purpose'
+Said = tuple  # (situation, the locale's line)
 SCENE = [
     (5.0, 'idle', 'hanging around', []),
     (2.5, 'watching', 'watching you type', []),
     (1.5, 'thinking', 'thinking', []),
+    (1.5, 'reading', 'reading pack.ts', []),
+    # The 20th read in a turn: a remark of its own.
+    (2.5, 'reading', Said(('manyReads', 'so many files!')), []),
     (2.0, 'writing', 'writing pack.ts', []),
     (1.5, 'sad', 'failed: npm test', []),
     (1.5, 'running', 'running npm test', []),
-    (2.0, 'happy', 'done!', []),
+    # A long turn that went well: a bigger celebration.
+    (2.5, 'celebrating', 'phew, done!', []),
     # A streak of turns that went well: proud when idle.
     (8.0, 'proud', 'proud of us', []),
     # Background agents outlive the turn: it keeps an eye on them, and they gather on both sides.
@@ -98,6 +104,9 @@ def render(name, out):
             img = Image.new('RGB', (width, height), BG)
             d = ImageDraw.Draw(img)
             pet = played[tick]
+            if isinstance(label, Said):
+                situation, fallback = label
+                label = '“' + pack['speech'].get('en', {}).get(situation, [fallback])[0] + '”'
             shown = 'strolling around' if pet['moving'] and mood in ('idle', 'proud') else label
 
             d.text((left, CELL_H // 2), 'Claude', font=bold, fill=FG)
