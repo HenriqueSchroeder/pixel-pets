@@ -31,6 +31,11 @@ def up(er, s=0): return [(er, 4 + s, 'e'), (er, 7 + s, 'e')]
 def joy(er): return [(er + 1, 2, 'o'), (er, 3, 'o'), (er + 1, 4, 'o'), (er + 1, 7, 'o'), (er, 8, 'o'), (er + 1, 9, 'o')]
 def mouth(mr, s=0): return [(mr, 5 + s, 'o'), (mr, 6 + s, 'o')]
 def smile(mr): return [(mr + 1, 5, 'o'), (mr + 1, 6, 'o')]
+# heavy lids: a drooping line over half an eye
+def half(er): return [(er, 3, 'o'), (er, 4, 'o'), (er + 1, 4, 'e'), (er, 7, 'o'), (er, 8, 'o'), (er + 1, 7, 'e')]
+def brow(er): return [(er - 1, 5, 'o'), (er - 1, 6, 'o')]
+def flat(mr): return [(mr + 1, 4, 'o'), (mr + 1, 5, 'o'), (mr + 1, 6, 'o'), (mr + 1, 7, 'o')]
+def wavy(mr): return [(mr + 1, 4, 'o'), (mr, 5, 'o'), (mr + 1, 6, 'o'), (mr, 7, 'o')]
 def omouth(mr): return [(mr, 5, 'o'), (mr, 6, 'o'), (mr + 1, 5, 'o'), (mr + 1, 6, 'o')]
 def grin(mr): return [(mr, 3, 'o'), (mr + 1, 4, 'o'), (mr + 1, 5, 'o'), (mr + 1, 6, 'o'), (mr + 1, 7, 'o'), (mr, 8, 'o')]
 def frown(mr): return [(mr + 1, 4, 'o'), (mr, 5, 'o'), (mr, 6, 'o'), (mr + 1, 7, 'o')]
@@ -86,6 +91,17 @@ F = {
     'sweating': [f('base', open_, frown, t((r, 11))) for r in (1, 1, 2, 2, 3, 3)],
     'happy': [f('tall', joy, smile)] * 2 + [f('squish', joy, smile)] * 2,
     'sad': [f('squish', open_, frown, t((r, 3))) for r in (6, 6, 7, 7)],
+    # at night it sags, lids heavy
+    'sleepy': [f('base', half, small)] * 3 + [f('squish', half, small)] * 3 + [f('squish', shut, small)] * 2,
+    # hours into the work: nearly a puddle, yawning
+    'tired': [f('squish', half, flat)] * 3 + [f('flat', half, small)] * 3 + [f('flat', shut, omouth)] * 2,
+    # glancing about, mouth wobbling, a drop of sweat
+    'worried': [f('base', look(-1), wavy)] * 3 + [f('base', open_, wavy)] + [f('base', look(1), wavy, t((2, 11)))] * 3 + [f('base', open_, wavy)],
+    # squashed down in a huff, steam rising
+    'grumpy': [f('squish', lambda er: open_(er) + brow(er), flat)] * 4 + [f('squish', lambda er: open_(er) + brow(er), flat, w((1, 10)))] * 2
+              + [f('squish', lambda er: open_(er) + brow(er), flat, w((0, 11)))] * 2,
+    # beaming, chest out, a sparkle on top
+    'proud': [f('base', joy, smile)] * 4 + [f('base', joy, smile, w((0, 10)))] * 2 + [f('squish', joy, smile, w((1, 11)))] * 2,
 }
 
 V = {
@@ -119,6 +135,11 @@ A = {
             'moods': ['idle'], 'every': [14, 30]},
     'idleYawn': {'frames': [f('base', open_, omouth), f('base', shut, omouth), f('squish', shut, omouth), f('base', open_, small)],
                  'moods': ['idle'], 'every': [20, 45]},
+    'sleepyYawn': {'frames': [f('squish', half, omouth), f('squish', shut, omouth), f('squish', shut, omouth), f('squish', half, small)],
+                   'moods': ['sleepy'], 'every': [15, 35]},
+    'nod': {'frames': [f('squish', shut, small)] * 3 + [f('squish', half, small)], 'moods': ['sleepy', 'tired'], 'every': [8, 20]},
+    'blinkWorried': {'frames': [f('base', shut, wavy)], 'moods': ['worried'], 'every': [2, 5]},
+    'blinkGrumpy': {'frames': [f('squish', lambda er: shut(er) + brow(er), flat)], 'moods': ['grumpy'], 'every': [3, 7]},
     'bubblePop': {'frames': [f('squish', shut, small, w((0, 10), (0, 11), (1, 10), (1, 11))), f('squish', shut, small, w((0, 9), (0, 11)))],
                   'moods': ['sleeping'], 'every': [12, 30]},
     'dreamJiggle': {'frames': [f('flat', shut, small), f('squish', shut, small), f('flat', shut, small)], 'moods': ['deepSleep'], 'every': [15, 40]},

@@ -24,6 +24,12 @@ scan=lambda s:[(5,3+s,'e'),(5,8+s,'e')]
 hop=lambda c:[(11,c,'.'),(10,c,'o')]
 w=lambda *ps:[(r,c,'w') for r,c in ps]
 t=lambda r,c:[(r,c,'t')]
+# heavy lids: a drooping line over half an eye
+HALF=[(4,2,'o'),(4,3,'o'),(5,3,'e'),(4,8,'o'),(4,9,'o'),(5,8,'e')]
+# brows pulled in over the inner corners of the eyes
+BROW=[(3,4,'o'),(3,7,'o')]
+FLAT=[(8,4,'o'),(8,5,'o'),(8,6,'o'),(8,7,'o')]
+WAVY=[(8,4,'o'),(7,5,'o'),(8,6,'o'),(7,7,'o')]
 
 asleep=SHUT+MOUTH
 L,Rr=look(-1)+MOUTH,look(1)+MOUTH
@@ -50,6 +56,16 @@ F={
  # eyes on the prompt below
  'watching':[DOWN+MOUTH]*6+[[(5,4,'e'),(5,9,'e')]+MOUTH]*2,
  'sad':[OPEN+FROWN+t(r,3) for r in (6,6,7,7,8,8)],
+ # at night: heavy lids, slow blinks
+ 'sleepy':[HALF+MOUTH]*5+[SHUT+MOUTH]*3,
+ # hours into the work: heavy lids, a long yawn
+ 'tired':[HALF+FLAT]*4+[HALF+OMOUTH]*2+[SHUT+OMOUTH]*2,
+ # glancing about, mouth wobbling, a drop of sweat now and then
+ 'worried':[look(-1)+WAVY]*3+[OPEN+WAVY]+[look(1)+WAVY+t(3,10)]*3+[OPEN+WAVY],
+ # brows down, mouth flat, a puff of steam rising
+ 'grumpy':[OPEN+BROW+FLAT]*4+[OPEN+BROW+FLAT+w((1,5))]*2+[OPEN+BROW+FLAT+w((0,6))]*2,
+ # eyes shut in a smile, grinning, a sparkle on its head
+ 'proud':[SMILE+GRIN]*4+[SMILE+GRIN+w((1,6))]*2+[SMILE+GRIN+w((0,6))]*2,
 }
 UP=[(4,3,'e'),(4,8,'e')]
 SIDEMOUTH=[(7,6,'o'),(7,7,'o')]
@@ -77,6 +93,10 @@ A={
  'dreamTwitch':{'frames':[asleep+ear_flick(),asleep,asleep+ear_flick()],'moods':['sleeping','deepSleep'],'every':[8,25]},
  'groom':{'frames':[SHUT+[(7,5,'o'),(7,6,'o'),(8,5,'p')]]*2+[SHUT+MOUTH]+[SHUT+[(7,5,'o'),(7,6,'o'),(8,5,'p')]]*2,'moods':['idle'],'every':[12,30]},
  'idleYawn':{'frames':[OPEN+OMOUTH,SHUT+OMOUTH,SHUT+OMOUTH,OPEN+MOUTH],'moods':['idle'],'every':[20,45]},
+ 'sleepyYawn':{'frames':[HALF+OMOUTH,SHUT+OMOUTH,SHUT+OMOUTH,HALF+MOUTH],'moods':['sleepy'],'every':[15,35]},
+ 'nod':{'frames':[SHUT+MOUTH]*3+[HALF+MOUTH],'moods':['sleepy','tired'],'every':[8,20]},
+ 'blinkWorried':{'frames':[SHUT+WAVY],'moods':['worried'],'every':[2,5]},
+ 'blinkGrumpy':{'frames':[SHUT+BROW+FLAT],'moods':['grumpy'],'every':[3,7]},
  'yawn':{'frames':[SHUT+OMOUTH]*3,'moods':['sleeping'],'every':[15,40]},
 }
 MINI_HAPPY=[(3,2,'o'),(3,5,'o'),(5,3,'o'),(5,4,'o')]
