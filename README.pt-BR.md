@@ -79,14 +79,15 @@ Rode `/plugin configure pixel-pets@pixel-pets`, ou procure **pixel-pets** no `/c
 
 | Opção | Padrão | O que faz |
 | --- | --- | --- |
-| `pet` | `cat` | Qual pet mostrar: um pack em `~/.claude/pets/` ou um que vem em [`pets/`](pets/) |
+| `pet` | `cat` | Qual pet mostrar, escolhido entre os que vêm junto (veja abaixo), ou `custom` para um seu |
+| `customPet` | | O seu pack quando `pet` é `custom`: um arquivo em `~/.claude/pets/`, sem `.json` |
 | `language` | `auto` | `auto` segue o setting `language` do Claude Code, depois o `$LANG`. Ou escolha `en`, `pt-BR` |
 | `awakeMinutes` | `1` | Quanto tempo o pet fica acordado, passeando, depois que o Claude termina, antes de dormir (metade à noite). `0` manda direto dormir |
 
 ## Usar outro pet
 
 1. Salve o pack em `~/.claude/pets/<nome>.json`. O nome do arquivo precisa ser igual ao `name` do pack.
-2. Coloque `<nome>` na opção `pet`.
+2. Escolha `custom` na opção `pet` e coloque `<nome>` em `customPet`.
 
 Um pack em `~/.claude/pets/` ganha de um embutido com o mesmo nome. Se um pack não puder ser lido, o pixel-pets diz o motivo num toast e mostra o gato.
 
