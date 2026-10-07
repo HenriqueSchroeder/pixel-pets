@@ -40,13 +40,15 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 Um pack só precisa desenhar `sleeping`. Todo humor que faltar usa os quadros do pai desenhado mais próximo: `running` cai em `typing`, depois `thinking`, depois `sleeping`.
 
-O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Só anda o pack que desenha `walking`: sem ele, o pet fica parado à esquerda, como o slime e o fantasma. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele andar para a esquerda.
+O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Quando eles não cabem onde ele está, ele anda para o lado para abrir espaço, e eles chegam quando ele termina. Só anda o pack que desenha `walking`: sem ele, o pet fica parado à esquerda, como o slime e o fantasma. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele andar para a esquerda.
 
 Ele acompanha como a sessão está indo. Uma tool ou um turno que falha o deixa preocupado, e um turno que dá certo o deixa orgulhoso; um turno que falha encerra a sequência de orgulho. Os dois perdem um ponto a cada cinco minutos, e quando ele está à toa aparece o sentimento mais forte: emburrado, depois preocupado, depois cansado, depois orgulhoso, depois com sono à noite. Isso vale só para a sessão.
 
+Ele também tem vontades próprias, que valem só para a sessão. Energia: dormir enche e trabalhar gasta, e um pet com pouca energia cochila mais cedo e descansa mais entre os passeios. Tédio: cresce enquanto nada acontece, e um pet entediado levanta sozinho de um cochilo por um tempo, mas nunca de um sono profundo. Saudade: cresce enquanto você está fora, e um pet com saudade passeia perto do prompt e cumprimenta a sua primeira tecla depois de meia hora fora ("senti sua falta!"), a não ser que um turno esteja rodando.
+
 A hora do dia é a sua hora local. À noite ele fica com sono e cochila na metade do `awakeMinutes`. Ele lembra de você entre sessões. A primeira vez que ele te vê no dia vem com uma saudação: um aniversário (uma semana, um mês, 100 dias, cada ano juntos), "senti sua falta!" depois de dois dias ou mais fora, ou bom dia. O `/pet` também diz há quanto tempo vocês estão juntos. Um `claude -p` não conta como te ver.
 
-De vez em quando ele fala alguma coisa, entre aspas na linha do Claude: "hmm…" depois de 30 segundos pensando sem tool, um comentário na 20ª leitura de arquivo do turno, com três agents trabalhando ao mesmo tempo, e num prompt à noite. Cada um no máximo uma vez por turno, e nunca dois em menos de três minutos.
+De vez em quando ele fala alguma coisa, entre aspas na linha do Claude: "hmm…" depois de 30 segundos pensando sem tool, um comentário na 20ª leitura de arquivo do turno, com três agents trabalhando ao mesmo tempo, num prompt à noite, um suspiro quando o tédio o tira de um cochilo, e uma palavra dormindo de vez em quando. Cada um no máximo uma vez por turno, e nunca dois em menos de três minutos.
 
 Cada subagent ganha um mini pet com o tipo dele (`Explore`, `Plan`, ...) e a ação atual. Quando o agent termina, o pet fica feliz (ou triste, se falhou) por um instante e sai.
 
@@ -124,7 +126,7 @@ Só um loop parece máquina. Três chaves opcionais em `main` deixam o pet impre
 - Uma ação é um quadro inteiro, então mantenha a mesma cara dos humores em que ela toca. Por isso o gato tem uma piscada para cada expressão.
 - Um humor tem até 16 quadros; a 4 fps, são 4 segundos.
 
-Dê uma voz a ele com `speech`, na raiz do pack: falas por código de idioma e situação, uma sorteada a cada vez. O idioma ou a situação que você deixar de fora diz a fala padrão. As situações são `longThink`, `manyReads`, `manyAgents` e `lateNight`, com até 8 falas cada, de uma linha e até 40 caracteres (o formato está no [README em inglês](README.md#make-it-feel-alive)).
+Dê uma voz a ele com `speech`, na raiz do pack: falas por código de idioma e situação, uma sorteada a cada vez. O idioma ou a situação que você deixar de fora diz a fala padrão. As situações são `longThink`, `manyReads`, `manyAgents`, `lateNight`, `bored` e `dreaming`, com até 8 falas cada, de uma linha e até 40 caracteres (o formato está no [README em inglês](README.md#make-it-feel-alive)).
 
 Para compartilhar um pet, veja o [CONTRIBUTING.md](CONTRIBUTING.md).
 

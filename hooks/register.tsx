@@ -2,6 +2,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 
 import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation } from '../types'
+import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs } from './drives'
+import type { Drives, State } from './drives'
 import { calm, cheer, feel, idleMood, isNight } from './feelings'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
@@ -13,7 +15,7 @@ import type { Pack } from './pack'
 import { encode, mirror, sizeOf } from './render'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
-import { gather, walkStep } from './walk'
+import { clamp, gather, onTheWay, walkStep } from './walk'
 import type { Plan, Side, Walk } from './walk'
 
 const asleep: Activity = { mood: 'sleeping', label: { text: 'sleeping', detail: '' } }
@@ -44,6 +46,10 @@ const CELEBRATION_MS = 4000
 const SPEECH_MS = 4000
 // How long the pet keeps watching the prompt after the last key.
 const TYPING_MS = 2000
+// How long it stays up when boredom gets it out of a nap.
+const STIR_MS = 45_000
+// How long into a nap it may talk in its sleep, in minutes.
+const DREAM_MINUTES: [number, number] = [10, 20]
 const AGENT_SLOT = 20
 // Room kept for the " +N" that stands for agents with no slot.
 const OVERFLOW_COLUMNS = 4
@@ -221,6 +227,21 @@ export const register: Register = (on, options) => {
   // An agent finished since the pet last cheered: the turn that reports it is worth a cheer.
   let agentsDone = false
   let saidLateNight = false
+  // What it wants, from the first draw on, and what the band showed last, which is
+  // what it has been up to since; plus until when it is up on its own.
+  let drives: Drives | undefined
+  let lastState: State = 'awake'
+  let stirredUntil = 0
+  // When it last woke up glad at the person's first key after a long while away,
+  // and whether that was since it went idle at `idleSince`.
+  let gladAt: number | null = null
+  // When it talks in its sleep next; null while awake.
+  let dreamAt: number | null = null
+  const wokeForThem = (idleSince: number | null) => gladAt !== null && idleSince !== null && gladAt >= idleSince
+  // Brings the drives up to `now` before `change` touches them.
+  const touch = (now: number, change: (settled: Drives) => Drives) => {
+    if (drives !== undefined) drives = change(drift(drives, now, lastState))
+  }
 
   // Says the line for `situation`, unless it spoke too lately or already did this turn.
   const speak = (situation: Situation, now: number, pack: Pack, locale: Locale) => {
@@ -252,24 +273,38 @@ export const register: Register = (on, options) => {
     return { text: `${say(locale, hidden ? 'hidden' : 'shown')}${await together($, locale)}` }
   })
 
-  // The pet looks at the prompt while the person types in it.
+  // The pet looks at the prompt while the person types in it, glad at the first key
+  // after a long while away, unless a turn or something else is showing.
   on('prompt.edit', async ($, e, next) => {
     const now = await $.clock.now()
     await update($, typingAt, () => now)
+    let missed = false
+    touch(now, settled => {
+      missed = misses(settled)
+      return seen(settled)
+    })
+    if (missed && (await read($, turnStartedAt)) === null) {
+      gladAt = now
+      const glad: Reaction = { mood: 'happy', label: label('missedYou'), until: now + REACTION_MS }
+      await update($, reaction, live => (live !== null && live.until > now ? live : glad))
+    }
     return next(e)
   }).catch(($, e, next) => next(e))
 
   // Only a pet in deep sleep is startled awake; a dozing one just starts thinking,
-  // and one keeping an eye on background agents was awake all along.
+  // one keeping an eye on background agents was awake all along, and one glad to
+  // see the person woke up already.
   on('prompt.submit', async ($, e, next) => {
     const now = await $.clock.now()
     const idleSince = await read($, lastActiveAt)
     const busySince = await read($, turnStartedAt)
     const isSupervising = stillHere(await read($, agents), now).some(one => one.leaving === undefined)
-    if (busySince === null && !isSupervising && idleSince !== null && now - idleSince > DEEP_SLEEP_MS) {
+    const isFastAsleep = idleSince !== null && now - idleSince > DEEP_SLEEP_MS && !wokeForThem(idleSince)
+    if (busySince === null && !isSupervising && isFastAsleep) {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
     if (busySince === null && idleSince !== null && now - idleSince >= BREAK_MS) await update($, restedAt, () => now)
+    touch(now, seen)
     if (isInteractive) await greet($, now)
     if (!saidLateNight && isNight(hourOf(now))) {
       const locale = await localeOf($, language)
@@ -283,6 +318,7 @@ export const register: Register = (on, options) => {
     await update($, activity, (): Activity => ({ mood: 'thinking', label: label('thinking') }))
     await update($, turnStartedAt, () => now)
     speaker = { ...speaker, saidThisTurn: [] }
+    touch(now, engaged)
     thinkingSince = now
     toolsThisTurn = 0
     readsThisTurn = 0
@@ -435,6 +471,9 @@ export const register: Register = (on, options) => {
     const typedAt = await read($, typingAt)
     const list = stillHere(await read($, agents), now)
     const words = (one: Label) => say(locale, one.text, one.detail)
+    // ponytail: the drives move only when the band is drawn, so a band hidden by /pet
+    // counts all that time as what it last showed; give them a clock of their own if that skews them.
+    drives = drives === undefined ? rested(now) : drift(drives, now, lastState)
 
     let shown: Activity
     let extra = ''
@@ -454,20 +493,39 @@ export const register: Register = (on, options) => {
       shown = isLong ? { ...current, mood: 'sweating' } : current
       if (isLong) extra = ` · ${Math.floor(elapsed / 60_000)}m`
     } else {
-      // It dozes off sooner at night. Unknown idle time (nothing has run yet) counts as a plain nap.
+      // It dozes off sooner at night, and when it runs low on energy. Unknown idle time
+      // (nothing has run yet) counts as a plain nap.
       const hour = hourOf(now)
-      const awakeFor = isNight(hour) ? awakeMs / 2 : awakeMs
+      const awakeFor = (isNight(hour) ? awakeMs / 2 : awakeMs) * alertness(drives)
       const idleFor = idleSince === null ? awakeFor + 1 : now - idleSince
       const isTyping = typedAt !== null && now - typedAt < TYPING_MS
-      if (isTyping && idleFor <= DEEP_SLEEP_MS) shown = { mood: 'watching', label: label('watching') }
+      // Fast asleep it does not look up, unless it woke up glad to see them since.
+      if (isTyping && (idleFor <= DEEP_SLEEP_MS || wokeForThem(idleSince))) shown = { mood: 'watching', label: label('watching') }
       // Background agents still at work: it keeps an eye on them rather than dozing off.
       else if (list.some(one => one.leaving === undefined)) shown = { mood: 'supervising', label: label('waitingForAgents') }
-      else if (idleSince !== null && idleFor > DEEP_SLEEP_MS) shown = { mood: 'deepSleep', label: label('deepSleep') }
-      else if (idleFor > awakeFor) shown = asleep
+      // Once glad to see them it only dozes, so the prompt it sends does not startle it.
+      else if (idleSince !== null && idleFor > DEEP_SLEEP_MS && !wokeForThem(idleSince)) shown = { mood: 'deepSleep', label: label('deepSleep') }
+      else if (idleFor > awakeFor && now >= stirredUntil && !stirs(drives)) shown = asleep
       else {
+        // Bored in a nap, it gets up for a while on its own.
+        if (idleFor > awakeFor && now >= stirredUntil) {
+          stirredUntil = now + STIR_MS
+          drives = stirred(drives)
+          speak('bored', now, pack, locale)
+        }
         const felt = idleMood(await read($, feelings), now, await read($, restedAt), hour)
         shown = felt === undefined ? { mood: 'idle', label: label('idle') } : { mood: felt, label: label(felt) }
       }
+    }
+
+    lastState = shown.mood === 'sleeping' || shown.mood === 'deepSleep' ? 'asleep' : e.props.isWorking ? 'working' : 'awake'
+    // Asleep, it talks in its sleep now and then, as rarely as it speaks at all.
+    const dreamGap = () => (DREAM_MINUTES[0] + (DREAM_MINUTES[1] - DREAM_MINUTES[0]) * Math.random()) * 60_000
+    if (lastState !== 'asleep') dreamAt = null
+    else if (dreamAt === null) dreamAt = now + dreamGap()
+    else if (now >= dreamAt) {
+      speak('dreaming', now, pack, locale)
+      dreamAt = now + dreamGap()
     }
 
     const miniSize = sizeOf(pack.mini?.working[0] ?? [])
@@ -493,18 +551,31 @@ export const register: Register = (on, options) => {
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>
     }
 
-    // It only strolls alone; with agents around it stays and they gather on both sides.
+    // It only strolls alone; with agents around they gather on both sides, and when
+    // they do not fit where it stands it hurries off to make room.
     // A proud pet struts about too; a sleepy, tired, worried or grumpy one stays put.
     const isRestless = shown.mood === 'idle' || shown.mood === 'proud'
-    const wants: Plan = list.length === 0 && isRestless ? 'wander' : 'stay'
-    const walked = walkStep(walk, pack.walks ? wants : 'stay', frame, room, pack.fps, Math.random)
     const width = slot + 1
     const extraColumns = hidden > 0 ? OVERFLOW_COLUMNS : 0
-    const placed = gather(walked.walk.x, room, visible.length, width, extraColumns, visible.map(one => sides.get(one.id)))
-    walk = placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
-    const sideOf = (index: number): Side => (placed.right.includes(index) ? 1 : -1)
-    sides = new Map(visible.map((one, i) => [one.id, sideOf(i)]))
-    const isStrolling = walked.moving && isRestless
+    const wanted = visible.map(one => sides.get(one.id))
+    const placed = gather(clamp(walk?.x ?? 0, room), room, visible.length, width, extraColumns, wanted)
+    const wants: Plan = visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless ? 'wander' : 'stay'
+    const walked = walkStep(walk, pack.walks ? wants : 'stay', frame, room, pack.fps, Math.random, paceOf(drives))
+    // A pet that does not walk is set down where they fit.
+    walk = pack.walks || placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
+    // The agents that do not fit around it yet, and the "+N", join once it gets there.
+    const drawn = onTheWay(walk.x, placed, room, visible.length, width, wanted)
+    const drawnCount = drawn.left.length + drawn.right.length
+    const showsMore = walk.x === placed.x && hidden > 0
+    const sideOf = (index: number): Side => (drawn.right.includes(index) ? 1 : -1)
+    // One not drawn yet keeps the side it had, so it does not hop over once it shows.
+    sides = new Map(
+      visible.flatMap((one, i): [string, Side][] => {
+        const side = i < drawnCount ? sideOf(i) : sides.get(one.id)
+        return side === undefined ? [] : [[one.id, side]]
+      }),
+    )
+    const isStrolling = walked.moving && wants === 'wander'
     const mood: Mood = walked.moving ? 'walking' : shown.mood
     const labelShown = isStrolling ? label('strolling') : shown.label
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
@@ -514,8 +585,8 @@ export const register: Register = (on, options) => {
 
     const moved = step(pack, motion, mood, frame, Math.random)
     motion = moved.motion
-    // It faces the first agent while there are any.
-    const facing = visible.length === 0 ? walk.facing : sideOf(0)
+    // It faces the way it walks, else the first agent while there are any.
+    const facing = walked.moving || drawnCount === 0 ? walk.facing : sideOf(0)
     const body = facing === 1 ? moved.frame : mirror(moved.frame)
 
     const { Box, Raster, Text } = $.ui.resolve(e)
@@ -540,7 +611,7 @@ export const register: Register = (on, options) => {
         </Box>
       )
     }
-    const leftColumns = placed.left.length * width + (placed.more === -1 ? extraColumns : 0)
+    const leftColumns = drawn.left.length * width + (showsMore && drawn.more === -1 ? extraColumns : 0)
 
     return (
       <Box flexDirection="column">
@@ -548,15 +619,15 @@ export const register: Register = (on, options) => {
           <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
         </Text>
         <Box flexDirection="row" marginLeft={walk.x - leftColumns}>
-          {hidden > 0 && placed.more === -1 && (
+          {showsMore && drawn.more === -1 && (
             <Box width={OVERFLOW_COLUMNS}>
               <Text dimColor>+{hidden}</Text>
             </Box>
           )}
-          {[...placed.left].reverse().map(i => agentPet(i, -1))}
+          {[...drawn.left].reverse().map(i => agentPet(i, -1))}
           <Raster key="main" {...mainSize} cells={encode(body, pack.colors)} />
-          {placed.right.map(i => agentPet(i, 1))}
-          {hidden > 0 && placed.more === 1 && <Text dimColor> +{hidden}</Text>}
+          {drawn.right.map(i => agentPet(i, 1))}
+          {showsMore && drawn.more === 1 && <Text dimColor> +{hidden}</Text>}
         </Box>
       </Box>
     )

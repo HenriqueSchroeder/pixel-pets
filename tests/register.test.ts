@@ -1,4 +1,4 @@
-import type { On } from 'claude-code'
+import type { Args, On } from 'claude-code'
 import type { TestBody } from 'claude-code/testing'
 import { expect, mock, test } from 'claude-code/testing'
 
@@ -333,6 +333,140 @@ test('stays awake, hanging around, for a while after a turn, then naps', async (
 
   await clock.advance(2 * 60_000)
   expect(await label()).toBe('· sleeping')
+})
+
+test('after hours of work it runs low on energy and dozes off sooner', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('turn.complete', () => ({ text: '' }))
+  const label = async (isWorking = false) => {
+    const ui = await $.ui.mount({ ...band(isWorking), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await label(true)
+  await clock.advance(3 * 60 * 60_000)
+  await label(true)
+  await $.turn.complete(finished)
+
+  // Half its usual minute awake.
+  await clock.advance(20_000)
+  expect(await label()).toBe('· hanging around')
+  await clock.advance(20_000)
+  expect(await label()).toBe('· sleeping')
+})
+
+test('bored in a nap, it gets up on its own for a while, but not out of a deep sleep', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await clock.advance(3000)
+  expect(await label()).toBe('· hanging around')
+  await clock.advance(2 * 60_000)
+  expect(await label()).toBe('· sleeping')
+  await clock.advance(4 * 60_000)
+  // Up on its own, it says so for a moment.
+  expect(await label()).toBe('· “nothing to do…”')
+  await clock.advance(30_000)
+  expect(await label()).toBe('· hanging around')
+  await clock.advance(30_000)
+  expect(await label()).toBe('· sleeping')
+  await clock.advance(4 * 60_000)
+  expect(await label()).toBe('· fast asleep')
+})
+
+test('asleep, it talks in its sleep now and then', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  // Bored, it is up around minute 5; back asleep by minute 7, it dreams 10 to 20 minutes later.
+  const seen = new Set<string | undefined>()
+  for (let minute = 0; minute <= 30; minute++) {
+    await clock.advance(60_000)
+    seen.add(await label())
+  }
+  expect(seen).toContain('· “zzz… mmh…”')
+})
+
+test('a prompt from the person keeps boredom away', async ($, on) => {
+  const { clock } = setup(on)
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await label()
+  await clock.advance(5 * 60_000)
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  await $.turn.complete(finished)
+  await clock.advance(2 * 60_000)
+  expect(await label()).toBe('· sleeping')
+})
+
+test('after a long while away, the first key it sees is greeted; a short while is not', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('prompt.edit', (_$, e) => ({ text: e.text + e.inputText, cursor: e.cursor + e.inputText.length }))
+  await $.turn.complete(finished)
+  // The kit raises prompt.edit, though its types leave the call out.
+  const raise = ($.prompt as unknown as { edit: (e: Args<'prompt.edit'>) => Promise<unknown> }).edit
+  const key = () => raise({ origin: { kind: 'composer' }, text: '', cursor: 0, start: 0, end: 0, inputText: 'h' })
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await label()
+  await clock.advance(40 * 60_000)
+  await key()
+  expect(await label()).toBe('· missed you!')
+  await clock.advance(3000)
+  // Glad to see them, it does not sink back into a deep sleep while they stop to think.
+  expect(await label()).not.toBe('· fast asleep')
+  await key()
+  expect(await label()).toBe('· watching you type')
+
+  await clock.advance(5 * 60_000)
+  await key()
+  expect(await label()).toBe('· watching you type')
+
+  // Glad to see them, it was up already: a prompt does not startle it.
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await label()).not.toBe('· waking up')
+})
+
+test('a key during a long turn is not greeted: the band keeps showing the work', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('prompt.edit', (_$, e) => ({ text: e.text + e.inputText, cursor: e.cursor + e.inputText.length }))
+  // The kit raises prompt.edit, though its types leave the call out.
+  const raise = ($.prompt as unknown as { edit: (e: Args<'prompt.edit'>) => Promise<unknown> }).edit
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await label()
+  await clock.advance(40 * 60_000)
+  await raise({ origin: { kind: 'composer' }, text: '', cursor: 0, start: 0, end: 0, inputText: 'h' })
+  expect(await label()).not.toBe('· missed you!')
 })
 
 test('how long it stays awake comes from the config', { options: { awakeMinutes: 0 } }, async ($, on) => {

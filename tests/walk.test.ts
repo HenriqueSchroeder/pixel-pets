@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import type { Random } from '../hooks/motion'
 import { mirror } from '../hooks/render'
-import { gather, walkStep } from '../hooks/walk'
+import { gather, layoutAt, onTheWay, walkStep } from '../hooks/walk'
 import type { Plan, Walk } from '../hooks/walk'
 
 const always = (value: number): Random => () => value
@@ -82,6 +82,66 @@ describe('gather', () => {
 
   test('alone it stays where it is', () => {
     expect(gather(7, -3, 0, 10, 0)).toEqual({ x: 7, left: [], right: [], more: 1 })
+  })
+})
+
+describe('pace', () => {
+  const resting: Walk = { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false }
+
+  test('leaning draws its spots toward the left', () => {
+    expect(walkStep(resting, 'wander', 1, 10, 1, always(0.5)).walk.target).toBe(5)
+    expect(walkStep(resting, 'wander', 1, 10, 1, always(0.5), { rest: 1, lean: 1 }).walk.target).toBe(1)
+  })
+
+  test('a slower pace rests longer once it gets there', () => {
+    const near: Walk = { ...resting, target: 1 }
+    // 3 to 10 seconds at half: 6.5 s, rounded to 7, from tick 1.
+    expect(walkStep(near, 'wander', 1, 10, 1, always(0.5)).walk.restUntil).toBe(8)
+    expect(walkStep(near, 'wander', 1, 10, 1, always(0.5), { rest: 2, lean: 0 }).walk.restUntil).toBe(14)
+  })
+})
+
+describe('going somewhere', () => {
+  test('it hurries two columns a tick to the spot and stays there', () => {
+    const start: Walk = { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false }
+    expect(trail({ go: 7 }, 1, 5, 10, always(0), start).xs).toEqual([2, 4, 6, 7, 7])
+  })
+
+  test('a spot past the stage stops at its edge', () => {
+    const start: Walk = { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false }
+    expect(trail({ go: 50 }, 1, 3, 4, always(0), start).xs).toEqual([2, 4, 4])
+  })
+})
+
+describe('layoutAt', () => {
+  test('lays them out where the pet stands, or not at all', () => {
+    expect(layoutAt(15, 30, 1, 20, 0)).toBeUndefined()
+    expect(layoutAt(10, 30, 1, 20, 0)).toEqual({ x: 10, left: [], right: [0], more: 1 })
+  })
+})
+
+describe('onTheWay', () => {
+  // Beside a pet at 25 on a 30-column stage two 10-column agents fit on its left; a third needs it at 20.
+  const placed = gather(25, 30, 3, 10, 0)
+
+  test('on its way, only the agents that already fit around it show', () => {
+    expect(placed.x).toBe(20)
+    expect(onTheWay(25, placed, 30, 3, 10)).toEqual({ x: 25, left: [0, 1], right: [], more: 1 })
+  })
+
+  test('when only the "+N" sent it off, all of them stay on the way', () => {
+    // Two 21-column agents fill the left of a pet at 43 on a 46-column stage: the "+N" needs it at 42.
+    const tight = gather(43, 46, 2, 21, 4, [-1, -1])
+    expect(tight.x).toBe(42)
+    expect(onTheWay(43, tight, 46, 2, 21, [-1, -1])).toEqual({ x: 43, left: [0, 1], right: [], more: 1 })
+  })
+
+  test('none show while none fit yet', () => {
+    expect(onTheWay(15, gather(15, 30, 1, 20, 0), 30, 1, 20)).toEqual({ x: 15, left: [], right: [], more: 1 })
+  })
+
+  test('all show once it gets there', () => {
+    expect(onTheWay(placed.x, placed, 30, 3, 10)).toBe(placed)
   })
 })
 

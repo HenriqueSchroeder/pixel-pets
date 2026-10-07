@@ -40,13 +40,15 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
 
-The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. Only a pack that draws `walking` moves: leave it out and the pet stays put at the left, as the slime and the ghost do. Packs draw their pet facing right; pixel-pets mirrors it to walk left.
+The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. When they do not fit where it stands, it walks aside to make room and they join as it gets there. Only a pack that draws `walking` moves: leave it out and the pet stays put at the left, as the slime and the ghost do. Packs draw their pet facing right; pixel-pets mirrors it to walk left.
 
 It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. These last for the session only.
 
+It has wants of its own too, for the session. Energy: sleep fills it and work drains it, and a pet low on energy dozes off sooner and rests longer between strolls. Boredom: it builds while nothing happens, and a bored pet gets up from a nap on its own for a while, though never out of a deep sleep. Longing: it builds while you are away, and a pet that misses you strolls near the prompt and greets your first key after half an hour away ("missed you!"), unless a turn is running.
+
 The time of day is your local time. At night it is sleepy and dozes off in half of `awakeMinutes`. It remembers you across sessions. The day's first sight of you opens with one welcome: an anniversary (a week, a month, 100 days, each year together), "missed you!" after two days or more away, or good morning. `/pet` also says how long you have been together. A `claude -p` run does not count as seeing you.
 
-Now and then it says something of its own, in quotes on Claude's line: "hmm…" after 30 seconds of thinking with no tool, a remark on the 20th file read in a turn, on three agents at work at once, and on a prompt at night. Each at most once a turn, and never two within three minutes.
+Now and then it says something of its own, in quotes on Claude's line: "hmm…" after 30 seconds of thinking with no tool, a remark on the 20th file read in a turn, on three agents at work at once, on a prompt at night, a sigh when boredom gets it up from a nap, and a word in its sleep now and then. Each at most once a turn, and never two within three minutes.
 
 Each subagent gets a mini pet with its type (`Explore`, `Plan`, ...) and its current action. When the agent ends, its pet is happy (or sad, if it failed) for a moment and then leaves.
 
@@ -162,7 +164,7 @@ Give it a voice with `speech`, at the top level: lines by language code and situ
 }
 ```
 
-The situations are `longThink`, `manyReads`, `manyAgents` and `lateNight`. Up to 8 lines each, one line of up to 40 characters.
+The situations are `longThink`, `manyReads`, `manyAgents`, `lateNight`, `bored` and `dreaming`. Up to 8 lines each, one line of up to 40 characters.
 
 The [schema](schema/pet.schema.json) gives your editor completion and checks. To share a pet, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
