@@ -1,6 +1,6 @@
 {
   "name": "pixel-pets",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Pixel-art pets above the prompt that react to what Claude and each subagent are doing",
   "author": {
     "name": "Henrique Schroeder"
