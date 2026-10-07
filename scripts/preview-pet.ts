@@ -7,6 +7,9 @@ import { join } from 'node:path'
 import { step } from '../hooks/motion'
 import type { Motion } from '../hooks/motion'
 import { MINI_MOODS, MOODS, PARENT, parsePack } from '../hooks/pack'
+import { mirror } from '../hooks/render'
+import { gather, walkStep } from '../hooks/walk'
+import type { Plan, Side, Walk } from '../hooks/walk'
 import type { Frame, Mood } from '../types'
 
 const args = process.argv.slice(2)
@@ -20,22 +23,34 @@ if (args.includes('--json')) {
   process.exit(0)
 }
 
-// Reads a JSON list of moods, one per tick, and prints the main pet's frame for
-// each tick as the plugin would play it. Seeded, so a GIF renders the same twice.
+// Reads a JSON list of ticks, each `{ mood, plan, room, agents, width }` (the
+// agents by id, each `width` columns), and prints the main pet's frame, column
+// and the agents on each side for each, as the plugin would play, walk and
+// gather them. Seeded, so a GIF renders the same twice.
 if (args.includes('--play')) {
-  let seed = 7
+  let seed = 4
   const random = () => {
     seed = (seed * 1664525 + 1013904223) % 4294967296
     return seed / 4294967296
   }
-  const moods = JSON.parse(readFileSync(0, 'utf8')) as Mood[]
+  type Tick = { mood: Mood; plan: Plan; room: number; agents: string[]; width: number }
+  const ticks = JSON.parse(readFileSync(0, 'utf8')) as Tick[]
   let motion: Motion | undefined
-  const frames = moods.map((mood, tick) => {
-    const moved = step(pack, motion, mood, tick, random)
+  let walk: Walk | undefined
+  let sides = new Map<string, Side>()
+  const played = ticks.map(({ mood, plan, room, agents, width }, tick) => {
+    const walked = walkStep(walk, pack.walks ? plan : 'stay', tick, room, pack.fps, random)
+    const placed = gather(walked.walk.x, room, agents.length, width, 0, agents.map(id => sides.get(id)))
+    walk = placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
+    const sideOf = (index: number): Side => (placed.right.includes(index) ? 1 : -1)
+    sides = new Map(agents.map((id, i) => [id, sideOf(i)]))
+    const moved = step(pack, motion, walked.moving ? 'walking' : mood, tick, random)
     motion = moved.motion
-    return moved.frame
+    const facing = agents.length === 0 ? walk.facing : sideOf(0)
+    const frame = facing === 1 ? moved.frame : mirror(moved.frame)
+    return { frame, x: walk.x, left: placed.left, right: placed.right, moving: walked.moving }
   })
-  console.log(JSON.stringify(frames))
+  console.log(JSON.stringify(played))
   process.exit(0)
 }
 
