@@ -17,7 +17,6 @@ export const PARENT: Record<Mood, Mood | null> = {
   writing: 'typing',
   reading: 'thinking',
   searching: 'reading',
-  waiting: 'thinking',
   supervising: 'thinking',
   compacting: 'thinking',
   sweating: 'thinking',

@@ -24,7 +24,7 @@ describe('parsePack', () => {
     expect(pack.moods.running).toEqual([['bb']])
     expect(pack.moods.writing).toEqual([['bb']])
     expect(pack.moods.searching).toEqual([['ob']])
-    expect(pack.moods.waiting).toEqual([['oo']])
+    expect(pack.moods.compacting).toEqual([['oo']])
   })
 
   test('only a pack that draws walking walks', () => {

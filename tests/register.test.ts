@@ -223,21 +223,58 @@ test('falls fast asleep after a long idle time', async ($, on) => {
   expect(await ui.find({ text: /fast asleep/ })).toBeDefined()
 })
 
-test('says it is waiting for you while a permission prompt is open', async ($, on) => {
-  const { clock } = setup(on)
-  let answer = () => {}
-  on('classic.PermissionRequest', () => new Promise(resolve => (answer = () => resolve({}))))
+// A tool call whose permission dialog the person answers with `ok` or a no.
+const askedCall = ($: Parameters<TestBody>[0], on: On, ok: boolean) => {
+  // No hook decides, so the dialog opens.
+  on('classic.PermissionRequest', () => ({}))
+  on('tool.call', async (_$, e) => {
+    await $.classic.PermissionRequest({ tool_name: String(e.tool), tool_input: {} })
+    return ok
+      ? { result: 'ok' }
+      : { result: "Error: The user doesn't want to proceed with this tool use.", isError: true }
+  })
+}
 
-  const pending = $.classic.PermissionRequest({ tool_name: 'Bash', tool_input: { command: 'rm -rf build' } })
-  // Let the plugin's hook reach its own `next` before drawing.
-  await clock.advance(1)
+test('thanks you for a yes to a permission prompt', async ($, on) => {
+  setup(on)
+  askedCall($, on, true)
+  await $.tool.call({ tool: 'Bash', command: 'touch x' } as never)
+
   const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
-  expect(await ui.find({ text: /waiting for you: Bash/ })).toBeDefined()
+  expect(await ui.find({ text: /thanks!/ })).toBeDefined()
+})
 
-  answer()
-  await pending
-  const after = await $.ui.mount({ ...band(true), surface: 'terminal' })
-  expect(await after.find({ text: /waiting for you/ })).toBeUndefined()
+test('takes a no calmly, and the turn ending does not cheer over it', async ($, on) => {
+  setup(on)
+  askedCall($, on, false)
+  on('turn.complete', () => ({ text: '' }))
+  await $.tool.call({ tool: 'Bash', command: 'touch x' } as never)
+  // As the engine ends it after a no: a plain answer, not aborted.
+  await $.turn.complete(finished)
+
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /okay, I won't/ })).toBeDefined()
+  expect(await ui.find({ text: /failed|done!/ })).toBeUndefined()
+})
+
+test('an interrupted turn does not cheer', async ($, on) => {
+  setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete({ ...finished, isAborted: true })
+
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /done!/ })).toBeUndefined()
+})
+
+test('a turn that only thinks while agents run is waiting on them', async ($, on) => {
+  setup(on)
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  await $.agent.spawn({ ...spawn, background: true })
+  await $.turn.start({ text: '', turnId: 't2' })
+
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.find({ text: '· waiting for agents' })).toBeDefined()
 })
 
 test('shows it is compacting, even between turns', async ($, on) => {

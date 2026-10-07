@@ -66,6 +66,12 @@ const describe = (e: ToolCallInput): Activity => {
     : { mood: 'typing', label: label('using', short(tool, 24)) }
 }
 
+const callKey = (agentId: string | undefined, tool: string) => `${agentId ?? 'main'}:${tool}`
+
+// The engine's words for a call the person said no to: there is no flag for it.
+const isDenial = (ran: { isError?: boolean; result?: unknown }) =>
+  ran.isError === true && typeof ran.result === 'string' && ran.result.includes("doesn't want to proceed")
+
 const reason = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
 // The language and the pack are read once per module load: a settings change
@@ -128,6 +134,11 @@ export const register: Register = (on, options) => {
   let walk: Walk | undefined
   // The side each agent's pet stands on, kept so none hops over when another leaves.
   let sides = new Map<string, Side>()
+  // The tool call running for each agent and tool, so a permission prompt (which
+  // names only those) finds the call it is for; and the calls that asked.
+  // ponytail: two same-named calls of one agent at once share a key; the later wins.
+  const openCalls = new Map<string, string>()
+  const asked = new Set<string>()
 
   on('session.start', async ($, e, next) => {
     const locale = await localeOf($, language)
@@ -188,9 +199,14 @@ export const register: Register = (on, options) => {
     }
 
     const until = now + REACTION_MS
-    await update($, reaction, (): Reaction =>
-      isBad ? { mood: 'sad', label: label('wentWrong'), until } : { mood: 'happy', label: label('done'), until },
-    )
+    // An interrupted turn earns no reaction, and one still showing (a thanks, a
+    // "fine, I won't" after a denied permission, a failure) is left to finish.
+    const live = await read($, reaction)
+    if (!e.isAborted && (live === null || live.until <= now)) {
+      await update($, reaction, (): Reaction =>
+        isBad ? { mood: 'sad', label: label('wentWrong'), until } : { mood: 'happy', label: label('done'), until },
+      )
+    }
     await update($, override, () => null)
     await update($, turnStartedAt, () => null)
     await update($, lastActiveAt, () => now)
@@ -221,16 +237,30 @@ export const register: Register = (on, options) => {
       await update($, agents, list => list.map(pet => (pet.id === agentId ? { ...pet, label: now.label } : pet)))
     }
 
-    const ran = await next(e)
+    const key = callKey(agentId, String(e.tool))
+    openCalls.set(key, e.tool_use_id)
+    let ran: Awaited<ReturnType<typeof next>>
+    let wasAsked = false
+    try {
+      ran = await next(e)
+    } finally {
+      if (openCalls.get(key) === e.tool_use_id) openCalls.delete(key)
+      wasAsked = asked.delete(e.tool_use_id)
+    }
 
-    if (agentId === undefined) await release($, 'waiting')
     // A background agent's tool call returns at once; its pet leaves on its own
     // turn.complete. Only a spawn that failed is dropped here.
     if (e.tool === 'Agent' && ran.isError === true) {
       await update($, agents, list => list.filter(pet => pet.toolUseId !== e.tool_use_id))
     }
-    if (agentId === undefined && ran.isError === true) {
-      const until = (await $.clock.now()) + REACTION_MS
+    const until = (await $.clock.now()) + REACTION_MS
+    if (wasAsked) {
+      // The person answered a permission prompt: thanks for a yes, fine for a no.
+      const thanked: Reaction = isDenial(ran)
+        ? { mood: 'sad', label: label('denied'), until }
+        : { mood: 'happy', label: label('thanks'), until }
+      await update($, reaction, () => thanked)
+    } else if (agentId === undefined && ran.isError === true) {
       // "failed: npm test", or the tool's name when the action has no detail.
       const failed = label('failed', short(now.label.detail || String(e.tool), 24))
       await update($, reaction, (): Reaction => ({ mood: 'sad', label: failed, until }))
@@ -238,12 +268,13 @@ export const register: Register = (on, options) => {
     return ran
   }).catch(($, e, next) => next(e))
 
-  // Claude is stuck until the person answers a permission prompt.
+  // The band is hidden while a permission dialog is open (and `$.ui.notice` does
+  // not show under the terminal's), so the pet only marks the call that asked;
+  // tool.call reacts once the person has answered.
   on('classic.PermissionRequest', async ($, e, next) => {
-    await update($, override, (): Activity => ({ mood: 'waiting', label: label('waitingForYou', short(e.tool_name, 24)) }))
-    const answered = await next(e)
-    await release($, 'waiting')
-    return answered
+    const id = openCalls.get(callKey(e.agent_id, e.tool_name))
+    if (id !== undefined) asked.add(id)
+    return next(e)
   }).catch(($, e, next) => next(e))
 
   on('session.compact', async ($, e, next) => {
@@ -281,7 +312,12 @@ export const register: Register = (on, options) => {
     } else if (e.props.isWorking) {
       const elapsed = startedAt === null ? 0 : now - startedAt
       const isLong = elapsed > LONG_TURN_MS && PATIENT.includes(doing.mood)
-      shown = isLong ? { ...doing, mood: 'sweating' } : doing
+      // A turn that only thinks while agents still run is waiting on them.
+      const current: Activity =
+        doing.mood === 'thinking' && list.some(one => one.leaving === undefined)
+          ? { mood: 'supervising', label: label('waitingForAgents') }
+          : doing
+      shown = isLong ? { ...current, mood: 'sweating' } : current
       if (isLong) extra = ` · ${Math.floor(elapsed / 60_000)}m`
     } else {
       // Unknown idle time (nothing has run yet) counts as a plain nap.

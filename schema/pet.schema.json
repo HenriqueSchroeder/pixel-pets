@@ -98,9 +98,6 @@
             "searching": {
               "$ref": "#/$defs/mainFrames"
             },
-            "waiting": {
-              "$ref": "#/$defs/mainFrames"
-            },
             "supervising": {
               "$ref": "#/$defs/mainFrames"
             },
@@ -219,14 +216,6 @@
                 "$ref": "#/$defs/mainFrames"
               }
             },
-            "waiting": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 4,
-              "items": {
-                "$ref": "#/$defs/mainFrames"
-              }
-            },
             "supervising": {
               "type": "array",
               "minItems": 1,
@@ -274,7 +263,7 @@
           "type": "object",
           "maxProperties": 32,
           "propertyNames": {
-            "pattern": "^(\\*|sleeping|deepSleep|idle|walking|watching|thinking|waking|typing|running|writing|reading|searching|waiting|supervising|compacting|sweating|happy|sad)>(\\*|sleeping|deepSleep|idle|walking|watching|thinking|waking|typing|running|writing|reading|searching|waiting|supervising|compacting|sweating|happy|sad)$",
+            "pattern": "^(\\*|sleeping|deepSleep|idle|walking|watching|thinking|waking|typing|running|writing|reading|searching|supervising|compacting|sweating|happy|sad)>(\\*|sleeping|deepSleep|idle|walking|watching|thinking|waking|typing|running|writing|reading|searching|supervising|compacting|sweating|happy|sad)$",
             "not": {
               "const": "*>*"
             }
@@ -316,7 +305,6 @@
                     "writing",
                     "reading",
                     "searching",
-                    "waiting",
                     "supervising",
                     "compacting",
                     "sweating",
