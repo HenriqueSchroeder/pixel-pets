@@ -38,6 +38,8 @@ export const ptBR: Locale = {
     manyReads: 'quantos arquivos!',
     manyAgents: 'time completo hoje!',
     lateNight: 'já tá tarde…',
+    bored: 'que tédio…',
+    dreaming: 'zzz… hmm…',
     denied: 'tá bom, não vou',
     compacting: 'arrumando a memória',
     idle: 'de bobeira',

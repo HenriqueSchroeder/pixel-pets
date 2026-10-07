@@ -1,7 +1,7 @@
 import type { Situation } from '../types'
 import type { Random } from './motion'
 
-export const SITUATIONS: readonly Situation[] = ['longThink', 'manyReads', 'manyAgents', 'lateNight']
+export const SITUATIONS: readonly Situation[] = ['longThink', 'manyReads', 'manyAgents', 'lateNight', 'bored', 'dreaming']
 
 // What the pet said lately: speech stays rare, at most once a turn for each
 // situation and never twice within a few minutes.

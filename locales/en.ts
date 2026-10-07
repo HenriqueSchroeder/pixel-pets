@@ -43,6 +43,8 @@ export const en: Locale = {
     manyReads: 'so many files!',
     manyAgents: 'full team today!',
     lateNight: "it's getting late…",
+    bored: 'nothing to do…',
+    dreaming: 'zzz… mmh…',
     denied: "okay, I won't",
     compacting: 'tidying up its memory',
     idle: 'hanging around',

@@ -26,7 +26,7 @@ export type Mood =
 export type MiniMood = 'working' | 'happy' | 'sad'
 
 // When the pet says something of its own, now and then.
-export type Situation = 'longThink' | 'manyReads' | 'manyAgents' | 'lateNight'
+export type Situation = 'longThink' | 'manyReads' | 'manyAgents' | 'lateNight' | 'bored' | 'dreaming'
 
 // A sprite frame: rows of palette letters, '.' see-through.
 export type Frame = string[]
