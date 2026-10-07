@@ -6,16 +6,25 @@ import type { Pack } from './pack'
 export type Motion = {
   mood: Mood
   loop: Frame[]
+  // The tick the mood started on, before its transition.
+  began: number
   // The tick the loop's first frame plays on.
   since: number
   // A transition or an action, played once from `start`.
-  once?: { frames: Frame[]; start: number }
+  once?: { frames: Frame[]; start: number; isAction: boolean }
   // The tick from which each action may play again.
   next: Record<string, number>
 }
 
 // A number in [0, 1): Math.random in the plugin, a fixed sequence in tests.
 export type Random = () => number
+
+// Moods of a turn at work: a burst of tools would flick between them every call.
+const WORK: ReadonlySet<Mood> = new Set(['thinking', 'typing', 'running', 'writing', 'reading', 'searching', 'supervising'])
+// How long a work mood shows before another work mood may take over.
+const DWELL_SECONDS = 1
+// An action this close to its end finishes before the mood changes.
+const FOLLOW_THROUGH_TICKS = 2
 
 const ticks = (seconds: number, fps: number) => Math.max(1, Math.round(seconds * fps))
 
@@ -35,16 +44,29 @@ const start = (pack: Pack, previous: Motion | undefined, mood: Mood, tick: numbe
   return {
     mood,
     loop,
+    began: tick,
     since: tick + (transition?.length ?? 0),
-    once: transition === undefined ? undefined : { frames: transition, start: tick },
+    once: transition === undefined ? undefined : { frames: transition, start: tick, isAction: false },
     next,
   }
+}
+
+// Whether it keeps playing `motion` on `tick` though the mood is now `mood`: a work
+// mood shows a moment before the next one, and an action about to end finishes.
+// Anything else, a reaction or sleep, takes over at once.
+const holds = (pack: Pack, motion: Motion, mood: Mood, tick: number) => {
+  if (WORK.has(motion.mood) && WORK.has(mood) && tick - motion.began < ticks(DWELL_SECONDS, pack.fps)) return true
+  const left = motion.once === undefined ? 0 : motion.once.start + motion.once.frames.length - tick
+  return motion.once?.isAction === true && left > 0 && left <= FOLLOW_THROUGH_TICKS
 }
 
 // The frame to draw on `tick`. Safe to call more than once per tick: the same
 // tick gives the same frame.
 export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick: number, random: Random) => {
-  let motion = previous?.mood === mood ? previous : start(pack, previous, mood, tick, random)
+  let motion =
+    previous !== undefined && (previous.mood === mood || holds(pack, previous, mood, tick))
+      ? previous
+      : start(pack, previous, mood, tick, random)
 
   if (motion.once !== undefined) {
     const frame = motion.once.frames[tick - motion.once.start]
@@ -52,10 +74,12 @@ export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick:
     motion = { ...motion, once: undefined }
   }
 
-  const due = pack.actions.find(action => (motion.next[action.name] ?? Infinity) <= tick)
+  // A mood on its way out starts no new action.
+  const isLeaving = motion.mood !== mood
+  const due = isLeaving ? undefined : pack.actions.find(action => (motion.next[action.name] ?? Infinity) <= tick)
   if (due !== undefined) {
     const again = tick + due.frames.length + someTime(due.every, pack.fps, random)
-    motion = { ...motion, once: { frames: due.frames, start: tick }, next: { ...motion.next, [due.name]: again } }
+    motion = { ...motion, once: { frames: due.frames, start: tick, isAction: true }, next: { ...motion.next, [due.name]: again } }
     return { motion, frame: due.frames[0] ?? [] }
   }
 
