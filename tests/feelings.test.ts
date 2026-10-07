@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { calm, feel, idleMood, isMorning, isNight, settle } from '../hooks/feelings'
+import { calm, cheer, feel, idleMood, isMorning, isNight, settle } from '../hooks/feelings'
 import type { Feelings } from '../types'
 
 const MINUTE = 60_000
@@ -34,6 +34,18 @@ describe('feelings', () => {
     expect(idleMood({ worry: 1, pride: 3, at: 0 }, 0, 0, NOON)).toBeUndefined()
     expect(idleMood(calm, 0, 0, 23)).toBe('sleepy')
     expect(idleMood(calm, 0, null, NOON)).toBeUndefined()
+  })
+
+  test('a turn cheers only once the agents are done, and plain work only now and then', () => {
+    const work = { tookLong: false, tools: 3, agentsDone: false, agentsLeft: 0 }
+    const lucky = () => 0
+    const unlucky = () => 0.99
+    expect(cheer(work, lucky)).toBe('happy')
+    expect(cheer(work, unlucky)).toBeNull()
+    expect(cheer({ ...work, tools: 0 }, lucky)).toBeNull()
+    expect(cheer({ ...work, tookLong: true }, unlucky)).toBe('celebrating')
+    expect(cheer({ ...work, tools: 0, agentsDone: true }, unlucky)).toBe('happy')
+    expect(cheer({ ...work, tookLong: true, agentsDone: true, agentsLeft: 1 }, lucky)).toBeNull()
   })
 
   test('night runs from 22h to 6h, morning from 5h to 11h', () => {

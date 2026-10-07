@@ -34,7 +34,7 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | `worried` | à toa depois de algumas falhas seguidas | sweating |
 | `grumpy` | à toa depois de muitas falhas seguidas | sad |
 | `proud` | à toa depois de uma sequência de turnos que deram certo | happy |
-| `happy` | por dois segundos depois que um turno termina, ou depois que você aprova um pedido de permissão ("valeu!") | sleeping |
+| `happy` | por dois segundos quando o último agent termina, de vez em quando depois de um turno de trabalho, ou depois que você aprova um pedido de permissão ("valeu!") | sleeping |
 | `celebrating` | por quatro segundos depois que um turno de 5 minutos ou mais dá certo, e num aniversário | happy |
 | `sad` | por dois segundos depois que uma tool falha, um turno dá erro ou você nega um pedido de permissão ("tá bom, não vou") | sleeping |
 

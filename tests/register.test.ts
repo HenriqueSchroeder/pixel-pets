@@ -430,6 +430,37 @@ test('keeps an eye on background agents after the turn ends, then hangs around',
   expect(await label()).toBe('· hanging around')
 })
 
+test('cheers when the last background agent is done, not at each one', async ($, on) => {
+  setup(on)
+  let spawned = 0
+  on('agent.spawn', () => ({ model: 'haiku', agentId: `a${(spawned += 1)}` }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.agent.spawn({ ...spawn, background: true, tool_use_id: 'toolu_1' })
+  await $.agent.spawn({ ...spawn, background: true, tool_use_id: 'toolu_2' })
+  await $.turn.complete(finished)
+  const main = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  // Each agent that ends opens a main turn that reports it.
+  await $.turn.complete({ ...finished, agentId: 'a1' })
+  await $.turn.complete(finished)
+  expect(await main()).toBe('· waiting for agents')
+
+  await $.turn.complete({ ...finished, agentId: 'a2' })
+  await $.turn.complete(finished)
+  expect(await main()).toBe('· done!')
+})
+
+test('a turn that only talks earns no cheer', async ($, on) => {
+  setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: '· done!' })).toBeUndefined()
+})
+
 test('a pet keeping an eye on background agents is not startled by a prompt', async ($, on) => {
   const { clock } = setup(on)
   on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))

@@ -34,7 +34,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | `worried` | idle after a few failures in a row | sweating |
 | `grumpy` | idle after many failures in a row | sad |
 | `proud` | idle after a streak of turns that went well | happy |
-| `happy` | for two seconds after a turn ends, or after you allow a permission prompt ("thanks!") | sleeping |
+| `happy` | for two seconds after the last agent is done, now and then after a turn of work, or after you allow a permission prompt ("thanks!") | sleeping |
 | `celebrating` | for four seconds after a turn of 5 minutes or more goes well, and on an anniversary | happy |
 | `sad` | for two seconds after a tool fails, a turn errors, or you deny a permission prompt ("okay, I won't") | sleeping |
 

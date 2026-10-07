@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 
 import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation } from '../types'
-import { calm, feel, idleMood, isNight } from './feelings'
+import { calm, cheer, feel, idleMood, isNight } from './feelings'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
 import { asVisit, daysBetween, welcome } from './memory'
@@ -214,9 +214,12 @@ export const register: Register = (on, options) => {
   // What it said lately and what it is saying now; a reload starts them fresh.
   let speaker: Speaker = quiet
   let saying: { text: string; until: number } | null = null
-  // Since when the main loop has run no tool (null while one runs), and its reads this turn.
+  // Since when the main loop has run no tool (null while one runs), and its tools and reads this turn.
   let thinkingSince: number | null = null
+  let toolsThisTurn = 0
   let readsThisTurn = 0
+  // An agent finished since the pet last cheered: the turn that reports it is worth a cheer.
+  let agentsDone = false
   let saidLateNight = false
 
   // Says the line for `situation`, unless it spoke too lately or already did this turn.
@@ -281,6 +284,7 @@ export const register: Register = (on, options) => {
     await update($, turnStartedAt, () => now)
     speaker = { ...speaker, saidThisTurn: [] }
     thinkingSince = now
+    toolsThisTurn = 0
     readsThisTurn = 0
     return next(e)
   })
@@ -294,21 +298,26 @@ export const register: Register = (on, options) => {
       const leaving = { mood: (isBad || e.isAborted ? 'sad' : 'happy') as MiniMood, until: now + LEAVING_MS }
       await update($, agents, list => stillHere(list, now).map(pet => (pet.id === id ? { ...pet, leaving } : pet)))
       await update($, lastActiveAt, () => now)
+      agentsDone = true
       return next(e)
     }
 
     if (!e.isAborted) await update($, feelings, felt => feel(felt, isBad ? 'turnFailed' : 'turnOk', now))
     const startedAt = await read($, turnStartedAt)
     const tookLong = startedAt !== null && now - startedAt >= LONG_WIN_MS
+    const agentsLeft = stillHere(await read($, agents), now).filter(one => one.leaving === undefined).length
+    const cheered = cheer({ tookLong, tools: toolsThisTurn, agentsDone, agentsLeft }, Math.random)
+    if (agentsLeft === 0) agentsDone = false
     const until = now + REACTION_MS
     // An interrupted turn earns no reaction, and one still showing (a thanks, a
     // "fine, I won't" after a denied permission, a failure) is left to finish.
+    // A failure always shows; a turn that went well only sometimes cheers.
     const live = await read($, reaction)
-    if (!e.isAborted && (live === null || live.until <= now)) {
+    if (!e.isAborted && (live === null || live.until <= now) && (isBad || cheered !== null)) {
       await update($, reaction, (): Reaction =>
         isBad
           ? { mood: 'sad', label: label('wentWrong'), until }
-          : tookLong
+          : cheered === 'celebrating'
             ? { mood: 'celebrating', label: label('phew'), until: now + CELEBRATION_MS }
             : { mood: 'happy', label: label('done'), until },
       )
@@ -348,7 +357,10 @@ export const register: Register = (on, options) => {
       await update($, agents, list => list.map(pet => (pet.id === agentId ? { ...pet, label: now.label } : pet)))
     }
 
-    if (agentId === undefined) thinkingSince = null
+    if (agentId === undefined) {
+      thinkingSince = null
+      toolsThisTurn += 1
+    }
     const key = callKey(agentId, String(e.tool))
     openCalls.set(key, e.tool_use_id)
     let ran: Awaited<ReturnType<typeof next>>

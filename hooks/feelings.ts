@@ -35,6 +35,22 @@ export const feel = (feelings: Feelings, what: Feeling, now: number): Feelings =
   }
 }
 
+// A turn of work that went well cheers it only now and then, or it would cheer at every step.
+const CHEER_CHANCE = 0.6
+
+type Turn = { tookLong: boolean; tools: number; agentsDone: boolean; agentsLeft: number }
+
+// How a turn that went well ends. It waits for the last agent before cheering;
+// a long turn is celebrated, the last agent done is cheered, other work only now
+// and then, and a turn that only talked earns nothing.
+export const cheer = (turn: Turn, random: () => number): 'celebrating' | 'happy' | null => {
+  if (turn.agentsLeft > 0) return null
+  if (turn.tookLong) return 'celebrating'
+  if (turn.agentsDone) return 'happy'
+  if (turn.tools === 0) return null
+  return random() < CHEER_CHANCE ? 'happy' : null
+}
+
 export const isNight = (hour: number) => hour >= 22 || hour < 6
 export const isMorning = (hour: number) => hour >= 5 && hour < 11
 
