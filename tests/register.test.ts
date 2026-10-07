@@ -590,6 +590,62 @@ test('a pet that draws no walking stays put', async ($, on) => {
   expect([...(await idleLabels($, on, pack('cat')))]).toEqual(['· hanging around'])
 })
 
+// A pet asleep, breathing in two frames, with the frame clock running; returns
+// the repaints the clock sends between full redraws.
+const asleepWithClock = async ($: Parameters<TestBody>[0], on: On) => {
+  const breathing = JSON.stringify({ ...JSON.parse(pack('cat')), main: { moods: { sleeping: [['oo', 'bb'], ['bb', 'oo']] } } })
+  const { clock } = setup(on, { '/pets/cat.json': breathing })
+  const blits: string[] = []
+  const engineDraws = { count: 0 }
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  // The engine's own band, drawn while the pet is hidden.
+  on('ui.render', ($, e) => {
+    engineDraws.count += 1
+    return $.ui.resolve(e).Text({ children: 'engine band' })
+  })
+  on('ui.blit', (_$, e) => {
+    if ('cells' in e) blits.push(e.key)
+    return { value: {} }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await clock.advance(5 * 60_000)
+  return { clock, blits, engineDraws }
+}
+
+test('asleep, only its frame is repainted between full redraws', async ($, on) => {
+  const { clock, blits } = await asleepWithClock($, on)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: '· sleeping' })).toBeDefined()
+
+  await clock.advance(2000)
+  expect(blits.length).toBeGreaterThan(0)
+  expect(new Set(blits)).toEqual(new Set(['main']))
+})
+
+test('with agents around, the band is redrawn in full, not just the pet', async ($, on) => {
+  const { clock, blits } = await asleepWithClock($, on)
+  await $.agent.spawn({ ...spawn, background: true })
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: '· waiting for agents' })).toBeDefined()
+
+  await clock.advance(2000)
+  expect(blits).toEqual([])
+})
+
+test('hidden, nothing is repainted or redrawn', async ($, on) => {
+  const { clock, blits, engineDraws } = await asleepWithClock($, on)
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  await $.command.run(runPet)
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  const drawn = engineDraws.count
+
+  await clock.advance(2000)
+  expect(blits).toEqual([])
+  expect(engineDraws.count).toBe(drawn)
+})
+
 test('keeps an eye on background agents after the turn ends, then hangs around', async ($, on) => {
   const { clock } = setup(on)
   on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))

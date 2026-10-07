@@ -54,6 +54,11 @@ const AGENT_SLOT = 20
 // Room kept for the " +N" that stands for agents with no slot.
 const OVERFLOW_COLUMNS = 4
 const MAX_AGENTS = 6
+// While only its own frame moves, the clock repaints that frame and redraws the
+// band in full only this often, in seconds, for what changes with time alone
+// (a reaction running out, dozing off): once a second awake, every 5 asleep.
+const REDRAW_AWAKE_S = 1
+const REDRAW_ASLEEP_S = 5
 
 // One body color per subagent, picked in spawn order.
 const AGENT_COLORS = [0x7cc4f2, 0x9bd57a, 0xc69af2, 0xf2d16b, 0xf28fb0, 0x6fd8c8]
@@ -209,6 +214,12 @@ export const register: Register = (on, options) => {
   let walk: Walk | undefined
   // The side each agent's pet stands on, kept so none hops over when another leaves.
   let sides = new Map<string, Side>()
+  // A full redraw costs Claude Code far more than repainting the pet, and every
+  // open session pays it. While the band shows nothing but the pet's own frame
+  // moving, `still` holds what the clock needs to repaint that frame alone; while
+  // the pet is hidden the clock redraws nothing, as showing it again redraws.
+  let still: { requestId: string; mood: Mood; facing: Side; cells: string } | null = null
+  let isOff = false
   // The tool call running for each agent and tool, so a permission prompt (which
   // names only those) finds the call it is for; and the calls that asked.
   // ponytail: two same-named calls of one agent at once share a key; the later wins.
@@ -263,7 +274,23 @@ export const register: Register = (on, options) => {
     await update($, lastActiveAt, () => now)
     $.clock.every(Math.round(1000 / pack.fps), () => {
       frame += 1
-      $.ui.invalidate('ui.render')
+      if (isOff) return
+      const scene = still
+      const isAsleep = scene?.mood === 'sleeping' || scene?.mood === 'deepSleep'
+      const every = pack.fps * (isAsleep ? REDRAW_ASLEEP_S : REDRAW_AWAKE_S)
+      if (scene === null || frame % every === 0) {
+        $.ui.invalidate('ui.render')
+        return
+      }
+      const moved = step(pack, motion, scene.mood, frame, Math.random)
+      motion = moved.motion
+      const cells = encode(scene.facing === 1 ? moved.frame : mirror(moved.frame), pack.colors)
+      if (cells === scene.cells) return
+      still = { ...scene, cells }
+      // Refused when the band is no longer drawn as it was: redraw it in full.
+      void $.ui.blit({ requestId: scene.requestId, key: 'main', cells }).then(done => {
+        if (done.deny !== undefined) $.ui.invalidate('ui.render')
+      })
     })
     await update($, restedAt, at => at ?? now)
     isInteractive = e.isInteractive
@@ -460,7 +487,9 @@ export const register: Register = (on, options) => {
   }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey || (await read($, isHidden))) {
+    still = null
+    isOff = await read($, isHidden)
+    if (e.props.hasSurvey || isOff) {
       return next(e)
     }
 
@@ -614,6 +643,19 @@ export const register: Register = (on, options) => {
     const facing = faceFor(isOnTheMove, walk.facing, drawn, Math.max(finishing, 0))
     const shape = blinkFrame ?? moved.frame
     const body = facing === 1 ? shape : mirror(shape)
+    const cells = encode(body, pack.colors)
+    // Nothing but the pet's own frame will move until something is written or
+    // time passes: no turn, agents, stroll or blink, reaction or line it says.
+    const isStill =
+      !e.props.isWorking &&
+      list.length === 0 &&
+      !isOnTheMove &&
+      blink === undefined &&
+      (!moves || wants === 'stay') &&
+      busy === null &&
+      !(flash !== null && flash.until > now) &&
+      !isQuoting
+    still = isStill ? { requestId: e.requestId, mood, facing, cells } : null
 
     const { Box, Raster, Text } = $.ui.resolve(e)
     const agentPet = (index: number, side: Side) => {
@@ -651,7 +693,7 @@ export const register: Register = (on, options) => {
             </Box>
           )}
           {[...drawn.left].reverse().map(i => agentPet(i, -1))}
-          <Raster key="main" {...mainSize} cells={encode(body, pack.colors)} />
+          <Raster key="main" {...mainSize} cells={cells} />
           {drawn.right.map(i => agentPet(i, 1))}
           {showsMore && drawn.more === 1 && <Text dimColor> +{hidden}</Text>}
         </Box>
