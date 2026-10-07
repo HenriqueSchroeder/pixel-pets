@@ -192,7 +192,9 @@ async function release($: EngineInterface, mood: Mood) {
 }
 
 export const register: Register = (on, options) => {
-  const petName = typeof options.pet === 'string' && options.pet !== '' ? options.pet : DEFAULT_PET
+  // The picker names a shipped pet, or `custom` for the person's own pack named in `customPet`.
+  const picked = options.pet === 'custom' ? options.customPet : options.pet
+  const petName = typeof picked === 'string' && picked !== '' ? picked : DEFAULT_PET
   const language = typeof options.language === 'string' ? options.language : 'auto'
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0

@@ -155,13 +155,19 @@ test("auto follows Claude Code's language setting", async ($, on) => {
   expect(await ui.find({ text: /dormindo/ })).toBeDefined()
 })
 
-test('loads the pet named in the config', { options: { pet: 'dragon' } }, async ($, on) => {
+test('loads the pet picked in the config', { options: { pet: 'owl' } }, async ($, on) => {
+  const { reads } = setup(on, { '/pets/owl.json': pack('owl'), '/pets/cat.json': pack('cat') })
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(reads.at(-1)).toMatch(/\/pets\/owl\.json$/)
+})
+
+test('custom loads the person\'s own pack', { options: { pet: 'custom', customPet: 'dragon' } }, async ($, on) => {
   const { reads } = setup(on, { '/pets/dragon.json': pack('dragon'), '/pets/cat.json': pack('cat') })
   await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(reads.at(-1)).toMatch(/\/pets\/dragon\.json$/)
 })
 
-test('refuses a pet name that walks out of the pets folder', { options: { pet: '../../.ssh/id_rsa' } }, async ($, on) => {
+test('refuses a pet name that walks out of the pets folder', { options: { pet: 'custom', customPet: '../../.ssh/id_rsa' } }, async ($, on) => {
   const toasts: string[] = []
   on('ui.toast', (_$, e) => (toasts.push(e.text), { value: undefined }))
   const { reads } = setup(on)

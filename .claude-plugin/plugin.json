@@ -12,8 +12,23 @@
     "pet": {
       "type": "string",
       "title": "Pet",
-      "description": "Name of the pet pack: a file in ~/.claude/pets/ or one shipped in pets/ (without .json)",
-      "default": "cat"
+      "description": "Which pet to show. Pick custom to use your own pack, named in Custom pet",
+      "default": "cat",
+      "options": [
+        "cat",
+        "slime",
+        "dog",
+        "ghost",
+        "owl",
+        "clawd",
+        "custom"
+      ]
+    },
+    "customPet": {
+      "type": "string",
+      "title": "Custom pet",
+      "description": "Your own pack when Pet is custom: the name of a file in ~/.claude/pets/, without .json",
+      "default": ""
     },
     "language": {
       "type": "string",
