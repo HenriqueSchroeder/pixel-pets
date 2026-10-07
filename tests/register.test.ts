@@ -14,13 +14,18 @@ const pack = (name: string) =>
 
 // Stands in for the disk: paths ending in a key answer its text, the rest are
 // missing. Returns the paths read, in order.
+// Local times, so the time of day reads the same on any machine.
+const at = (hour: number, day = 15) => new Date(2026, 0, day, hour, 0).getTime()
+
 const setup = (
   on: On,
   entries: Record<string, string> = { '/pets/cat.json': pack('cat') },
   settings: Record<string, unknown> = {},
+  now = at(14),
 ) => {
   const reads: string[] = []
-  const clock = mock.clock(on)
+  const clock = mock.clock(on, { now })
+  mock.store(on)
   mock.env(on, { HOME, LANG: 'en_US.UTF-8' })
   on('settings.read', () => ({ value: settings }))
   on('fs.read', (_$, e) => {
@@ -404,4 +409,82 @@ test('a pet keeping an eye on background agents is not startled by a prompt', as
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
   expect(await ui.find({ text: /waking up/ })).toBeUndefined()
+})
+
+const failedTool = { result: 'boom', isError: true } as const
+
+test('failures add up to a worried pet, then a grumpy one', async ($, on) => {
+  const { clock } = setup(on)
+  on('tool.call', () => failedTool)
+  on('turn.complete', () => ({ text: '' }))
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await $.tool.call({ tool: 'Bash', command: 'npm test' } as never)
+  await $.turn.complete({ ...finished, reason: 'error' } as never)
+  await clock.advance(3000)
+  expect(await label()).toBe('· a bit worried')
+
+  await $.tool.call({ tool: 'Bash', command: 'npm test' } as never)
+  await $.turn.complete({ ...finished, reason: 'error' } as never)
+  await clock.advance(3000)
+  expect(await label()).toBe('· grumpy')
+})
+
+test('turns that go well make it proud', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  for (let i = 0; i < 3; i++) await $.turn.complete(finished)
+
+  await clock.advance(3000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /^· (proud of us|strolling around)$/ })).toBeDefined()
+})
+
+test('at night it is sleepy, and dozes off in half the time', async ($, on) => {
+  const { clock } = setup(on, undefined, undefined, at(23))
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await clock.advance(3000)
+  expect(await label()).toBe('· sleepy')
+  await clock.advance(40_000)
+  expect(await label()).toBe('· sleeping')
+})
+
+test('says good morning on the first session of the day only', async ($, on) => {
+  const { clock } = setup(on, undefined, undefined, at(8))
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  const greeted = async () => {
+    await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /good morning!/ })) !== undefined
+  }
+
+  expect(await greeted()).toBe(true)
+  await clock.advance(5000)
+  expect(await greeted()).toBe(false)
+})
+
+test('hours of work since its last long break tire it', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  await $.turn.complete(finished)
+  // An hour away rests it.
+  await clock.advance(61 * 60_000)
+  await $.prompt.submit({ text: 'back', wait: false, origin: { kind: 'composer' } })
+
+  await clock.advance(3 * 60 * 60_000)
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: '· tired' })).toBeDefined()
 })

@@ -8,6 +8,8 @@ export const PARENT: Record<Mood, Mood | null> = {
   sleeping: null,
   deepSleep: 'sleeping',
   idle: 'thinking',
+  sleepy: 'idle',
+  tired: 'sleepy',
   walking: 'idle',
   watching: 'reading',
   thinking: 'sleeping',
@@ -20,6 +22,9 @@ export const PARENT: Record<Mood, Mood | null> = {
   supervising: 'thinking',
   compacting: 'thinking',
   sweating: 'thinking',
+  worried: 'sweating',
+  grumpy: 'sad',
+  proud: 'happy',
   happy: 'sleeping',
   sad: 'sleeping',
 }

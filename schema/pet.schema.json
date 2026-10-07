@@ -71,6 +71,12 @@
             "idle": {
               "$ref": "#/$defs/mainFrames"
             },
+            "sleepy": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "tired": {
+              "$ref": "#/$defs/mainFrames"
+            },
             "walking": {
               "$ref": "#/$defs/mainFrames"
             },
@@ -105,6 +111,15 @@
               "$ref": "#/$defs/mainFrames"
             },
             "sweating": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "worried": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "grumpy": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "proud": {
               "$ref": "#/$defs/mainFrames"
             },
             "happy": {
@@ -144,6 +159,22 @@
                 "$ref": "#/$defs/mainFrames"
               }
             },
+            "sleepy": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/mainFrames"
+              }
+            },
+            "tired": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/mainFrames"
+              }
+            },
             "walking": {
               "type": "array",
               "minItems": 1,
@@ -240,6 +271,30 @@
                 "$ref": "#/$defs/mainFrames"
               }
             },
+            "worried": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/mainFrames"
+              }
+            },
+            "grumpy": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/mainFrames"
+              }
+            },
+            "proud": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/mainFrames"
+              }
+            },
             "happy": {
               "type": "array",
               "minItems": 1,
@@ -263,7 +318,7 @@
           "type": "object",
           "maxProperties": 32,
           "propertyNames": {
-            "pattern": "^(\\*|sleeping|deepSleep|idle|walking|watching|thinking|waking|typing|running|writing|reading|searching|supervising|compacting|sweating|happy|sad)>(\\*|sleeping|deepSleep|idle|walking|watching|thinking|waking|typing|running|writing|reading|searching|supervising|compacting|sweating|happy|sad)$",
+            "pattern": "^(\\*|sleeping|deepSleep|idle|sleepy|tired|walking|watching|thinking|waking|typing|running|writing|reading|searching|supervising|compacting|sweating|worried|grumpy|proud|happy|sad)>(\\*|sleeping|deepSleep|idle|sleepy|tired|walking|watching|thinking|waking|typing|running|writing|reading|searching|supervising|compacting|sweating|worried|grumpy|proud|happy|sad)$",
             "not": {
               "const": "*>*"
             }
@@ -296,6 +351,8 @@
                     "sleeping",
                     "deepSleep",
                     "idle",
+                    "sleepy",
+                    "tired",
                     "walking",
                     "watching",
                     "thinking",
@@ -308,6 +365,9 @@
                     "supervising",
                     "compacting",
                     "sweating",
+                    "worried",
+                    "grumpy",
+                    "proud",
                     "happy",
                     "sad"
                   ]

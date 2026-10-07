@@ -2,6 +2,8 @@ export type Mood =
   | 'sleeping'
   | 'deepSleep'
   | 'idle'
+  | 'sleepy'
+  | 'tired'
   | 'walking'
   | 'watching'
   | 'waking'
@@ -14,6 +16,9 @@ export type Mood =
   | 'supervising'
   | 'compacting'
   | 'sweating'
+  | 'worried'
+  | 'grumpy'
+  | 'proud'
   | 'happy'
   | 'sad'
 
@@ -68,9 +73,19 @@ export type Text =
   | 'idle'
   | 'strolling'
   | 'watching'
+  | 'sleepy'
+  | 'tired'
+  | 'worried'
+  | 'grumpy'
+  | 'proud'
+  | 'goodMorning'
 
 // What a pet says, kept as a locale key so a language change redraws it right.
 export type Label = { text: Text; detail: string }
+
+// How the session has gone so far: worry from failures, pride from turns that
+// went well. Both fade a point every few minutes with nothing new.
+export type Feelings = { worry: number; pride: number; at: number }
 
 // What the pet is doing now, set by tools and turns.
 export type Activity = { mood: Mood; label: Label }
@@ -93,7 +108,7 @@ declare module 'claude-code' {
     'pixel-pets': {
       activity: Activity
       reaction: Reaction | null
-      // Waiting for a permission answer or compacting: shown over everything else.
+      // Compacting: shown over everything else.
       override: Activity | null
       turnStartedAt: number | null
       lastActiveAt: number | null
@@ -101,6 +116,10 @@ declare module 'claude-code' {
       typingAt: number | null
       agents: AgentPet[]
       isHidden: boolean
+      // How the session has gone; fades with time.
+      feelings: Feelings
+      // The end of its last long break, or the session's start: long after it, it tires.
+      restedAt: number | null
     }
   }
 }

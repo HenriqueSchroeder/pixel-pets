@@ -1,7 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 
-import type { Activity, AgentPet, Label, MiniMood, Mood, Reaction } from '../types'
+import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction } from '../types'
+import { calm, feel, idleMood, isMorning, isNight } from './feelings'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
 import { step } from './motion'
@@ -22,12 +23,17 @@ const lastActiveAt = atom({ plugin: 'pixel-pets', key: 'lastActiveAt' } as const
 const typingAt = atom({ plugin: 'pixel-pets', key: 'typingAt' } as const, null as number | null)
 const agents = atom({ plugin: 'pixel-pets', key: 'agents' } as const, [] as AgentPet[])
 const isHidden = atom({ plugin: 'pixel-pets', key: 'isHidden' } as const, false)
+const feelings = atom({ plugin: 'pixel-pets', key: 'feelings' } as const, calm as Feelings)
+const restedAt = atom({ plugin: 'pixel-pets', key: 'restedAt' } as const, null as number | null)
 
 const REACTION_MS = 2000
 const WAKING_MS = 1200
 const LEAVING_MS = 1500
 const LONG_TURN_MS = 2 * 60_000
 const DEEP_SLEEP_MS = 10 * 60_000
+// A break this long rests it, as far as getting tired goes.
+const BREAK_MS = 60 * 60_000
+const GREETING_MS = 2500
 // How long the pet keeps watching the prompt after the last key.
 const TYPING_MS = 2000
 const AGENT_SLOT = 20
@@ -119,6 +125,22 @@ function packOf($: EngineInterface, name: string, locale: Locale) {
   return loading
 }
 
+const hourOf = (now: number) => new Date(now).getHours()
+const dayOf = (now: number) => new Date(now).toDateString()
+
+// "Good morning" on the day's first session; the day is kept across sessions.
+async function greet($: EngineInterface, now: number) {
+  try {
+    const last = await $.store.get('lastDay')
+    await $.store.set('lastDay', dayOf(now))
+    if (last !== dayOf(now) && isMorning(hourOf(now))) {
+      await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('goodMorning'), until: now + GREETING_MS }))
+    }
+  } catch {
+    // No store to remember the day by: no greeting, and nothing else held up.
+  }
+}
+
 // Clears the override only if it is still the one this hook set.
 async function release($: EngineInterface, mood: Mood) {
   await update($, override, current => (current?.mood === mood ? null : current))
@@ -150,6 +172,9 @@ export const register: Register = (on, options) => {
       frame += 1
       $.ui.invalidate('ui.render')
     })
+    await update($, restedAt, at => at ?? now)
+    // A `claude -p` run has nobody to greet, and must not use up the day's greeting.
+    if (e.isInteractive) await greet($, now)
     return next(e)
   })
 
@@ -176,6 +201,7 @@ export const register: Register = (on, options) => {
     if (busySince === null && !isSupervising && idleSince !== null && now - idleSince > DEEP_SLEEP_MS) {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
+    if (busySince === null && idleSince !== null && now - idleSince >= BREAK_MS) await update($, restedAt, () => now)
     return next(e)
   }).catch(($, e, next) => next(e))
 
@@ -198,6 +224,7 @@ export const register: Register = (on, options) => {
       return next(e)
     }
 
+    if (!e.isAborted) await update($, feelings, felt => feel(felt, isBad ? 'turnFailed' : 'turnOk', now))
     const until = now + REACTION_MS
     // An interrupted turn earns no reaction, and one still showing (a thanks, a
     // "fine, I won't" after a denied permission, a failure) is left to finish.
@@ -253,7 +280,8 @@ export const register: Register = (on, options) => {
     if (e.tool === 'Agent' && ran.isError === true) {
       await update($, agents, list => list.filter(pet => pet.toolUseId !== e.tool_use_id))
     }
-    const until = (await $.clock.now()) + REACTION_MS
+    const at = await $.clock.now()
+    const until = at + REACTION_MS
     if (wasAsked) {
       // The person answered a permission prompt: thanks for a yes, fine for a no.
       const thanked: Reaction = isDenial(ran)
@@ -264,6 +292,7 @@ export const register: Register = (on, options) => {
       // "failed: npm test", or the tool's name when the action has no detail.
       const failed = label('failed', short(now.label.detail || String(e.tool), 24))
       await update($, reaction, (): Reaction => ({ mood: 'sad', label: failed, until }))
+      await update($, feelings, felt => feel(felt, 'toolFailed', at))
     }
     return ran
   }).catch(($, e, next) => next(e))
@@ -320,15 +349,20 @@ export const register: Register = (on, options) => {
       shown = isLong ? { ...current, mood: 'sweating' } : current
       if (isLong) extra = ` · ${Math.floor(elapsed / 60_000)}m`
     } else {
-      // Unknown idle time (nothing has run yet) counts as a plain nap.
-      const idleFor = idleSince === null ? awakeMs + 1 : now - idleSince
+      // It dozes off sooner at night. Unknown idle time (nothing has run yet) counts as a plain nap.
+      const hour = hourOf(now)
+      const awakeFor = isNight(hour) ? awakeMs / 2 : awakeMs
+      const idleFor = idleSince === null ? awakeFor + 1 : now - idleSince
       const isTyping = typedAt !== null && now - typedAt < TYPING_MS
       if (isTyping && idleFor <= DEEP_SLEEP_MS) shown = { mood: 'watching', label: label('watching') }
       // Background agents still at work: it keeps an eye on them rather than dozing off.
       else if (list.some(one => one.leaving === undefined)) shown = { mood: 'supervising', label: label('waitingForAgents') }
       else if (idleSince !== null && idleFor > DEEP_SLEEP_MS) shown = { mood: 'deepSleep', label: label('deepSleep') }
-      else if (idleFor > awakeMs) shown = asleep
-      else shown = { mood: 'idle', label: label('idle') }
+      else if (idleFor > awakeFor) shown = asleep
+      else {
+        const felt = idleMood(await read($, feelings), now, await read($, restedAt), hour)
+        shown = felt === undefined ? { mood: 'idle', label: label('idle') } : { mood: felt, label: label(felt) }
+      }
     }
 
     const miniSize = sizeOf(pack.mini.working[0] ?? [])
@@ -354,7 +388,9 @@ export const register: Register = (on, options) => {
     }
 
     // It only strolls alone; with agents around it stays and they gather on both sides.
-    const wants: Plan = list.length === 0 && shown.mood === 'idle' ? 'wander' : 'stay'
+    // A proud pet struts about too; a sleepy, tired, worried or grumpy one stays put.
+    const isRestless = shown.mood === 'idle' || shown.mood === 'proud'
+    const wants: Plan = list.length === 0 && isRestless ? 'wander' : 'stay'
     const walked = walkStep(walk, pack.walks ? wants : 'stay', frame, room, pack.fps, Math.random)
     const width = slot + 1
     const extraColumns = hidden > 0 ? OVERFLOW_COLUMNS : 0
@@ -362,7 +398,7 @@ export const register: Register = (on, options) => {
     walk = placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
     const sideOf = (index: number): Side => (placed.right.includes(index) ? 1 : -1)
     sides = new Map(visible.map((one, i) => [one.id, sideOf(i)]))
-    const isStrolling = walked.moving && shown.mood === 'idle'
+    const isStrolling = walked.moving && isRestless
     const mood: Mood = walked.moving ? 'walking' : shown.mood
     const labelShown = isStrolling ? label('strolling') : shown.label
 
