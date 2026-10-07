@@ -4,10 +4,11 @@ import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 import type { Activity, AgentPet, Feelings, Frame, Label, MiniMood, Mood, Reaction, Situation, Traits } from '../types'
 import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, USUAL } from './drives'
 import type { Drives, State } from './drives'
-import { calm, cheer, feel, idleMood, isNight } from './feelings'
+import { calm, cheer, feel, idleMood, isNight, nightOf } from './feelings'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
 import { asVisit, daysBetween, welcome } from './memory'
+import type { Visit } from './memory'
 import { step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
@@ -170,9 +171,9 @@ async function remember($: EngineInterface, now: number) {
 
 // How the day's first sight of the person goes: an anniversary, missing them, or
 // good morning. Checked when a session opens and on each prompt, so a session left
-// open overnight still greets the morning.
-async function greet($: EngineInterface, now: number) {
-  const hello = welcome(await remember($, now), now, hourOf(now))
+// open overnight still greets the morning. `before` is the visit before this one.
+async function greet($: EngineInterface, now: number, before: Visit | undefined) {
+  const hello = welcome(before, now, hourOf(now))
   if (hello === undefined) return
   const until = now + GREETING_MS
   const shown: Reaction =
@@ -182,6 +183,44 @@ async function greet($: EngineInterface, now: number) {
         ? { mood: 'happy', label: label('missedYou'), until }
         : { mood: 'waking', label: label('goodMorning'), until }
   await update($, reaction, () => shown)
+}
+
+// When the person came back from their last break, across every session: an hour
+// with no prompt in any of them rests the pet. `before` is the visit before this one.
+async function restedSince($: EngineInterface, now: number, before: Visit | undefined) {
+  try {
+    const kept = await $.store.get('restedAt')
+    if (typeof kept === 'number' && before !== undefined && now - before.lastSeenAt < BREAK_MS) return kept
+    await $.store.set('restedAt', now)
+  } catch {
+    // No store: rested as of now, as a session that remembers nothing.
+  }
+  return now
+}
+
+// Whether no session has said the late-night line yet tonight.
+async function quietTonight($: EngineInterface, now: number) {
+  try {
+    return (await $.store.get('lateNight')) !== nightOf(now)
+  } catch {
+    return true
+  }
+}
+
+async function saidTonight($: EngineInterface, now: number) {
+  try {
+    await $.store.set('lateNight', nightOf(now))
+  } catch {
+    // No store: this session alone keeps it.
+  }
+}
+
+// The person is at the prompt: the day's welcome, and their rest, from the visit before.
+async function atThePrompt($: EngineInterface, now: number) {
+  const before = await remember($, now)
+  await greet($, now, before)
+  const since = await restedSince($, now, before)
+  await update($, restedAt, () => since)
 }
 
 // "Together for 12 days", for /pet; nothing when it has no memory of the person.
@@ -292,9 +331,9 @@ export const register: Register = (on, options) => {
         if (done.deny !== undefined) $.ui.invalidate('ui.render')
       })
     })
-    await update($, restedAt, at => at ?? now)
     isInteractive = e.isInteractive
-    if (isInteractive) await greet($, now)
+    if (isInteractive) await atThePrompt($, now)
+    else await update($, restedAt, at => at ?? now)
     return next(e)
   })
 
@@ -334,12 +373,15 @@ export const register: Register = (on, options) => {
     if (busySince === null && !isSupervising && isFastAsleep) {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
-    if (busySince === null && idleSince !== null && now - idleSince >= BREAK_MS) await update($, restedAt, () => now)
     touch(now, seen)
-    if (isInteractive) await greet($, now)
+    if (isInteractive) await atThePrompt($, now)
+    // Once a night across every session: the first to see the person late says it.
     if (!saidLateNight && isNight(hourOf(now))) {
-      const locale = await localeOf($, language)
-      saidLateNight = speak('lateNight', now, await packOf($, petName, locale), locale)
+      if (await quietTonight($, now)) {
+        const locale = await localeOf($, language)
+        saidLateNight = speak('lateNight', now, await packOf($, petName, locale), locale)
+        if (saidLateNight) await saidTonight($, now)
+      } else saidLateNight = true
     }
     return next(e)
   }).catch(($, e, next) => next(e))

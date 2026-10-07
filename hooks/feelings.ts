@@ -53,6 +53,8 @@ export const cheer = (turn: Turn, random: () => number): 'celebrating' | 'happy'
 
 export const isNight = (hour: number) => hour >= 22 || hour < 6
 export const isMorning = (hour: number) => hour >= 5 && hour < 11
+// The night `now` falls in, named by its evening's date: 2 a.m. belongs to the night before.
+export const nightOf = (now: number) => new Date(now - 6 * 60 * 60_000).toDateString()
 
 // The moods that stand in for plain `idle`; each is also the key of its words.
 export type Felt = Extract<Mood, 'grumpy' | 'worried' | 'tired' | 'proud' | 'sleepy'>

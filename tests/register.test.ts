@@ -772,20 +772,36 @@ test('says good morning on the first session of the day only', async ($, on) => 
   expect(await greeted()).toBe(false)
 })
 
-test('hours of work since its last long break tire it', async ($, on) => {
-  const { clock } = setup(on)
-  on('turn.complete', () => ({ text: '' }))
-  on('prompt.submit', (_$, e) => ({ text: e.text }))
-  await $.turn.complete(finished)
-  // An hour away rests it.
-  await clock.advance(61 * 60_000)
-  await $.prompt.submit({ text: 'back', wait: false, origin: { kind: 'composer' } })
+// What the other sessions left in the store: the person last seen a minute ago,
+// back from their last break `hoursAgo`.
+const workedFor = (hoursAgo: number, lastSeenAgo = 60_000) => ({
+  visit: { metAt: at(14) - 5 * 24 * 60 * 60_000, lastSeenAt: at(14) - lastSeenAgo },
+  restedAt: at(14) - hoursAgo * 60 * 60_000,
+})
 
-  await clock.advance(3 * 60 * 60_000)
-  await $.turn.complete(finished)
-  await clock.advance(3000)
+test('a session opened after hours of work in others is tired too', async ($, on) => {
+  setup(on, undefined, undefined, at(14), workedFor(4))
+  expect(await opens($, on)).toBe('· tired')
+})
+
+test('an hour with no prompt in any session rests it', async ($, on) => {
+  setup(on, undefined, undefined, at(14), workedFor(4, 61 * 60_000))
+  expect(await opens($, on)).toBe('· hanging around')
+})
+
+test('a prompt after an hour away rests a session left open', async ($, on) => {
+  const { clock } = setup(on, undefined, undefined, at(14), workedFor(4))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.complete', () => ({ text: '' }))
+  expect(await opens($, on)).toBe('· tired')
+  // In steps: the frame clock runs, and one advance takes 10,000 waits at most.
+  for (let i = 0; i < 4; i++) await clock.advance(16 * 60_000)
+  await $.prompt.submit({ text: 'back', wait: false, origin: { kind: 'composer' } })
+  // Startled awake, then the turn it asked for ends: awake, and showing how it feels.
+  await clock.advance(2000)
+  await $.turn.complete({ ...finished, isAborted: true })
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await ui.find({ text: '· tired' })).toBeDefined()
+  expect(await ui.find({ text: '· hanging around' })).toBeDefined()
 })
 
 // A session opened at `now` by a person at the prompt, or by a `claude -p` run.
@@ -889,7 +905,7 @@ test('a full team of agents earns a remark, but not right after another', async 
   expect(await line($)).not.toMatch(/“/)
 })
 
-test('late at night it says so, once a session', async ($, on) => {
+test('late at night it says so, once a night across sessions', async ($, on) => {
   const { clock } = setup(on, undefined, undefined, at(23))
   on('prompt.submit', (_$, e) => ({ text: e.text }))
   on('turn.start', (_$, e) => ({ turnId: e.turnId }))
@@ -900,6 +916,14 @@ test('late at night it says so, once a session', async ($, on) => {
   await clock.advance(10 * 60_000)
   await $.turn.start({ text: 'one more thing', turnId: 't2' })
   await $.prompt.submit(prompt)
+  expect(await line($)).not.toMatch(/late/)
+})
+
+test('late at night it stays quiet if another session said so tonight', async ($, on) => {
+  // Said at 23h; this session sees the person at 1h, the same night.
+  setup(on, undefined, undefined, at(1, 16), { lateNight: new Date(at(23)).toDateString() })
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  await $.prompt.submit({ text: 'one more thing', wait: false, origin: { kind: 'composer' } })
   expect(await line($)).not.toMatch(/late/)
 })
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { calm, cheer, feel, idleMood, isMorning, isNight, settle } from '../hooks/feelings'
+import { calm, cheer, feel, idleMood, isMorning, isNight, nightOf, settle } from '../hooks/feelings'
 import type { Feelings } from '../types'
 
 const MINUTE = 60_000
@@ -51,5 +51,8 @@ describe('feelings', () => {
   test('night runs from 22h to 6h, morning from 5h to 11h', () => {
     expect([21, 22, 3, 5, 6].map(isNight)).toEqual([false, true, true, true, false])
     expect([4, 5, 10, 11].map(isMorning)).toEqual([false, true, true, false])
+    const evening = new Date(2026, 0, 15, 23).getTime()
+    expect(nightOf(new Date(2026, 0, 16, 2).getTime())).toBe(nightOf(evening))
+    expect(nightOf(new Date(2026, 0, 16, 23).getTime())).not.toBe(nightOf(evening))
   })
 })
