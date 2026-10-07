@@ -35,6 +35,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | `grumpy` | idle after many failures in a row | sad |
 | `proud` | idle after a streak of turns that went well | happy |
 | `happy` | for two seconds after a turn ends, or after you allow a permission prompt ("thanks!") | sleeping |
+| `celebrating` | for four seconds after a turn of 5 minutes or more goes well, and on an anniversary | happy |
 | `sad` | for two seconds after a tool fails, a turn errors, or you deny a permission prompt ("okay, I won't") | sleeping |
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
@@ -43,7 +44,9 @@ The pet walks a stage under Claude's line: it strolls while idle, and when subag
 
 It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. These last for the session only.
 
-The time of day is your local time. At night it is sleepy and dozes off in half of `awakeMinutes`. On the first session of the day, in the morning, it says good morning.
+The time of day is your local time. At night it is sleepy and dozes off in half of `awakeMinutes`. It remembers you across sessions. The day's first sight of you opens with one welcome: an anniversary (a week, a month, 100 days, each year together), "missed you!" after two days or more away, or good morning. `/pet` also says how long you have been together. A `claude -p` run does not count as seeing you.
+
+Now and then it says something of its own, in quotes on Claude's line: "hmm…" after 30 seconds of thinking with no tool, a remark on the 20th file read in a turn, on three agents at work at once, and on a prompt at night. Each at most once a turn, and never two within three minutes.
 
 Each subagent gets a mini pet with its type (`Explore`, `Plan`, ...) and its current action. When the agent ends, its pet is happy (or sad, if it failed) for a moment and then leaves.
 
@@ -139,6 +142,17 @@ A loop alone looks like a machine. Three optional keys under `main` make the pet
 - `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm.
 - An action is a whole frame, so keep its face the same as the moods it plays in. The cat has one blink per expression for that reason.
 - A mood holds up to 16 frames; at 4 fps that is 4 seconds.
+
+Give it a voice with `speech`, at the top level: lines by language code and situation, one picked at random. A language or situation you leave out says the default line.
+
+```json
+"speech": {
+  "en": { "longThink": ["mrrp… hmm"], "manyReads": ["so many files… mrow!"] },
+  "pt-BR": { "longThink": ["mrrp… hmm"] }
+}
+```
+
+The situations are `longThink`, `manyReads`, `manyAgents` and `lateNight`. Up to 8 lines each, one line of up to 40 characters.
 
 The [schema](schema/pet.schema.json) gives your editor completion and checks. To share a pet, see [CONTRIBUTING.md](CONTRIBUTING.md).
 

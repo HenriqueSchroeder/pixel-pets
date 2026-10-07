@@ -35,6 +35,7 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | `grumpy` | à toa depois de muitas falhas seguidas | sad |
 | `proud` | à toa depois de uma sequência de turnos que deram certo | happy |
 | `happy` | por dois segundos depois que um turno termina, ou depois que você aprova um pedido de permissão ("valeu!") | sleeping |
+| `celebrating` | por quatro segundos depois que um turno de 5 minutos ou mais dá certo, e num aniversário | happy |
 | `sad` | por dois segundos depois que uma tool falha, um turno dá erro ou você nega um pedido de permissão ("tá bom, não vou") | sleeping |
 
 Um pack só precisa desenhar `sleeping`. Todo humor que faltar usa os quadros do pai desenhado mais próximo: `running` cai em `typing`, depois `thinking`, depois `sleeping`.
@@ -43,7 +44,9 @@ O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, 
 
 Ele acompanha como a sessão está indo. Uma tool ou um turno que falha o deixa preocupado, e um turno que dá certo o deixa orgulhoso; um turno que falha encerra a sequência de orgulho. Os dois perdem um ponto a cada cinco minutos, e quando ele está à toa aparece o sentimento mais forte: emburrado, depois preocupado, depois cansado, depois orgulhoso, depois com sono à noite. Isso vale só para a sessão.
 
-A hora do dia é a sua hora local. À noite ele fica com sono e cochila na metade do `awakeMinutes`. Na primeira sessão do dia, de manhã, ele dá bom dia.
+A hora do dia é a sua hora local. À noite ele fica com sono e cochila na metade do `awakeMinutes`. Ele lembra de você entre sessões. A primeira vez que ele te vê no dia vem com uma saudação: um aniversário (uma semana, um mês, 100 dias, cada ano juntos), "senti sua falta!" depois de dois dias ou mais fora, ou bom dia. O `/pet` também diz há quanto tempo vocês estão juntos. Um `claude -p` não conta como te ver.
+
+De vez em quando ele fala alguma coisa, entre aspas na linha do Claude: "hmm…" depois de 30 segundos pensando sem tool, um comentário na 20ª leitura de arquivo do turno, com três agents trabalhando ao mesmo tempo, e num prompt à noite. Cada um no máximo uma vez por turno, e nunca dois em menos de três minutos.
 
 Cada subagent ganha um mini pet com o tipo dele (`Explore`, `Plan`, ...) e a ação atual. Quando o agent termina, o pet fica feliz (ou triste, se falhou) por um instante e sai.
 
@@ -110,6 +113,8 @@ Só um loop parece máquina. Três chaves opcionais em `main` deixam o pet impre
 - `actions`: quadros tocados uma vez num momento aleatório enquanto o pet está num dos `moods`, `every` [mín, máx] segundos depois da última vez. Piscadas, orelhas mexendo e bocejos ficam aqui, e os loops podem ficar calmos.
 - Uma ação é um quadro inteiro, então mantenha a mesma cara dos humores em que ela toca. Por isso o gato tem uma piscada para cada expressão.
 - Um humor tem até 16 quadros; a 4 fps, são 4 segundos.
+
+Dê uma voz a ele com `speech`, na raiz do pack: falas por código de idioma e situação, uma sorteada a cada vez. O idioma ou a situação que você deixar de fora diz a fala padrão. As situações são `longThink`, `manyReads`, `manyAgents` e `lateNight`, com até 8 falas cada, de uma linha e até 40 caracteres (o formato está no [README em inglês](README.md#make-it-feel-alive)).
 
 Para compartilhar um pet, veja o [CONTRIBUTING.md](CONTRIBUTING.md).
 
