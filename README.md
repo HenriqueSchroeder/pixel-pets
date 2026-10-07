@@ -79,7 +79,7 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 
 A pack in `~/.claude/pets/` wins over a shipped one with the same name. If a pack can't be read, pixel-pets says why in a toast and shows the cat.
 
-Shipped pets, both shown at the top: [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), a small pack that draws only five moods, lets the rest fall back and stays put.
+Shipped pets, both shown at the top: [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks.
 
 ## Draw your own
 

@@ -79,7 +79,7 @@ Rode `/plugin configure pixel-pets@pixel-pets`, ou procure **pixel-pets** no `/c
 
 Um pack em `~/.claude/pets/` ganha de um embutido com o mesmo nome. Se um pack não puder ser lido, o pixel-pets diz o motivo num toast e mostra o gato.
 
-Pets que vêm junto, os dois mostrados no topo: [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), um pack pequeno que desenha só cinco humores, deixa o resto cair no fallback e fica parado.
+Pets que vêm junto, os dois mostrados no topo: [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda.
 
 ## Desenhe o seu
 
