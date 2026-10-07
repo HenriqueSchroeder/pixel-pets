@@ -40,7 +40,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
 
-The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. Only a pack that draws `walking` moves: leave it out and the pet stays put at the left, as the slime does. Packs draw their pet facing right; pixel-pets mirrors it to walk left.
+The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. Only a pack that draws `walking` moves: leave it out and the pet stays put at the left, as the slime and the ghost do. Packs draw their pet facing right; pixel-pets mirrors it to walk left.
 
 It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. These last for the session only.
 
@@ -90,7 +90,15 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 
 A pack in `~/.claude/pets/` wins over a shipped one with the same name. If a pack can't be read, pixel-pets says why in a toast and shows the cat.
 
-Shipped pets, both shown at the top: [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks.
+Shipped pets:
+
+- [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks. Both are shown at the top.
+- [`dog`](pets/dog.json), which wags its tail, pants and tilts its head when it thinks.
+- [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then and fades as it sleeps.
+- [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
+- [`clawd`](pets/clawd.json), the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
+
+![The dog, ghost, owl and clawd, idle, thinking, happy and asleep](screenshots/gallery.gif)
 
 ## Draw your own
 

@@ -40,7 +40,7 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 Um pack só precisa desenhar `sleeping`. Todo humor que faltar usa os quadros do pai desenhado mais próximo: `running` cai em `typing`, depois `thinking`, depois `sleeping`.
 
-O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Só anda o pack que desenha `walking`: sem ele, o pet fica parado à esquerda, como o slime. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele andar para a esquerda.
+O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Só anda o pack que desenha `walking`: sem ele, o pet fica parado à esquerda, como o slime e o fantasma. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele andar para a esquerda.
 
 Ele acompanha como a sessão está indo. Uma tool ou um turno que falha o deixa preocupado, e um turno que dá certo o deixa orgulhoso; um turno que falha encerra a sequência de orgulho. Os dois perdem um ponto a cada cinco minutos, e quando ele está à toa aparece o sentimento mais forte: emburrado, depois preocupado, depois cansado, depois orgulhoso, depois com sono à noite. Isso vale só para a sessão.
 
@@ -90,7 +90,15 @@ Rode `/plugin configure pixel-pets@pixel-pets`, ou procure **pixel-pets** no `/c
 
 Um pack em `~/.claude/pets/` ganha de um embutido com o mesmo nome. Se um pack não puder ser lido, o pixel-pets diz o motivo num toast e mostra o gato.
 
-Pets que vêm junto, os dois mostrados no topo: [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda.
+Pets que vêm junto:
+
+- [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda. Os dois aparecem no topo.
+- [`dog`](pets/dog.json), que abana o rabo, ofega e inclina a cabeça quando pensa.
+- [`ghost`](pets/ghost.json), que flutua em vez de andar, dá um "buu" de vez em quando e vai sumindo enquanto dorme.
+- [`owl`](pets/owl.json), que pisca devagar e gira a cabeça até dar a volta.
+- [`clawd`](pets/clawd.json), o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
+
+![O dog, o ghost, a owl e o clawd, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
 
 ## Desenhe o seu
 
