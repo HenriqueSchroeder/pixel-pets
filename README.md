@@ -102,6 +102,29 @@ A pack is a palette and some frames. Each frame is rows of palette letters, and 
 - `mini.tint` (default `b`) is the letter recolored for each subagent.
 - See every mood of a pack, and what it borrows, in your terminal: `npx tsx scripts/preview-pet.ts <name or path>`.
 
+### Make it feel alive
+
+A loop alone looks like a machine. Three optional keys under `main` make the pet unpredictable:
+
+```json
+"variants": {
+  "thinking": [[["...frame..."], ["...frame..."]]]
+},
+"transitions": {
+  "*>sleeping": [["...yawn..."], ["...eyes droop..."]],
+  "sleeping>*": [["...stretch..."]]
+},
+"actions": {
+  "blink": { "frames": [["...eyes shut..."]], "moods": ["thinking", "reading"], "every": [2, 6] }
+}
+```
+
+- `variants`: more loops for a mood you draw in `moods`. One of them, or the mood's own loop, is picked at random each time the mood starts.
+- `transitions`: frames played once when the mood changes, keyed `from>to`. Either side may be `*`. An exact key wins over `from>*`, which wins over `*>to`.
+- `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm.
+- An action is a whole frame, so keep its face the same as the moods it plays in. The cat has one blink per expression for that reason.
+- A mood holds up to 16 frames; at 4 fps that is 4 seconds.
+
 The [schema](schema/pet.schema.json) gives your editor completion and checks. To share a pet, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Check what it does before you install

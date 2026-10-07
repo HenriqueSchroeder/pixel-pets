@@ -86,6 +86,16 @@ Um pack é uma paleta e alguns quadros. Cada quadro são linhas de letras da pal
 - `mini.tint` (padrão `b`) é a letra recolorida para cada subagent.
 - Veja todos os humores de um pack, e de quem cada um herda, no seu terminal: `npx tsx scripts/preview-pet.ts <nome ou caminho>`.
 
+### Dê vida ao pet
+
+Só um loop parece máquina. Três chaves opcionais em `main` deixam o pet imprevisível (o formato está no [README em inglês](README.md#make-it-feel-alive)):
+
+- `variants`: mais loops para um humor que você desenha em `moods`. Um deles, ou o loop do próprio humor, é sorteado cada vez que o humor começa.
+- `transitions`: quadros tocados uma vez quando o humor muda, com chave `de>para`. Um dos lados pode ser `*`. A chave exata ganha de `de>*`, que ganha de `*>para`.
+- `actions`: quadros tocados uma vez num momento aleatório enquanto o pet está num dos `moods`, `every` [mín, máx] segundos depois da última vez. Piscadas, orelhas mexendo e bocejos ficam aqui, e os loops podem ficar calmos.
+- Uma ação é um quadro inteiro, então mantenha a mesma cara dos humores em que ela toca. Por isso o gato tem uma piscada para cada expressão.
+- Um humor tem até 16 quadros; a 4 fps, são 4 segundos.
+
 Para compartilhar um pet, veja o [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Confira o que ele faz antes de instalar
