@@ -1,5 +1,6 @@
-import type { Frame, MiniMood, Mood, PackFile } from '../types'
+import type { Frame, MiniMood, Mood, PackFile, Situation } from '../types'
 import { hexColor } from './render'
+import { SITUATIONS } from './speech'
 import type { Colors } from './render'
 
 // Each mood a pack leaves out borrows from its parent, so an old or small pack
@@ -26,6 +27,7 @@ export const PARENT: Record<Mood, Mood | null> = {
   grumpy: 'sad',
   proud: 'happy',
   happy: 'sleeping',
+  celebrating: 'happy',
   sad: 'sleeping',
 }
 
@@ -43,6 +45,8 @@ const LIMITS = {
   transitions: 32,
   actions: 16,
   everySeconds: { min: 1, max: 600 },
+  linesPerSituation: 8,
+  lineLength: 40,
   paletteSize: 16,
   fps: { min: 1, max: 12 },
 }
@@ -63,6 +67,7 @@ export type Pack = {
   tint: string
   // Only a pack that draws `walking` leaves its spot: the rest stay put.
   walks: boolean
+  speech: Record<string, Partial<Record<Situation, string[]>>>
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -155,6 +160,36 @@ const parseActions = (raw: unknown): Action[] => {
   })
 }
 
+const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/
+
+// Lines are shown as they are: plain one-line text, short enough for the band.
+const parseSpeech = (raw: unknown) => {
+  const out: Record<string, Partial<Record<Situation, string[]>>> = {}
+  if (raw === undefined) return out
+  if (!isRecord(raw)) throw new Error('speech: an object of language to situations')
+  for (const [code, situations] of Object.entries(raw)) {
+    if (!LANGUAGE.test(code)) throw new Error(`speech: "${code}" is not a language code like "en" or "pt-BR"`)
+    if (!isRecord(situations)) throw new Error(`speech.${code}: an object of situation to lines`)
+    const lines: Partial<Record<Situation, string[]>> = {}
+    for (const [situation, list] of Object.entries(situations)) {
+      const where = `speech.${code}.${situation}`
+      if (!SITUATIONS.includes(situation as Situation)) throw new Error(`${where}: unknown situation, use ${SITUATIONS.join(', ')}`)
+      const { linesPerSituation: most, lineLength: longest } = LIMITS
+      if (
+        !Array.isArray(list) ||
+        list.length === 0 ||
+        list.length > most ||
+        !list.every(line => typeof line === 'string' && line.trim() !== '' && line.length <= longest && !/[\u0000-\u001f\u007f]/.test(line))
+      ) {
+        throw new Error(`${where}: 1 to ${most} lines of one line each, up to ${longest} characters`)
+      }
+      lines[situation as Situation] = list
+    }
+    out[code] = lines
+  }
+  return out
+}
+
 // Packs come from anyone, so everything is checked before it reaches the renderer.
 export const parsePack = (raw: unknown): Pack => {
   if (!isRecord(raw)) throw new Error('a pack is a JSON object')
@@ -217,7 +252,9 @@ export const parsePack = (raw: unknown): Pack => {
   const tint = file.mini.tint ?? 'b'
   if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error('mini.tint: must be a palette letter')
 
-  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking') }
+  const speech = parseSpeech(file.speech)
+
+  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking'), speech }
 }
 
 const SAFE_NAME = /^[a-z0-9][a-z0-9_-]{0,40}$/

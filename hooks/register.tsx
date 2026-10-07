@@ -1,15 +1,18 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 
-import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction } from '../types'
-import { calm, feel, idleMood, isMorning, isNight } from './feelings'
+import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation } from '../types'
+import { calm, feel, idleMood, isNight } from './feelings'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
+import { asVisit, daysBetween, welcome } from './memory'
 import { step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
 import { encode, mirror, sizeOf } from './render'
+import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
+import type { Speaker } from './speech'
 import { gather, walkStep } from './walk'
 import type { Plan, Side, Walk } from './walk'
 
@@ -34,6 +37,11 @@ const DEEP_SLEEP_MS = 10 * 60_000
 // A break this long rests it, as far as getting tired goes.
 const BREAK_MS = 60 * 60_000
 const GREETING_MS = 2500
+// A turn this long that goes well earns a bigger, longer celebration.
+const LONG_WIN_MS = 5 * 60_000
+const CELEBRATION_MS = 4000
+// How long a line it says stays on Claude's line.
+const SPEECH_MS = 4000
 // How long the pet keeps watching the prompt after the last key.
 const TYPING_MS = 2000
 const AGENT_SLOT = 20
@@ -126,18 +134,55 @@ function packOf($: EngineInterface, name: string, locale: Locale) {
 }
 
 const hourOf = (now: number) => new Date(now).getHours()
-const dayOf = (now: number) => new Date(now).toDateString()
+const anniversary = (days: number): Label =>
+  days === 7
+    ? label('aWeekTogether')
+    : days === 30
+      ? label('aMonthTogether')
+      : days === 365
+        ? label('aYearTogether')
+        : days % 365 === 0
+          ? label('yearsTogether', String(days / 365))
+          : label('daysTogether', String(days))
 
-// "Good morning" on the day's first session; the day is kept across sessions.
-async function greet($: EngineInterface, now: number) {
+// Notes that the person is here now, and when they first met. Returns the visit
+// before this one. With no store it remembers nothing, and holds nothing up.
+async function remember($: EngineInterface, now: number) {
   try {
-    const last = await $.store.get('lastDay')
-    await $.store.set('lastDay', dayOf(now))
-    if (last !== dayOf(now) && isMorning(hourOf(now))) {
-      await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('goodMorning'), until: now + GREETING_MS }))
-    }
+    const visit = asVisit(await $.store.get('visit'))
+    await $.store.set('visit', { metAt: visit?.metAt ?? now, lastSeenAt: now })
+    return visit
   } catch {
-    // No store to remember the day by: no greeting, and nothing else held up.
+    return undefined
+  }
+}
+
+// How the day's first sight of the person goes: an anniversary, missing them, or
+// good morning. Checked when a session opens and on each prompt, so a session left
+// open overnight still greets the morning.
+async function greet($: EngineInterface, now: number) {
+  const hello = welcome(await remember($, now), now, hourOf(now))
+  if (hello === undefined) return
+  const until = now + GREETING_MS
+  const shown: Reaction =
+    hello.kind === 'anniversary'
+      ? { mood: 'celebrating', label: anniversary(hello.days), until: now + CELEBRATION_MS }
+      : hello.kind === 'missedYou'
+        ? { mood: 'happy', label: label('missedYou'), until }
+        : { mood: 'waking', label: label('goodMorning'), until }
+  await update($, reaction, () => shown)
+}
+
+// "Together for 12 days", for /pet; nothing when it has no memory of the person.
+async function together($: EngineInterface, locale: Locale) {
+  try {
+    const visit = asVisit(await $.store.get('visit'))
+    if (visit === undefined) return ''
+    const days = daysBetween(visit.metAt, await $.clock.now())
+    const said = days === 0 ? say(locale, 'justMet') : days === 1 ? say(locale, 'togetherADay') : say(locale, 'togetherDays', String(days))
+    return ` ${said.charAt(0).toUpperCase()}${said.slice(1)}.`
+  } catch {
+    return ''
   }
 }
 
@@ -161,6 +206,24 @@ export const register: Register = (on, options) => {
   // ponytail: two same-named calls of one agent at once share a key; the later wins.
   const openCalls = new Map<string, string>()
   const asked = new Set<string>()
+  // Only a session with a person at the prompt counts as seeing them: a `claude -p`
+  // run must not spend the day's welcome.
+  let isInteractive = false
+  // What it said lately and what it is saying now; a reload starts them fresh.
+  let speaker: Speaker = quiet
+  let saying: { text: string; until: number } | null = null
+  // Since when the main loop has run no tool (null while one runs), and its reads this turn.
+  let thinkingSince: number | null = null
+  let readsThisTurn = 0
+  let saidLateNight = false
+
+  // Says the line for `situation`, unless it spoke too lately or already did this turn.
+  const speak = (situation: Situation, now: number, pack: Pack, locale: Locale) => {
+    if (!maySpeak(speaker, situation, now)) return false
+    speaker = spoke(speaker, situation, now)
+    saying = { text: lineFor(pack.speech, locale.code, situation, say(locale, situation), Math.random), until: now + SPEECH_MS }
+    return true
+  }
 
   on('session.start', async ($, e, next) => {
     const locale = await localeOf($, language)
@@ -173,15 +236,15 @@ export const register: Register = (on, options) => {
       $.ui.invalidate('ui.render')
     })
     await update($, restedAt, at => at ?? now)
-    // A `claude -p` run has nobody to greet, and must not use up the day's greeting.
-    if (e.isInteractive) await greet($, now)
+    isInteractive = e.isInteractive
+    if (isInteractive) await greet($, now)
     return next(e)
   })
 
   on('command.run', { command: 'pet' }, async $ => {
     const locale = await localeOf($, language)
     const hidden = await update($, isHidden, value => !value)
-    return { text: say(locale, hidden ? 'hidden' : 'shown') }
+    return { text: `${say(locale, hidden ? 'hidden' : 'shown')}${await together($, locale)}` }
   })
 
   // The pet looks at the prompt while the person types in it.
@@ -202,6 +265,11 @@ export const register: Register = (on, options) => {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
     if (busySince === null && idleSince !== null && now - idleSince >= BREAK_MS) await update($, restedAt, () => now)
+    if (isInteractive) await greet($, now)
+    if (!saidLateNight && isNight(hourOf(now))) {
+      const locale = await localeOf($, language)
+      saidLateNight = speak('lateNight', now, await packOf($, petName, locale), locale)
+    }
     return next(e)
   }).catch(($, e, next) => next(e))
 
@@ -209,6 +277,9 @@ export const register: Register = (on, options) => {
     const now = await $.clock.now()
     await update($, activity, (): Activity => ({ mood: 'thinking', label: label('thinking') }))
     await update($, turnStartedAt, () => now)
+    speaker = { ...speaker, saidThisTurn: [] }
+    thinkingSince = now
+    readsThisTurn = 0
     return next(e)
   })
 
@@ -225,13 +296,19 @@ export const register: Register = (on, options) => {
     }
 
     if (!e.isAborted) await update($, feelings, felt => feel(felt, isBad ? 'turnFailed' : 'turnOk', now))
+    const startedAt = await read($, turnStartedAt)
+    const tookLong = startedAt !== null && now - startedAt >= LONG_WIN_MS
     const until = now + REACTION_MS
     // An interrupted turn earns no reaction, and one still showing (a thanks, a
     // "fine, I won't" after a denied permission, a failure) is left to finish.
     const live = await read($, reaction)
     if (!e.isAborted && (live === null || live.until <= now)) {
       await update($, reaction, (): Reaction =>
-        isBad ? { mood: 'sad', label: label('wentWrong'), until } : { mood: 'happy', label: label('done'), until },
+        isBad
+          ? { mood: 'sad', label: label('wentWrong'), until }
+          : tookLong
+            ? { mood: 'celebrating', label: label('phew'), until: now + CELEBRATION_MS }
+            : { mood: 'happy', label: label('done'), until },
       )
     }
     await update($, override, () => null)
@@ -250,6 +327,11 @@ export const register: Register = (on, options) => {
         const pet: AgentPet = { id, toolUseId: e.tool_use_id, type: e.subagentType, label: label('thinking'), color }
         return [...stillHere(list, now), pet]
       })
+      const working = stillHere(await read($, agents), now).filter(one => one.leaving === undefined)
+      if (working.length >= MANY_AGENTS) {
+        const locale = await localeOf($, language)
+        speak('manyAgents', now, await packOf($, petName, locale), locale)
+      }
     }
     return started
   }).catch(($, e, next) => next(e))
@@ -264,6 +346,7 @@ export const register: Register = (on, options) => {
       await update($, agents, list => list.map(pet => (pet.id === agentId ? { ...pet, label: now.label } : pet)))
     }
 
+    if (agentId === undefined) thinkingSince = null
     const key = callKey(agentId, String(e.tool))
     openCalls.set(key, e.tool_use_id)
     let ran: Awaited<ReturnType<typeof next>>
@@ -282,6 +365,13 @@ export const register: Register = (on, options) => {
     }
     const at = await $.clock.now()
     const until = at + REACTION_MS
+    if (agentId === undefined) {
+      thinkingSince = at
+      if (e.tool === 'Read' && (readsThisTurn += 1) === MANY_READS) {
+        const locale = await localeOf($, language)
+        speak('manyReads', at, await packOf($, petName, locale), locale)
+      }
+    }
     if (wasAsked) {
       // The person answered a permission prompt: thanks for a yes, fine for a no.
       const thanked: Reaction = isDenial(ran)
@@ -341,6 +431,7 @@ export const register: Register = (on, options) => {
     } else if (e.props.isWorking) {
       const elapsed = startedAt === null ? 0 : now - startedAt
       const isLong = elapsed > LONG_TURN_MS && PATIENT.includes(doing.mood)
+      if (thinkingSince !== null && now - thinkingSince >= LONG_THINK_MS) speak('longThink', now, pack, locale)
       // A turn that only thinks while agents still run is waiting on them.
       const current: Activity =
         doing.mood === 'thinking' && list.some(one => one.leaving === undefined)
@@ -401,6 +492,10 @@ export const register: Register = (on, options) => {
     const isStrolling = walked.moving && isRestless
     const mood: Mood = walked.moving ? 'walking' : shown.mood
     const labelShown = isStrolling ? label('strolling') : shown.label
+    // A line it says takes Claude's line for a moment, unless a reaction or a mood that
+    // must show is on it.
+    const isQuoting = saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
+    const said = isQuoting ? `“${saying?.text}”` : words(labelShown)
 
     const moved = step(pack, motion, mood, frame, Math.random)
     motion = moved.motion
@@ -435,7 +530,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         <Text>
-          <Text bold>Claude</Text> <Text dimColor>· {words(labelShown)}{extra}</Text>
+          <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
         </Text>
         <Box flexDirection="row" marginLeft={walk.x - leftColumns}>
           {hidden > 0 && placed.more === -1 && (

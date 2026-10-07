@@ -20,9 +20,13 @@ export type Mood =
   | 'grumpy'
   | 'proud'
   | 'happy'
+  | 'celebrating'
   | 'sad'
 
 export type MiniMood = 'working' | 'happy' | 'sad'
+
+// When the pet says something of its own, now and then.
+export type Situation = 'longThink' | 'manyReads' | 'manyAgents' | 'lateNight'
 
 // A sprite frame: rows of palette letters, '.' see-through.
 export type Frame = string[]
@@ -44,6 +48,9 @@ export type PackFile = {
     actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number] }>
   }
   mini: { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }
+  // The pet's own lines, by language code ("en", "pt-BR"); a language or situation
+  // left out says the locale's line.
+  speech?: Record<string, Partial<Record<Situation, string[]>>>
 }
 
 // Every string a locale must give (see locales/en.ts).
@@ -79,6 +86,17 @@ export type Text =
   | 'grumpy'
   | 'proud'
   | 'goodMorning'
+  | 'phew'
+  | 'missedYou'
+  | 'aWeekTogether'
+  | 'aMonthTogether'
+  | 'daysTogether'
+  | 'aYearTogether'
+  | 'yearsTogether'
+  | 'justMet'
+  | 'togetherADay'
+  | 'togetherDays'
+  | Situation
 
 // What a pet says, kept as a locale key so a language change redraws it right.
 export type Label = { text: Text; detail: string }

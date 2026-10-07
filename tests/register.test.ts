@@ -22,10 +22,11 @@ const setup = (
   entries: Record<string, string> = { '/pets/cat.json': pack('cat') },
   settings: Record<string, unknown> = {},
   now = at(14),
+  stored: Record<string, unknown> = {},
 ) => {
   const reads: string[] = []
   const clock = mock.clock(on, { now })
-  mock.store(on)
+  mock.store(on, stored)
   mock.env(on, { HOME, LANG: 'en_US.UTF-8' })
   on('settings.read', () => ({ value: settings }))
   on('fs.read', (_$, e) => {
@@ -214,6 +215,10 @@ test('sweats when a turn runs long, and says for how long', async ($, on) => {
   await $.turn.start({ text: 'hi', turnId: 't1' })
 
   await clock.advance(3 * 60_000)
+  // So long a think also earns a "hmm…", which has the line for a few seconds.
+  const musing = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await musing.find({ text: /“hmm…” · 3m/ })).toBeDefined()
+  await clock.advance(5000)
   const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
   expect(await ui.find({ text: /thinking · 3m/ })).toBeDefined()
 })
@@ -487,4 +492,163 @@ test('hours of work since its last long break tire it', async ($, on) => {
   await clock.advance(3000)
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(await ui.find({ text: '· tired' })).toBeDefined()
+})
+
+// A session opened at `now` by a person at the prompt, or by a `claude -p` run.
+const opens = async ($: Parameters<TestBody>[0], on: On, isInteractive = true) => {
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive })
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  return (await ui.find({ text: /^· / }))?.text
+}
+
+test('is glad to see you after days away', async ($, on) => {
+  setup(on, undefined, undefined, at(14), { visit: { metAt: at(14, 1), lastSeenAt: at(14, 10) } })
+  expect(await opens($, on)).toBe('· missed you!')
+})
+
+test('celebrates an anniversary over missing you', async ($, on) => {
+  setup(on, undefined, undefined, at(14), { visit: { metAt: at(14, 8), lastSeenAt: at(14, 10) } })
+  expect(await opens($, on)).toBe('· a week together!')
+})
+
+test('a claude -p run does not use up the morning greeting', async ($, on) => {
+  const { clock } = setup(on, undefined, undefined, at(8))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  await clock.advance(5000)
+
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /good morning!/ })).toBeDefined()
+})
+
+test('/pet says how long you have been together', async ($, on) => {
+  setup(on, undefined, undefined, at(14), { visit: { metAt: at(14, 3), lastSeenAt: at(14, 14) } })
+  const ran = await $.command.run(runPet)
+  expect(JSON.stringify(ran)).toContain('Pets hidden. Together for 12 days.')
+})
+
+test('a long turn that goes well earns a bigger celebration', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.start({ text: 'big job', turnId: 't1' })
+  await clock.advance(6 * 60_000)
+  await $.turn.complete(finished)
+
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: '· phew, done!' })).toBeDefined()
+  await clock.advance(3000)
+  const still = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await still.find({ text: '· phew, done!' })).toBeDefined()
+})
+
+test('a session left open past midnight welcomes the first prompt of the new day', async ($, on) => {
+  const almostMidnight = new Date(2026, 0, 14, 23, 59, 30).getTime()
+  // Met six days ago and seen already today: nothing to say until the day turns.
+  const { clock } = setup(on, undefined, undefined, almostMidnight, { visit: { metAt: at(14, 8), lastSeenAt: at(20, 14) } })
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  expect(await opens($, on)).not.toMatch(/together|missed|morning/)
+
+  await clock.advance(60_000)
+  await $.prompt.submit({ text: 'still here', wait: false, origin: { kind: 'composer' } })
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.find({ text: /a week together!/ })).toBeDefined()
+})
+
+const readFile = (file: string) => ({ tool: 'Read', file_path: file }) as never
+
+// Draws the band and returns Claude's line.
+const line = async ($: Parameters<TestBody>[0], isWorking = true) => {
+  const ui = await $.ui.mount({ ...band(isWorking), surface: 'terminal' })
+  return (await ui.find({ text: /^· / }))?.text
+}
+
+test('twenty reads in a turn earn a remark, in the pack\'s own words when it has them', async ($, on) => {
+  const own = JSON.stringify({ ...JSON.parse(pack('cat')), speech: { en: { manyReads: ['mrrp, so many!'] } } })
+  setup(on, { '/pets/cat.json': own })
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.turn.start({ text: 'look around', turnId: 't1' })
+
+  for (let i = 1; i < 20; i++) await $.tool.call(readFile(`f${i}.ts`))
+  expect(await line($)).toBe('· reading f19.ts')
+  await $.tool.call(readFile('f20.ts'))
+  expect(await line($)).toBe('· “mrrp, so many!”')
+})
+
+test('a full team of agents earns a remark, but not right after another', async ($, on) => {
+  const { clock } = setup(on)
+  let spawned = 0
+  on('agent.spawn', () => ({ model: 'haiku', agentId: `a${(spawned += 1)}` }))
+  for (let i = 0; i < 3; i++) await $.agent.spawn({ ...spawn, tool_use_id: `toolu_${i}` })
+  expect(await line($)).toBe('· “full team today!”')
+
+  // A fourth agent a minute later: still too soon to speak again.
+  await clock.advance(60_000)
+  await $.agent.spawn({ ...spawn, tool_use_id: 'toolu_9' })
+  expect(await line($)).not.toMatch(/“/)
+})
+
+test('late at night it says so, once a session', async ($, on) => {
+  const { clock } = setup(on, undefined, undefined, at(23))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  const prompt = { text: 'one more thing', wait: false, origin: { kind: 'composer' } } as const
+
+  await $.prompt.submit(prompt)
+  expect(await line($)).toBe("· “it's getting late…”")
+  await clock.advance(10 * 60_000)
+  await $.turn.start({ text: 'one more thing', turnId: 't2' })
+  await $.prompt.submit(prompt)
+  expect(await line($)).not.toMatch(/late/)
+})
+
+test('the same remark can come again in a later turn', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', () => ({ result: 'ok' }))
+  const readTwenty = async (turnId: string) => {
+    await $.turn.start({ text: 'look around', turnId })
+    for (let i = 1; i <= 20; i++) await $.tool.call(readFile(`f${i}.ts`))
+    return line($)
+  }
+
+  expect(await readTwenty('t1')).toBe('· “so many files!”')
+  await clock.advance(4 * 60_000)
+  expect(await readTwenty('t2')).toBe('· “so many files!”')
+})
+
+test('a long think after a tool still earns a "hmm…"', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.turn.start({ text: 'fix it', turnId: 't1' })
+  await $.tool.call({ tool: 'Bash', command: 'npm test' } as never)
+
+  await clock.advance(20_000)
+  expect(await line($)).toBe('· running npm test')
+  await clock.advance(11_000)
+  expect(await line($)).toBe('· “hmm…”')
+})
+
+test('a slow tool is no long think', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', async () => {
+    await clock.sleep(60_000)
+    return { result: 'ok' }
+  })
+  await $.turn.start({ text: 'build it', turnId: 't1' })
+  const running = $.tool.call({ tool: 'Bash', command: 'npm run build' } as never)
+
+  await clock.advance(40_000)
+  expect(await line($)).toBe('· running npm run build')
+  await clock.advance(20_000)
+  await running
 })

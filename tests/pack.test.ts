@@ -100,4 +100,16 @@ describe('parsePack', () => {
     const raw = { ...tiny(), mini: { tint: 'z', moods: { working: [['ob']] } } }
     expect(() => parsePack(raw)).toThrow(/mini.tint/)
   })
+
+  test('takes its own lines by language and situation, and checks them', () => {
+    const lines = { en: { longThink: ['mrrp…'] }, 'pt-BR': { manyReads: ['quanta coisa!'] } }
+    expect(parsePack({ ...tiny(), speech: lines }).speech).toEqual(lines)
+    expect(parsePack(tiny()).speech).toEqual({})
+    const refused = (speech: unknown) => () => parsePack({ ...tiny(), speech })
+    expect(refused({ en: { sing: ['la'] } })).toThrow(/unknown situation/)
+    expect(refused({ english: { longThink: ['hm'] } })).toThrow(/language code/)
+    expect(refused({ en: { longThink: ['x'.repeat(41)] } })).toThrow(/up to 40/)
+    expect(refused({ en: { longThink: ['two\nlines'] } })).toThrow(/one line each/)
+    expect(refused({ en: { longThink: Array(9).fill('hm') } })).toThrow(/1 to 8 lines/)
+  })
 })
