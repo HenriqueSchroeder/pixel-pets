@@ -26,12 +26,11 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | `writing` | `Edit`, `Write` | typing |
 | `reading` | `Read` | thinking |
 | `searching` | `Grep`, `Glob`, `WebFetch`, `WebSearch`, `LSP` | reading |
-| `waiting` | o Claude está esperando você responder um pedido de permissão | thinking |
-| `supervising` | o Claude está esperando os agents, ou eles ainda rodam em background depois do turno | thinking |
+| `supervising` | o Claude está esperando os agents, ou só pensando enquanto eles rodam, ou eles ainda rodam em background depois do turno | thinking |
 | `compacting` | a conversa está sendo compactada | thinking |
 | `sweating` | o turno passou de 2 minutos e o Claude está pensando ou rodando um comando | thinking |
-| `happy` | por dois segundos depois que um turno termina | sleeping |
-| `sad` | por dois segundos depois que uma tool falha ou um turno dá erro | sleeping |
+| `happy` | por dois segundos depois que um turno termina, ou depois que você aprova um pedido de permissão ("valeu!") | sleeping |
+| `sad` | por dois segundos depois que uma tool falha, um turno dá erro ou você nega um pedido de permissão ("tá bom, não vou") | sleeping |
 
 Um pack só precisa desenhar `sleeping`. Todo humor que faltar usa os quadros do pai desenhado mais próximo: `running` cai em `typing`, depois `thinking`, depois `sleeping`.
 

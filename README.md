@@ -26,12 +26,11 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | `writing` | `Edit`, `Write` | typing |
 | `reading` | `Read` | thinking |
 | `searching` | `Grep`, `Glob`, `WebFetch`, `WebSearch`, `LSP` | reading |
-| `waiting` | Claude is waiting for you to answer a permission prompt | thinking |
-| `supervising` | Claude is waiting for its agents, or they still run in the background after the turn | thinking |
+| `supervising` | Claude is waiting for its agents, or only thinking while they run, or they still run in the background after the turn | thinking |
 | `compacting` | the conversation is being compacted | thinking |
 | `sweating` | a turn has run for over 2 minutes and Claude is thinking or running a command | thinking |
-| `happy` | for two seconds after a turn ends | sleeping |
-| `sad` | for two seconds after a tool fails or a turn errors | sleeping |
+| `happy` | for two seconds after a turn ends, or after you allow a permission prompt ("thanks!") | sleeping |
+| `sad` | for two seconds after a tool fails, a turn errors, or you deny a permission prompt ("okay, I won't") | sleeping |
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
 
