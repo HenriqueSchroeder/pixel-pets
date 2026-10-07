@@ -47,7 +47,8 @@ export type PackFile = {
     // Played once at random while in one of `moods`, every `every` seconds [min, max].
     actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number] }>
   }
-  mini: { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }
+  // false: no mini pets, the agents show only as the pet's own `supervising`
+  mini: false | { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }
   // The pet's own lines, by language code ("en", "pt-BR"); a language or situation
   // left out says the locale's line.
   speech?: Record<string, Partial<Record<Situation, string[]>>>

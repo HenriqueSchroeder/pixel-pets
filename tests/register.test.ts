@@ -356,6 +356,19 @@ test("agents' pets stand to the right with their labels in full", async ($, on) 
   expect(await ui.find({ text: 'searching (Grep)' })).toBeDefined()
 })
 
+test('a pack with no mini pets shows none for its agents, and no "+N"', async ($, on) => {
+  const noMini = JSON.stringify({ ...JSON.parse(pack('cat')), mini: false })
+  setup(on, { '/pets/cat.json': noMini })
+  let spawned = 0
+  on('agent.spawn', () => ({ model: 'haiku', agentId: `a${(spawned += 1)}` }))
+  for (let i = 0; i < 2; i++) await $.agent.spawn({ ...spawn, tool_use_id: `toolu_${i}` })
+
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
+  expect(await ui.find({ text: /^\+/ })).toBeUndefined()
+  expect(await ui.find({ text: '· waiting for agents' })).toBeDefined()
+})
+
 test('on a narrow terminal it shows the agents that fit and counts the rest', async ($, on) => {
   setup(on)
   let spawned = 0

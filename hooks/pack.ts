@@ -63,7 +63,8 @@ export type Pack = {
   variants: Record<Mood, Frame[][]>
   transitions: Record<string, Frame[]>
   actions: Action[]
-  mini: Record<MiniMood, Frame[]>
+  // null when the pack draws no mini pets: its agents show only as its own `supervising`.
+  mini: Record<MiniMood, Frame[]> | null
   tint: string
   // Only a pack that draws `walking` leaves its spot: the rest stay put.
   walks: boolean
@@ -238,8 +239,16 @@ export const parsePack = (raw: unknown): Pack => {
     'main',
   )
 
-  if (!isRecord(file.mini) || !isRecord(file.mini.moods)) throw new Error('mini.moods: required')
-  const miniGiven = file.mini.moods as Record<string, unknown>
+  const { mini, tint } = file.mini === false ? { mini: null, tint: 'b' } : parseMini(file.mini, colors)
+
+  const speech = parseSpeech(file.speech)
+
+  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking'), speech }
+}
+
+const parseMini = (raw: unknown, colors: Colors) => {
+  if (!isRecord(raw) || !isRecord(raw.moods)) throw new Error('mini.moods: required, or mini: false for no mini pets')
+  const miniGiven = raw.moods as Record<string, unknown>
   if (miniGiven.working === undefined) throw new Error('mini.moods.working: required, happy and sad fall back to it')
   const miniUnknown = Object.keys(miniGiven).filter(key => !MINI_MOODS.includes(key as MiniMood))
   if (miniUnknown.length > 0) throw new Error(`mini.moods: unknown mood ${miniUnknown.join(', ')}`)
@@ -249,12 +258,9 @@ export const parsePack = (raw: unknown): Pack => {
     mini[mood] = miniGiven[mood] === undefined ? working : checkFrames(miniGiven[mood], `mini.moods.${mood}`, LIMITS.mini)
   }
   sameSize(MINI_MOODS.flatMap(mood => mini[mood]), 'mini')
-  const tint = file.mini.tint ?? 'b'
+  const tint = raw.tint ?? 'b'
   if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error('mini.tint: must be a palette letter')
-
-  const speech = parseSpeech(file.speech)
-
-  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking'), speech }
+  return { mini, tint }
 }
 
 const SAFE_NAME = /^[a-z0-9][a-z0-9_-]{0,40}$/

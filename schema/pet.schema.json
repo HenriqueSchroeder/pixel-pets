@@ -404,54 +404,61 @@
       }
     },
     "mini": {
-      "description": "The small pet drawn for each subagent, at most 12x12.",
-      "type": "object",
-      "required": [
-        "moods"
-      ],
-      "properties": {
-        "tint": {
-          "description": "The palette letter recolored per subagent.",
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1,
-          "default": "b"
+      "description": "The small pet drawn for each subagent, at most 12x12; false for none, and the agents show only as the main pet's supervising.",
+      "oneOf": [
+        {
+          "const": false
         },
-        "moods": {
-          "description": "Only working is required; happy and sad (shown for a moment when the agent ends) fall back to it.",
+        {
           "type": "object",
           "required": [
-            "working"
+            "moods"
           ],
-          "additionalProperties": false,
           "properties": {
-            "working": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 16,
-              "items": {
-                "$ref": "#/$defs/miniFrame"
-              }
+            "tint": {
+              "description": "The palette letter recolored per subagent.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1,
+              "default": "b"
             },
-            "happy": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 16,
-              "items": {
-                "$ref": "#/$defs/miniFrame"
-              }
-            },
-            "sad": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 16,
-              "items": {
-                "$ref": "#/$defs/miniFrame"
+            "moods": {
+              "description": "Only working is required; happy and sad (shown for a moment when the agent ends) fall back to it.",
+              "type": "object",
+              "required": [
+                "working"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "working": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "$ref": "#/$defs/miniFrame"
+                  }
+                },
+                "happy": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "$ref": "#/$defs/miniFrame"
+                  }
+                },
+                "sad": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "$ref": "#/$defs/miniFrame"
+                  }
+                }
               }
             }
           }
         }
-      }
+      ]
     },
     "speech": {
       "description": "The pet's own lines, by language code (\"en\", \"pt-BR\"). Shown now and then in quotes on Claude's line; a language or situation left out says the locale's line.",

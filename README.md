@@ -127,6 +127,7 @@ A pack is a palette and some frames. Each frame is rows of palette letters, and 
 - Two pixel rows fit in one terminal row, so a 12×12 pet takes 12 columns and 6 rows.
 - The mini pet needs `working`. Its `happy` and `sad`, shown when an agent ends, fall back to `working`.
 - `mini.tint` (default `b`) is the letter recolored for each subagent.
+- `"mini": false` draws no mini pets: while agents work, the pet shows them only by its own `supervising`. Handy for a wide pet that leaves little room beside it.
 - See every mood of a pack, and what it borrows, in your terminal: `npx tsx scripts/preview-pet.ts <name or path>`.
 
 ### Make it feel alive

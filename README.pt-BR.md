@@ -111,6 +111,7 @@ Um pack é uma paleta e alguns quadros. Cada quadro são linhas de letras da pal
 - Duas linhas de pixel cabem numa linha do terminal, então um pet de 12×12 ocupa 12 colunas e 6 linhas.
 - O mini pet precisa de `working`. O `happy` e o `sad` dele, mostrados quando um agent termina, caem em `working`.
 - `mini.tint` (padrão `b`) é a letra recolorida para cada subagent.
+- `"mini": false` não desenha mini pets: enquanto os agents trabalham, o pet mostra isso só pelo próprio `supervising`. Útil para um pet largo, que deixa pouco espaço ao lado.
 - Veja todos os humores de um pack, e de quem cada um herda, no seu terminal: `npx tsx scripts/preview-pet.ts <nome ou caminho>`.
 
 ### Dê vida ao pet

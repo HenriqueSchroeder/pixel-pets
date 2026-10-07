@@ -33,7 +33,13 @@ describe('parsePack', () => {
   })
 
   test('mini happy and sad fall back to working', () => {
-    expect(parsePack(tiny()).mini.happy).toEqual([['ob', 'bo']])
+    expect(parsePack(tiny()).mini?.happy).toEqual([['ob', 'bo']])
+  })
+
+  test('mini: false draws no mini pets; leaving mini out is still a mistake', () => {
+    expect(parsePack({ ...tiny(), mini: false }).mini).toBeNull()
+    expect(() => parsePack({ ...tiny(), mini: undefined })).toThrow(/mini: false/)
+    expect(() => parsePack({ ...tiny(), mini: true })).toThrow(/mini.moods/)
   })
 
   test('variants, transitions and actions are optional and checked', () => {

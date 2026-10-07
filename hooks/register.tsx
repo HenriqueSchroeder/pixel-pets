@@ -458,16 +458,17 @@ export const register: Register = (on, options) => {
       }
     }
 
-    const miniSize = sizeOf(pack.mini.working[0] ?? [])
+    const miniSize = sizeOf(pack.mini?.working[0] ?? [])
     const slot = Math.max(miniSize.columns, AGENT_SLOT)
     const petColumns = pack.moods.sleeping[0]?.[0]?.length ?? 0
     // As many agents as fit beside the pet; the rest are a "+N" that needs room too.
+    // A pack with no mini pets shows its agents only by its own mood.
     const room = e.props.bodyColumns - petColumns - 2
     const fits = (count: number) => count * (slot + 1) + (count < list.length ? OVERFLOW_COLUMNS : 0) <= room
-    let shownAgents = Math.min(list.length, MAX_AGENTS)
+    let shownAgents = pack.mini === null ? 0 : Math.min(list.length, MAX_AGENTS)
     while (shownAgents > 0 && !fits(shownAgents)) shownAgents -= 1
     const visible = list.slice(0, shownAgents)
-    const hidden = list.length - visible.length
+    const hidden = pack.mini === null ? 0 : list.length - visible.length
     const agentWords = (one: AgentPet) =>
       one.leaving === undefined ? words(one.label) : say(locale, one.leaving.mood === 'sad' ? 'wentWrong' : 'done')
 
@@ -509,7 +510,7 @@ export const register: Register = (on, options) => {
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
-      const miniFrames = pack.mini[one.leaving?.mood ?? 'working']
+      const miniFrames = pack.mini?.[one.leaving?.mood ?? 'working'] ?? []
       const mini = miniFrames[frame % miniFrames.length] ?? []
       return (
         // On the left the slot hugs the pet too: its pet and words lean right.
