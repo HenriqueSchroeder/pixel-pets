@@ -37,7 +37,8 @@ SCENE = [
     (1.5, 'sad', 'failed: npm test', []),
     (1.5, 'running', 'running npm test', []),
     (2.0, 'happy', 'done!', []),
-    (8.0, 'idle', 'hanging around', []),
+    # A streak of turns that went well: proud when idle.
+    (8.0, 'proud', 'proud of us', []),
     # Background agents outlive the turn: it keeps an eye on them, and they gather on both sides.
     (1.5, 'supervising', 'waiting for agents', [(EXPLORE, 'working', 'thinking')]),
     (1.5, 'supervising', 'waiting for agents', [(EXPLORE, 'working', 'reading auth.ts'), (PLAN, 'working', 'thinking')]),
@@ -82,7 +83,7 @@ def render(name, out):
 
     ticks = []
     for seconds, mood, label, agents in SCENE:
-        plan = 'wander' if mood == 'idle' and not agents else 'stay'
+        plan = 'wander' if mood in ('idle', 'proud') and not agents else 'stay'
         tick = {'mood': mood, 'plan': plan, 'room': STAGE_COLUMNS - pet_w - 2,
                 'agents': [kind for kind, _, _ in agents], 'width': AGENT_SLOT + 1}
         ticks += [tick] * round(seconds * fps)
@@ -97,7 +98,7 @@ def render(name, out):
             img = Image.new('RGB', (width, height), BG)
             d = ImageDraw.Draw(img)
             pet = played[tick]
-            shown = 'strolling around' if pet['moving'] and mood == 'idle' else label
+            shown = 'strolling around' if pet['moving'] and mood in ('idle', 'proud') else label
 
             d.text((left, CELL_H // 2), 'Claude', font=bold, fill=FG)
             d.text((left + 7 * CELL_W, CELL_H // 2), f'· {shown}', font=font, fill=DIM)
