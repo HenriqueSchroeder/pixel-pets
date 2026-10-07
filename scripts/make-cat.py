@@ -7,8 +7,8 @@ editing the JSON by hand. Each frame is a base sprite with a few pixels painted
 over it (eyes, mouth, effects), so a pose is a short list of (row, column, letter).
 """
 
-import json
-from pathlib import Path
+from sprites import SCHEMA, paint, write
+
 MAIN = ['.o........o.','obo......obo','obboooooobbo','obbbbbbbbbbo','obbbbbbbbbbo','obbbbbbbbbbo','obpbbbbbbpbo','obbbbbbbbbbo','obbbbbbbbbbo','.obbbbbbbbo.','..oooooooo..','..o......o..']
 MINI = ['.o....o.','oboooobo','obbbbbbo','obebbebo','obbbbbbo','obbbbbbo','.obbbbo.','.o....o.']
 OPEN=[(4,3,'e'),(5,3,'e'),(4,8,'e'),(5,8,'e')]
@@ -106,13 +106,8 @@ A={
 MINI_HAPPY=[(3,2,'o'),(3,5,'o'),(5,3,'o'),(5,4,'o')]
 MINI_SAD=[(5,3,'o'),(5,4,'o')]
 MINI_STEP=[(7,1,'.'),(6,1,'o')], [(7,6,'.'),(6,6,'o')]
-def paint(base,px):
-  g=[list(r) for r in base]
-  for r,c,l in px:
-    if 0<=c<len(g[r]): g[r][c]=l
-  return [''.join(r) for r in g]
 pack={
- '$schema':'https://raw.githubusercontent.com/HenriqueSchroeder/pixel-pets/main/schema/pet.schema.json',
+ '$schema':SCHEMA,
  'name':'cat','author':'Henrique Schroeder','description':'An orange cat, the default pet.',
  'palette':{'o':'#2b1d14','b':'#f0a35e','e':'#1a1a1a','p':'#f27c8f','w':'#ffffff','t':'#5ab4ff'},
  'fps':4,
@@ -132,7 +127,4 @@ pack={
    'pt-BR':{'longThink':['mrrp… hmm','hmm… *mexe o rabo*'],'manyReads':['quanto arquivo… miau!'],'manyAgents':['uma ninhada de agents!'],'lateNight':['*boceja* já tá tarde…']},
  },
 }
-for m,fr in pack['main']['moods'].items(): assert len(fr)<=8,(m,len(fr))
-out = Path(__file__).resolve().parent.parent / 'pets' / 'cat.json'
-out.write_text(json.dumps(pack, indent=2) + '\n')
-print(f'{out}: written')
+write(pack)

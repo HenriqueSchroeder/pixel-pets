@@ -1,4 +1,4 @@
-"""Draws the slime, which never walks and writes pets/slime.json.
+"""Draws the slime, which never walks, and writes pets/slime.json.
 
     python3 scripts/make-slime.py
 
@@ -7,8 +7,9 @@ editing the JSON by hand. Each frame is a base sprite with a few pixels painted
 over it (eyes, mouth, effects), so a pose is a short list of (row, column, letter).
 """
 
-import json
-from pathlib import Path
+import sprites
+from sprites import SCHEMA, write
+
 
 # Bodies, 12x10. The face sits at eye row ER and mouth row MR of each body.
 BASE = ['....oooo....', '..oobbbboo..', '.obbbbbbbbo.', '.obwbbbbbbo.', 'obbbbbbbbbbo',
@@ -42,11 +43,7 @@ def frown(mr): return [(mr + 1, 4, 'o'), (mr, 5, 'o'), (mr, 6, 'o'), (mr + 1, 7,
 
 
 def paint(body, px):
-    g = [list(r) for r in BODY[body]]
-    for r, c, l in px:
-        if 0 <= r < len(g) and 0 <= c < len(g[r]):
-            g[r][c] = l
-    return [''.join(r) for r in g]
+    return sprites.paint(BODY[body], px)
 
 
 def f(body, eyes, mouth_=None, extra=()):
@@ -153,16 +150,12 @@ MINI = ['..oooo..', '.obbbbo.', 'obbbbbbo', 'obbbbbbo', '.oooooo.', '........']
 MINI_SQ = ['........', '..oooo..', 'obbbbbbo', 'obbbbbbo', 'oooooooo', '........']
 
 
-def mini(base, px):
-    g = [list(r) for r in base]
-    for r, c, l in px:
-        g[r][c] = l
-    return [''.join(r) for r in g]
+mini = sprites.paint
 
 
 me = lambda r: [(r, 2, 'e'), (r, 5, 'e')]
 pack = {
-    '$schema': 'https://raw.githubusercontent.com/HenriqueSchroeder/pixel-pets/main/schema/pet.schema.json',
+    '$schema': SCHEMA,
     'name': 'slime', 'author': 'Henrique Schroeder',
     'description': 'A green slime that bounces in place, melts into a puddle when it sleeps deep, and never walks.',
     'palette': {'o': '#14381c', 'b': '#5fd068', 'w': '#d9ffd9', 'e': '#0b1f0f', 't': '#5ab4ff'},
@@ -183,8 +176,4 @@ pack = {
         'pt-BR': {'longThink': ['blub… hmm'], 'manyReads': ['quanto arquivo… blub!'], 'manyAgents': ['a gosmada toda!'], 'lateNight': ['*derrete um pouco* tá tarde…']},
     },
 }
-for m, fr in F.items():
-    assert len(fr) <= 8, (m, len(fr))
-out = Path(__file__).resolve().parent.parent / 'pets' / 'slime.json'
-out.write_text(json.dumps(pack, indent=2) + '\n')
-print(f'{out}: written')
+write(pack)
