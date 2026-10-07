@@ -12,7 +12,11 @@ Pets and translations are the easiest ways to help, and neither needs any code.
    ```
 
 3. Try it: copy it to `~/.claude/pets/`, set the `pet` option to its name, and run `claude --plugin-dir .`.
-4. Open a pull request with a screenshot of the pet in your terminal.
+4. Open a pull request with a GIF of your pet. This renders one from your pack, with the same scene as the README:
+
+   ```bash
+   python3 scripts/render-gif.py <name> screenshots/<name>.gif   # needs Pillow
+   ```
 
 Keep pets original or drawn from work you have the right to share.
 

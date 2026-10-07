@@ -6,13 +6,9 @@ A pixel-art pet that lives above your Claude Code prompt and reacts to what Clau
 
 Pets are plain JSON files, so you can draw your own or use one someone else made.
 
-```
- ▄▀▀▀▀▄       Claude · running npm test
- █ ▀▀ █       ▄▀▀▄ Explore            ▄▀▀▄ Plan
- ▀▄▄▄▄▀       ▀▄▄▀ reading auth.ts    ▀▄▄▀ thinking
-```
+![pixel-pets: the cat above the prompt while three subagents work](screenshots/band.gif)
 
-> A recording is coming. The sketch above stands in for the real pixel art.
+![pixel-pets: the slime pet in the same scene](screenshots/slime.gif)
 
 ## What it shows
 
@@ -76,7 +72,7 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 
 A pack in `~/.claude/pets/` wins over a shipped one with the same name. If a pack can't be read, pixel-pets says why in a toast and shows the cat.
 
-Shipped pets: [`cat`](pets/cat.json), [`slime`](pets/slime.json).
+Shipped pets, both shown at the top: [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), a small pack that draws only four moods and lets the rest fall back.
 
 ## Draw your own
 

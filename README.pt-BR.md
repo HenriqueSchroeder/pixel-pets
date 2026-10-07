@@ -6,13 +6,9 @@ Um pet em pixel art que vive acima do prompt do Claude Code e reage ao que o Cla
 
 Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outra pessoa fez.
 
-```
- ▄▀▀▀▀▄       Claude · rodando npm test
- █ ▀▀ █       ▄▀▀▄ Explore            ▄▀▀▄ Plan
- ▀▄▄▄▄▀       ▀▄▄▀ lendo auth.ts      ▀▄▄▀ pensando
-```
+![pixel-pets: o gato acima do prompt enquanto três subagents trabalham](screenshots/band.gif)
 
-> Uma gravação vem em breve. O esboço acima substitui o pixel art de verdade.
+![pixel-pets: o slime na mesma cena](screenshots/slime.gif)
 
 ## O que ele mostra
 
@@ -76,7 +72,7 @@ Rode `/plugin configure pixel-pets@pixel-pets`, ou procure **pixel-pets** no `/c
 
 Um pack em `~/.claude/pets/` ganha de um embutido com o mesmo nome. Se um pack não puder ser lido, o pixel-pets diz o motivo num toast e mostra o gato.
 
-Pets que vêm junto: [`cat`](pets/cat.json), [`slime`](pets/slime.json).
+Pets que vêm junto, os dois mostrados no topo: [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), um pack pequeno que desenha só quatro humores e deixa o resto cair no fallback.
 
 ## Desenhe o seu
 
