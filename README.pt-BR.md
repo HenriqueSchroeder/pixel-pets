@@ -6,9 +6,11 @@ Um pet em pixel art que vive acima do prompt do Claude Code e reage ao que o Cla
 
 Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outra pessoa fez.
 
-![pixel-pets: o gato acima do prompt enquanto três subagents trabalham](screenshots/band.gif)
+![pixel-pets: o clawd acima do prompt enquanto três subagents trabalham](screenshots/clawd.gif)
 
-![pixel-pets: o slime na mesma cena](screenshots/slime.gif)
+![pixel-pets: o fantasma na mesma cena, sumindo e reaparecendo em outro lugar enquanto passeia](screenshots/ghost.gif)
+
+![pixel-pets: a raposa na mesma cena](screenshots/fox.gif)
 
 ## O que ele mostra
 
@@ -95,14 +97,14 @@ Um pack em `~/.claude/pets/` ganha de um embutido com o mesmo nome. Se um pack n
 
 Pets que vêm junto:
 
-- [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda: afunda no chão e brota em outro lugar. Os dois aparecem no topo.
+- [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda: afunda no chão e brota em outro lugar.
 - [`dog`](pets/dog.json), que abana o rabo, ofega e inclina a cabeça quando pensa.
 - [`ghost`](pets/ghost.json), que flutua em vez de andar, dá um "buu" de vez em quando, vai sumindo enquanto dorme e reaparece em outro lugar com um "buu".
 - [`owl`](pets/owl.json), que pisca devagar e gira a cabeça até dar a volta.
-- [`clawd`](pets/clawd.json), o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
+- [`clawd`](pets/clawd.json), que aparece no topo com o ghost e a fox: o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
 - [`fox`](pets/fox.json), que balança o rabo, pula de cabeça nos ratos sob a neve e fica de lado para andar.
 
-![O dog, o ghost, a owl, o clawd e a fox, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
+![O cat, o slime, o dog e a owl, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
 
 ## Desenhe o seu
 

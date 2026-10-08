@@ -1,6 +1,6 @@
 """Renders the README's gallery: a few pets side by side in a few moods.
 
-    python3 scripts/render-gallery.py screenshots/gallery.gif dog ghost owl clawd
+    python3 scripts/render-gallery.py screenshots/gallery.gif cat slime dog owl
 
 Needs Pillow (pip install pillow) and npx. Each pack is resolved by
 scripts/preview-pet.ts (--json), so a mood a pack leaves out shows what it

@@ -6,9 +6,11 @@ A pixel-art pet that lives above your Claude Code prompt and reacts to what Clau
 
 Pets are plain JSON files, so you can draw your own or use one someone else made.
 
-![pixel-pets: the cat above the prompt while three subagents work](screenshots/band.gif)
+![pixel-pets: clawd above the prompt while three subagents work](screenshots/clawd.gif)
 
-![pixel-pets: the slime pet in the same scene](screenshots/slime.gif)
+![pixel-pets: the ghost in the same scene, fading out and turning up elsewhere as it strolls](screenshots/ghost.gif)
+
+![pixel-pets: the fox in the same scene](screenshots/fox.gif)
 
 ## What it shows
 
@@ -95,14 +97,14 @@ A pack in `~/.claude/pets/` wins over a shipped one with the same name. If a pac
 
 Shipped pets:
 
-- [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks: it sinks into the floor and wells up somewhere else. Both are shown at the top.
+- [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks: it sinks into the floor and wells up somewhere else.
 - [`dog`](pets/dog.json), which wags its tail, pants and tilts its head when it thinks.
 - [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
-- [`clawd`](pets/clawd.json), the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
+- [`clawd`](pets/clawd.json), shown at the top with the ghost and the fox: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
 - [`fox`](pets/fox.json), which sways its brush, pounces on mice under the snow and turns side on to walk.
 
-![The dog, ghost, owl, clawd and fox, idle, thinking, happy and asleep](screenshots/gallery.gif)
+![The cat, slime, dog and owl, idle, thinking, happy and asleep](screenshots/gallery.gif)
 
 ## Draw your own
 
