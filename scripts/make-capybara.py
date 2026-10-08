@@ -249,6 +249,16 @@ T = {
     'deepSleep>*': get_up([lie(EAR_BACK + SHUT), lie()]),
     'deepSleep>waking': [lie(EAR_BACK + SHUT), lie(WIDE), frame(WIDE, up=-1)],
     'sleeping>deepSleep': [lie(EAR_BACK + SHUT)],
+    # a crouch, head down, before it springs for joy
+    '*>happy': [frame(OPEN, dy=1), frame(ZEN, dy=1), frame(ZEN, up=1, legs='reach'), frame(ZEN)],
+    '*>celebrating': [frame(OPEN, dy=1), frame(ZEN, dy=1), frame(ZEN, up=1, legs='reach', fx=at(ORANGE, 1, 22)),
+                      frame(ZEN, fx=at(ORANGE, 0, 22))],
+    # and settling back after a reaction
+    'happy>*': [frame(ZEN, dy=1), frame(ZEN), frame(OPEN)],
+    'sad>*': [frame(SAD + EAR_BACK, dy=1), frame(DOWN), frame(OPEN)],
+    # eyes up as a thought starts; a start when it begins to sweat
+    '*>thinking': [frame(OPEN), frame(UP), frame(UP)],
+    '*>sweating': [frame(WIDE + EAR_FLICK, up=1), frame(WIDE), frame(WIDE + FROWN)],
 }
 
 # A bird flies in, sits on its head a while, and flies off.
@@ -278,6 +288,18 @@ A = {
     'sleepyYawn': {'frames': [frame(HALF + YAWN), frame(SHUT + YAWN), frame(SHUT + YAWN), frame(HALF)],
                    'moods': ['sleepy'], 'every': [15, 35]},
     'nod': {'frames': [frame(SHUT, dy=1), frame(SHUT, dy=2), frame(SHUT, dy=2), frame(HALF)], 'moods': ['sleepy'], 'every': [8, 20]},
+    # a blink now and then where the loop has none of its own, or only one
+    'blink': {'frames': [frame(SHUT)], 'moods': ['thinking', 'reading', 'typing', 'writing', 'running', 'compacting'],
+              'every': [3, 8]},
+    # head low: nose to the ground, or worn out
+    'blinkLow': {'frames': [frame(SHUT, dy=1)], 'moods': ['searching', 'tired'], 'every': [3, 8]},
+    'blinkFrown': {'frames': [frame(SHUT + EAR_BACK + FROWN)], 'moods': ['worried', 'grumpy'], 'every': [3, 8]},
+    # proud of us: a little hop, the orange still on its head
+    'proudHop': {'frames': [frame(ZEN, dy=1, fx=at(ORANGE, 2, 22)), frame(ZEN, up=1, legs='reach', fx=at(ORANGE, 1, 22)),
+                            frame(ZEN, fx=at(ORANGE, 1, 22))], 'moods': ['proud'], 'every': [6, 14]},
+    # deep asleep, the laid back ear twitches
+    'dreamFlick': {'frames': [lie(SHUT + EAR_FLICK), lie(EAR_BACK + SHUT), lie(SHUT + EAR_FLICK)], 'moods': ['deepSleep'],
+                   'every': [8, 25]},
     # the bird on its back stirs in its sleep
     'dreamBird': {'frames': [lie(fx=bird('up', *NAP_PERCH)), lie(fx=bird('down', *NAP_PERCH)),
                              lie(fx=bird('up', *NAP_PERCH)), lie(fx=bird('asleep', *NAP_PERCH))],
