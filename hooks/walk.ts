@@ -12,6 +12,8 @@ export type Walk = {
   tick: number
   // Whether it took a step on that tick, so a second draw shows it walking too.
   moving: boolean
+  // Where a stroll it broke halfway goes on to, after a short look around.
+  onward?: number
 }
 
 // wander: stroll to a random spot now and then. stay: hold still. go: hurry to a spot.
@@ -20,6 +22,10 @@ export type Plan = 'wander' | 'stay' | { go: number }
 const COLUMNS_PER_TICK = 1
 const HURRY_COLUMNS_PER_TICK = 2
 const REST_SECONDS: [number, number] = [3, 10]
+// A stroll this long breaks halfway now and then, for a look around this long.
+const BREAK_FROM_COLUMNS = 12
+const BREAK_CHANCE = 0.3
+const LOOK_SECONDS: [number, number] = [1, 2]
 
 // How it strolls: `rest` stretches the pauses, `lean` (0 to 1) draws its spots
 // toward the left, where the prompt starts.
@@ -44,24 +50,34 @@ export const walkStep = (
   // A second draw on this tick only keeps it inside a stage that shrank since.
   if (walk.tick === tick) return { walk: { ...walk, x }, moving: walk.moving }
 
-  const rest = () => tick + Math.round((REST_SECONDS[0] + (REST_SECONDS[1] - REST_SECONDS[0]) * random()) * pace.rest * fps)
-  let { target, facing, restUntil } = walk
+  const pause = ([min, max]: [number, number], scale: number) => tick + Math.round((min + (max - min) * random()) * scale * fps)
+  let { target, facing, restUntil, onward } = walk
   target = clamp(target, maxX)
 
+  if (plan !== 'wander') onward = undefined
   if (plan === 'stay') target = x
   else if (typeof plan === 'object') target = clamp(plan.go, maxX)
   else if (x === target && tick >= restUntil) {
-    target = Math.round(random() ** (1 + 2 * pace.lean) * maxX)
-    if (target === x) restUntil = rest()
+    if (onward !== undefined) {
+      target = clamp(onward, maxX)
+      onward = undefined
+    } else {
+      target = Math.round(random() ** (1 + 2 * pace.lean) * maxX)
+      if (Math.abs(target - x) >= BREAK_FROM_COLUMNS && random() < BREAK_CHANCE) {
+        onward = target
+        target = Math.round((x + target) / 2)
+      }
+    }
+    if (target === x) restUntil = pause(REST_SECONDS, pace.rest)
   }
 
-  if (x === target) return { walk: { x, target, facing, restUntil, tick, moving: false }, moving: false }
+  if (x === target) return { walk: { x, target, facing, restUntil, tick, moving: false, onward }, moving: false }
 
   const direction = target > x ? 1 : -1
   const speed = typeof plan === 'object' ? HURRY_COLUMNS_PER_TICK : COLUMNS_PER_TICK
   const next = x + direction * Math.min(speed, Math.abs(target - x))
-  if (next === target && plan === 'wander') restUntil = rest()
-  return { walk: { x: next, target, facing: direction, restUntil, tick, moving: true }, moving: true }
+  if (next === target && plan === 'wander') restUntil = onward === undefined ? pause(REST_SECONDS, pace.rest) : pause(LOOK_SECONDS, 1)
+  return { walk: { x: next, target, facing: direction, restUntil, tick, moving: true, onward }, moving: true }
 }
 
 export type Side = 1 | -1
@@ -121,6 +137,13 @@ export const gather = (
   }
   return { x, left: [], right: [], more: 1 }
 }
+
+// The side agent `index` stands on.
+export const sideIn = (drawn: Gathering, index: number): Side => (drawn.right.includes(index) ? 1 : -1)
+
+// Which way it faces: the way it walks, else toward the drawn agent `at`.
+export const faceFor = (moving: boolean, facing: Side, drawn: Gathering, at: number): Side =>
+  moving || drawn.left.length + drawn.right.length === 0 ? facing : sideIn(drawn, at)
 
 // Who shows while the pet is on its way to `placed`: all of them once it stands
 // there, else as many as already fit around `x`, with no room kept for a "+N".

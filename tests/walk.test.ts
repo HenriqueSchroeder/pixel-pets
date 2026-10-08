@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import type { Random } from '../hooks/motion'
 import { mirror } from '../hooks/render'
-import { gather, layoutAt, onTheWay, walkStep } from '../hooks/walk'
+import { faceFor, gather, layoutAt, onTheWay, walkStep } from '../hooks/walk'
 import type { Plan, Walk } from '../hooks/walk'
 
 const always = (value: number): Random => () => value
@@ -85,6 +85,25 @@ describe('gather', () => {
   })
 })
 
+describe('a long stroll', () => {
+  // Calls to random in turn: a far spot, a break, then a short look around.
+  const inTurn = (...values: number[]): Random => {
+    let i = 0
+    return () => values[i++ % values.length] ?? 0
+  }
+
+  test('breaks halfway now and then for a short look around, then goes on', () => {
+    const { xs } = trail('wander', 1, 24, 40, inTurn(0.9, 0.1, 0.5), { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false })
+    // 36 is the spot, 18 the break: there it looks around for 2 ticks, then walks on.
+    expect(xs.slice(16, 21)).toEqual([17, 18, 18, 19, 20])
+  })
+
+  test('a short stroll never breaks', () => {
+    const { xs } = trail('wander', 1, 6, 10, inTurn(0.5, 0), { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false })
+    expect(xs).toEqual([1, 2, 3, 4, 5, 5])
+  })
+})
+
 describe('pace', () => {
   const resting: Walk = { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false }
 
@@ -142,6 +161,23 @@ describe('onTheWay', () => {
 
   test('all show once it gets there', () => {
     expect(onTheWay(placed.x, placed, 30, 3, 10)).toBe(placed)
+  })
+})
+
+describe('faceFor', () => {
+  const around = { x: 20, left: [1], right: [0, 2], more: 1 as const }
+
+  test('it faces the way it walks', () => {
+    expect(faceFor(true, -1, around, 0)).toBe(-1)
+  })
+
+  test('standing, it faces the agent it looks at', () => {
+    expect(faceFor(false, -1, around, 0)).toBe(1)
+    expect(faceFor(false, 1, around, 1)).toBe(-1)
+  })
+
+  test('with no agent drawn, it keeps its way', () => {
+    expect(faceFor(false, -1, { x: 0, left: [], right: [], more: 1 }, 0)).toBe(-1)
   })
 })
 
