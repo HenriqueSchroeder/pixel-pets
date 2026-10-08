@@ -8,11 +8,11 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 ![pixel-pets: clawd above the prompt while three subagents work](screenshots/clawd.gif)
 
+![pixel-pets: the dragon in the same scene, flying off to land elsewhere and breathing fire when a long job is done](screenshots/dragon.gif)
+
 ![pixel-pets: the ghost in the same scene, fading out and turning up elsewhere as it strolls](screenshots/ghost.gif)
 
 ![pixel-pets: the fox in the same scene](screenshots/fox.gif)
-
-![pixel-pets: the dragon in the same scene, flying off to land elsewhere and breathing fire when a long job is done](screenshots/dragon.gif)
 
 ## What it shows
 
@@ -103,7 +103,7 @@ Shipped pets:
 - [`dog`](pets/dog.json), which wags its tail, pants and tilts its head when it thinks.
 - [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
-- [`clawd`](pets/clawd.json), shown at the top with the ghost, the fox and the dragon: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
+- [`clawd`](pets/clawd.json), shown at the top with the dragon, the ghost and the fox: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
 - [`fox`](pets/fox.json), which sways its brush, pounces on mice under the snow and turns side on to walk.
 - [`dragon`](pets/dragon.json), a big red dragon that breathes fire, counts its hoard and flies off to land elsewhere. It draws no mini pets.
 
