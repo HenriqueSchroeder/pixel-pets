@@ -579,7 +579,31 @@
           "..bbbbbbbbbbbb..",
           "..bbbbbbbbbbbb..",
           "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbebbbbbbeb..",
+          "..bbbebbbbbbeb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
           "...b......b....."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbebbbbbbeb..",
+          "..bbbebbbbbbeb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
         ]
       ],
       "watching": [
@@ -961,6 +985,90 @@
           "..bbebbbbbbebb..",
           "bbbbbbbbbbbbbbbb",
           "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
           "..bbbbbbbbbbbb..",
           "...b.b....b.b...",
           "...b.b....b.b..."
@@ -2003,6 +2111,106 @@
             "...b.b....b.b..."
           ]
         ]
+      ],
+      "idle": [
+        [
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbdbbbbbbdbb..",
+            "..beebbbbbbeeb..",
+            "bbbbbbbbbbbbbbbb",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ]
+        ]
       ]
     },
     "transitions": {
@@ -2270,6 +2478,150 @@
           "...d.d....d.d..."
         ]
       ],
+      "*>happy": [
+        [
+          "................",
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "b.bbebbbbbbebb..",
+          ".bbebebbbbebeb..",
+          "..bpbbbbbbbbpbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          ".....b....b....."
+        ]
+      ],
+      "*>celebrating": [
+        [
+          "................",
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "..bbebbbbbbebb..",
+          ".bbbbbbbbbbbbbb.",
+          ".bbbbbbbbbbbbbb.",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "..p..........y..",
+          "........t.......",
+          "..bbbbbbbbbbbb..",
+          "b.bbebbbbbbebb.b",
+          ".bbebebbbbebebb.",
+          "..bpbbbbbbbbpb..",
+          "..bbbbebbebbbb..",
+          "..bbbbbeebbbbb..",
+          "...b.b....b.b...",
+          ".....b....b....."
+        ]
+      ],
+      "happy>*": [
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "..bebebbbbebeb..",
+          "bbbpbbbbbbbbpbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ]
+      ],
+      "sad>*": [
+        [
+          "................",
+          "................",
+          "..dddddddddddd..",
+          "..dddddddddddd..",
+          "..ddeddddddedd..",
+          ".dddddddddddddd.",
+          ".dddddddddddddd.",
+          "..dddddddddddd..",
+          "...d.d....d.d...",
+          "...d.d....d.d..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ]
+      ],
+      "*>thinking": [
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "..bbbbbbbbbbbb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ],
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "..bbebbbbbbebb..",
+          "..bbbbbbbbbbbb..",
+          "bbbbbbbbbbbbbbbb",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbbbbbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ]
+      ],
+      "*>sweating": [
+        [
+          "................",
+          "................",
+          "..bbbbbbbbbbbb..",
+          "b.bbebbbbbbebb.b",
+          ".bbbebbbbbbebbb.",
+          "..bbbbbbbbbbbb..",
+          "..bbbbbeebbbbb..",
+          "..bbbbbeebbbbb..",
+          "...b.b....b.b...",
+          "...b.b....b.b..."
+        ]
+      ],
       "celebrating>sleeping": [
         [
           "................",
@@ -2355,7 +2707,9 @@
           "searching",
           "reading",
           "compacting",
-          "watching"
+          "watching",
+          "running",
+          "thinking"
         ],
         "every": [
           2,
@@ -2425,7 +2779,8 @@
           ]
         ],
         "moods": [
-          "typing"
+          "typing",
+          "writing"
         ],
         "every": [
           2,
@@ -2831,6 +3186,88 @@
         "every": [
           8,
           25
+        ]
+      },
+      "strut": {
+        "frames": [
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbebbbbbbebb..",
+            "..bebebbbbebeb..",
+            "bbbpbbbbbbbbpbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            ".....b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbebbbbbbebb..",
+            "..bebebbbbebeb..",
+            "bbbpbbbbbbbbpbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbebbbbbbebb..",
+            "..bebebbbbebeb..",
+            "bbbpbbbbbbbbpbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b....."
+          ],
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbebbbbbbebb..",
+            "..bebebbbbebeb..",
+            "bbbpbbbbbbbbpbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ]
+        ],
+        "moods": [
+          "proud"
+        ],
+        "every": [
+          6,
+          14
+        ]
+      },
+      "blinkProud": {
+        "frames": [
+          [
+            "................",
+            "................",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "..beebbbbbbeeb..",
+            "bbbpbbbbbbbbpbbb",
+            "..bbbbbbbbbbbb..",
+            "..bbbbbbbbbbbb..",
+            "...b.b....b.b...",
+            "...b.b....b.b..."
+          ]
+        ],
+        "moods": [
+          "proud"
+        ],
+        "every": [
+          3,
+          8
         ]
       }
     }

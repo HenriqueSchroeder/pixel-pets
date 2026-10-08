@@ -127,6 +127,8 @@ F = {
 V = {
     'thinking': [[f(UP + [(7, 6, 'e'), (7, 7, 'e')])] * 4 + [f(UP + [(7, 6, 'e'), (7, 7, 'e')], False)] * 4],
     'reading': [[f(scan(-1) + MOUTH)] * 3 + [f(scan(0) + MOUTH, False)] * 3 + [f(scan(1) + MOUTH)] * 2],
+    # or lazing low, eyes half shut, rising only now and then
+    'idle': [[f(HALF + MOUTH + BLUSH, False)] * 5 + [f(HALF + MOUTH + BLUSH)] * 3],
 }
 T = {
     '*>sleeping': [f(OPEN + MOUTH), f(OPEN + OMOUTH), f(DOWN + OMOUTH, False), f(SHUT + OMOUTH, False, FAINT), f(SHUT + MOUTH, False, FAINT)],
@@ -135,13 +137,22 @@ T = {
     'deepSleep>*': [f(SHUT + MOUTH, False, FAINTER), f(SHUT + MOUTH, False, FAINT), f(DOWN + MOUTH, False), f(OPEN + OMOUTH), f(OPEN + MOUTH)],
     'deepSleep>waking': [f(SHUT + MOUTH, False, FAINT)],
     'sleeping>deepSleep': [f(SHUT + MOUTH, False, FAINT)],
+    # a dip before it rises for joy
+    '*>happy': [f(OPEN + MOUTH, False), f(JOY + GRIN + TONGUE + BLUSH)],
+    '*>celebrating': [f(OPEN + OMOUTH, False), f(JOY + GRIN + BLUSH)],
+    # and settling back after a reaction
+    'happy>*': [f(JOY + MOUTH + BLUSH), f(OPEN + MOUTH)],
+    'sad>*': [f(DOWN + FROWN, False), f(OPEN + MOUTH)],
+    # eyes up as a thought starts; a start when it begins to sweat
+    '*>thinking': [f(UP + MOUTH)] * 2,
+    '*>sweating': [f(WIDE + OMOUTH)],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
 
 A = {
     # blinks hold the ghost where most of its loop floats
-    'blink': {'frames': [f(SHUT + MOUTH)], 'moods': ['thinking', 'reading', 'searching', 'compacting', 'watching'], 'every': [2, 6]},
+    'blink': {'frames': [f(SHUT + MOUTH)], 'moods': ['thinking', 'reading', 'searching', 'compacting', 'watching', 'supervising', 'running'], 'every': [2, 6]},
     'blinkIdle': {'frames': [f(SHUT + MOUTH + BLUSH)], 'moods': ['idle'], 'every': [2, 6]},
     'blinkGrin': {'frames': [f(SHUT + GRIN)], 'moods': ['typing', 'writing'], 'every': [2, 6]},
     'blinkFrown': {'frames': [f(SHUT + FROWN)], 'moods': ['sweating'], 'every': [2, 5]},
@@ -152,6 +163,9 @@ A = {
     # it flickers out of being for a moment
     'flicker': {'frames': [f(OPEN + MOUTH, fade=FAINT), f(OPEN + MOUTH, fade=FAINTER), f(OPEN + MOUTH, fade=FAINT)], 'moods': ['idle'], 'every': [12, 30]},
     'bleh': {'frames': [f(JOY + TONGUE + BLUSH)] * 3, 'moods': ['idle', 'proud'], 'every': [15, 35]},
+    'blinkProud': {'frames': [f(SHUT + GRIN + BLUSH)], 'moods': ['proud'], 'every': [3, 8]},
+    # dimming and brightening as it dreams
+    'sleepFlicker': {'frames': [f(SHUT + MOUTH, False, FAINTER)] * 2 + [f(SHUT + MOUTH, False, FAINT)], 'moods': ['sleeping'], 'every': [10, 25]},
     'sleepyYawn': {'frames': [f(HALF + OMOUTH, fade=FAINT), f(SHUT + OMOUTH, fade=FAINT), f(SHUT + OMOUTH, fade=FAINT), f(HALF + MOUTH, fade=FAINT)], 'moods': ['sleepy'], 'every': [15, 35]},
     'nod': {'frames': [f(SHUT + MOUTH, False, FAINT)] * 3 + [f(HALF + MOUTH, False)], 'moods': ['sleepy', 'tired'], 'every': [8, 20]},
     'dreamDrift': {'frames': [f(SHUT + MOUTH, True, FAINTER), f(SHUT + MOUTH, True, FAINTER), f(SHUT + MOUTH, False, FAINTER)], 'moods': ['deepSleep'], 'every': [10, 30]},

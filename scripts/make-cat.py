@@ -10,6 +10,46 @@ over it (eyes, mouth, effects), so a pose is a short list of (row, column, lette
 from sprites import SCHEMA, paint, write
 
 MAIN = ['.o........o.','obo......obo','obboooooobbo','obbbbbbbbbbo','obbbbbbbbbbo','obbbbbbbbbbo','obpbbbbbbpbo','obbbbbbbbbbo','obbbbbbbbbbo','.obbbbbbbbo.','..oooooooo..','..o......o..']
+# Breathing out, or crouching to spring: the head a pixel lower, the body a row shorter.
+BREATH = ['............'] + MAIN[:8] + MAIN[9:]
+
+
+# Walking it turns side on, nose to the right and tail up behind, like the fox.
+SIDE = [
+    '............',
+    '............',
+    '........o.o.',
+    '.o.....obobo',
+    'obo....obbbo',
+    'obo....obbeo',
+    '.obooooobbbp',
+    '..obbbbbbbo.',
+    '..obbbbbbbo.',
+    '..obbbbbbbo.',
+    '...oooooooo.',
+    '...o.o.o.o..',
+]
+# legs reaching out front and back, then gathered under it; the tail swishing a pixel
+SPREAD = [(11, c, '.') for c in range(12)] + [(11, c, 'o') for c in (2, 5, 7, 10)]
+GATHER = [(11, c, '.') for c in range(12)] + [(11, c, 'o') for c in (3, 4, 8, 9)]
+SWISH = [(3, 1, '.'), (3, 0, 'o')]
+
+
+class breath(list):
+    """A pose drawn on BREATH: the rows above the one it drops sit a row lower."""
+
+
+class side(list):
+    """A pose drawn on SIDE."""
+
+
+def draw(pose):
+    if isinstance(pose, breath):
+        return paint(BREATH, [(r + 1 if r < 8 else r, c, l) for r, c, l in pose])
+    if isinstance(pose, side):
+        return paint(SIDE, pose)
+    return paint(MAIN, pose)
+
 MINI = ['.o....o.','oboooobo','obbbbbbo','obebbebo','obbbbbbo','obbbbbbo','.obbbbo.','.o....o.']
 OPEN=[(4,3,'e'),(5,3,'e'),(4,8,'e'),(5,8,'e')]
 SHUT=[(5,3,'o'),(5,4,'o'),(5,7,'o'),(5,8,'o')]
@@ -42,17 +82,18 @@ F={
  'typing':[OPEN+GRIN+hop(2)]*2+[OPEN+GRIN+hop(9)]*2,
  'running':[look(1)+MOUTH+w((11,c)) for c in range(3,9)],
  'writing':[DOWN+GRIN+hop(2)]*2+[DOWN+GRIN+hop(9)]*2,
- 'reading':[DOWN+MOUTH],
+ # reading, breathing slow
+ 'reading':[DOWN+MOUTH]*6+[breath(DOWN+MOUTH)]*2,
  'searching':[scan(-1)+MOUTH]*2+[scan(0)+MOUTH]*2+[scan(1)+MOUTH]*2+[scan(0)+MOUTH]*2,
  'compacting':[DOWN+MOUTH+w((0,3),(1,8))]*2+[DOWN+MOUTH+w((1,3),(0,8))]*2,
  'sweating':[OPEN+FROWN+t(r,10) for r in (3,3,4,4,5,5)],
  'happy':[SMILE+GRIN]*2+[SMILE+GRIN+hop(2)+hop(9)]*2,
  # a long job done: hopping on both feet in falling confetti
  'celebrating':[SMILE+GRIN+hop(2)+hop(9)+[(0,3,'p'),(1,6,'t'),(0,8,'w')], SMILE+GRIN+[(1,4,'w'),(0,6,'p'),(1,8,'t')]]*4,
- # sitting around, awake
- 'idle':[OPEN+MOUTH],
- # drawn facing right; the core mirrors it to walk left
- 'walking':[look(1)+MOUTH+hop(2), look(1)+MOUTH+hop(9)],
+ # sitting around, awake, breathing slow
+ 'idle':[OPEN+MOUTH]*6+[breath(OPEN+MOUTH)]*2,
+ # side on, facing right; the core mirrors it to walk left
+ 'walking':[side(SPREAD), side(GATHER), side(SPREAD+SWISH), side(GATHER)],
  # eyes on the agents beside it (drawn on its right), a glance back now and then
  'supervising':[Rr]*6+[OPEN+MOUTH]*2,
  # eyes on the prompt below
@@ -75,6 +116,8 @@ ear_flick=lambda: [(0,1,'.'),(0,0,'o')]
 V={
  'thinking':[[UP+SIDEMOUTH]*8],
  'reading':[[scan(-1)+MOUTH]*3+[scan(0)+MOUTH]*3+[scan(1)+MOUTH]*2],
+ # or loafing, eyes half shut, content
+ 'idle':[[HALF+MOUTH]*6+[breath(HALF+MOUTH)]*2],
 }
 T={
  '*>sleeping':[OPEN+MOUTH, OPEN+OMOUTH, DOWN+OMOUTH, SHUT+OMOUTH, SHUT+MOUTH],
@@ -83,6 +126,15 @@ T={
  'deepSleep>*':[SHUT+MOUTH, DOWN+MOUTH, OPEN+OMOUTH, OPEN+OMOUTH, OPEN+MOUTH],
  'deepSleep>waking':[OPEN+OMOUTH],
  'sleeping>deepSleep':[asleep],
+ # a crouch before it springs for joy
+ '*>happy':[breath(OPEN+MOUTH), SMILE+GRIN+hop(2)+hop(9)],
+ '*>celebrating':[breath(OPEN+OMOUTH), SMILE+GRIN+hop(2)+hop(9)],
+ # and settling back after a reaction
+ 'happy>*':[SMILE+MOUTH, OPEN+MOUTH],
+ 'sad>*':[DOWN+FROWN, OPEN+MOUTH],
+ # eyes up as a thought starts; a start when it begins to sweat
+ '*>thinking':[UP+MOUTH, UP+MOUTH],
+ '*>sweating':[OPEN+OMOUTH],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping']=T['happy>sleeping']
@@ -102,6 +154,9 @@ A={
  'blinkWorried':{'frames':[SHUT+WAVY],'moods':['worried'],'every':[2,5]},
  'blinkGrumpy':{'frames':[SHUT+BROW+FLAT],'moods':['grumpy'],'every':[3,7]},
  'yawn':{'frames':[SHUT+OMOUTH]*3,'moods':['sleeping'],'every':[15,40]},
+ # proud of us: a little strut on the spot
+ 'strut':{'frames':[SMILE+GRIN+hop(2),SMILE+GRIN,SMILE+GRIN+hop(9),SMILE+GRIN],'moods':['proud'],'every':[6,14]},
+ 'blinkProud':{'frames':[SHUT+GRIN],'moods':['proud'],'every':[3,8]},
 }
 MINI_HAPPY=[(3,2,'o'),(3,5,'o'),(5,3,'o'),(5,4,'o')]
 MINI_SAD=[(5,3,'o'),(5,4,'o')]
@@ -112,10 +167,10 @@ pack={
  'palette':{'o':'#2b1d14','b':'#f0a35e','e':'#1a1a1a','p':'#f27c8f','w':'#ffffff','t':'#5ab4ff'},
  'fps':4,
  'main':{
-   'moods':{m:[paint(MAIN,f) for f in fr] for m,fr in F.items()},
-   'variants':{m:[[paint(MAIN,f) for f in loop] for loop in loops] for m,loops in V.items()},
-   'transitions':{k:[paint(MAIN,f) for f in fr] for k,fr in T.items()},
-   'actions':{k:{'frames':[paint(MAIN,f) for f in a['frames']],'moods':a['moods'],'every':a['every']} for k,a in A.items()},
+   'moods':{m:[draw(f) for f in fr] for m,fr in F.items()},
+   'variants':{m:[[draw(f) for f in loop] for loop in loops] for m,loops in V.items()},
+   'transitions':{k:[draw(f) for f in fr] for k,fr in T.items()},
+   'actions':{k:{'frames':[draw(f) for f in a['frames']],'moods':a['moods'],'every':a['every']} for k,a in A.items()},
  },
  'mini':{'tint':'b','moods':{
    'working':[paint(MINI,MINI_STEP[0])]*2+[paint(MINI,MINI_STEP[1])]*2,

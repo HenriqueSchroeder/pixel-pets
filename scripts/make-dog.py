@@ -84,6 +84,45 @@ EAR_UP = [(1, 0, 'd'), (2, 0, 'd'), (5, 0, '.'), (5, 1, '.')]
 ASLEEP = SHUT + MOUTH
 WAG = [TAIL_UP, TAIL_DOWN]
 
+# Walking it turns side on, nose to the right: an ear hanging, tail up behind.
+SIDE = [
+    '............',
+    '............',
+    '.......oooo.',
+    '.d....obbbbo',
+    '.d....odbebo',
+    '..d..oddblle',
+    '..dooooobllo',
+    '..obbbbbbbo.',
+    '..obbbbbbbo.',
+    '..obbbbbbbo.',
+    '...oooooooo.',
+    '...o.o.o.o..',
+]
+# legs reaching out front and back, then gathered under it; the tail wagging, the tongue out
+SPREAD = [(11, c, '.') for c in range(12)] + [(11, c, 'o') for c in (2, 5, 7, 10)]
+GATHER = [(11, c, '.') for c in range(12)] + [(11, c, 'o') for c in (3, 4, 8, 9)]
+SIDE_WAG = [(3, 1, '.'), (3, 0, 'd')]
+SIDE_TONGUE = [(7, 11, 'p')]
+
+
+# Breathing out, or crouching to spring: the head a pixel lower, the chin row gone.
+BREATH = ['............'] + HEAD[:9] + HEAD[10:]
+
+
+class breath(list):
+    """A pose drawn on BREATH: the rows above the one it drops sit a row lower."""
+
+
+class side(list):
+    """A pose drawn on SIDE."""
+
+
+def draw(pose):
+    if isinstance(pose, breath):
+        return paint(BREATH, [(r + 1 if r < 9 else r, c, l) for r, c, l in pose])
+    return paint(SIDE if isinstance(pose, side) else HEAD, pose)
+
 F = {
     # 4 fps: a frame repeated is a pose held for another quarter second
     'sleeping': [ASLEEP] * 4 + [ASLEEP + w((1, 10))] * 2 + [ASLEEP + w((0, 11))] * 2,
@@ -94,15 +133,17 @@ F = {
     'idle': [OPEN + MOUTH + TAIL_UP] * 2 + [OPEN + MOUTH + TAIL_DOWN] * 2,
     'sleepy': [HALF + MOUTH] * 5 + [SHUT + MOUTH] * 3,
     'tired': [HALF + FLAT] * 4 + [HALF + OMOUTH] * 2 + [SHUT + OMOUTH] * 2,
-    # drawn facing right; the core mirrors it to walk left
-    'walking': [look(1) + MOUTH + TONGUE + hop(2) + TAIL_UP, look(1) + MOUTH + TONGUE + hop(9) + TAIL_DOWN],
+    # side on, facing right; the core mirrors it to walk left
+    'walking': [side(SPREAD + SIDE_TONGUE), side(GATHER + SIDE_TONGUE), side(SPREAD + SIDE_WAG + SIDE_TONGUE),
+                side(GATHER + SIDE_WAG + SIDE_TONGUE)],
     'watching': [DOWN + MOUTH] * 6 + [[(4, 5, 'e'), (4, 8, 'e')] + MOUTH] * 2,
     # head tilted, one ear up
     'thinking': [look(-1) + MOUTH + EAR_UP] * 4 + [look(1) + MOUTH + EAR_UP] * 4,
     'typing': [OPEN + GRIN + hop(2)] * 2 + [OPEN + GRIN + hop(9)] * 2,
     'running': [look(1) + MOUTH + TONGUE + w((11, c)) for c in range(3, 9)],
     'writing': [DOWN + GRIN + hop(2)] * 2 + [DOWN + GRIN + hop(9)] * 2,
-    'reading': [DOWN + MOUTH],
+    # reading, breathing slow
+    'reading': [DOWN + MOUTH] * 6 + [breath(DOWN + MOUTH)] * 2,
     'searching': [scan(-1) + MOUTH + EAR_UP] * 2 + [scan(0) + MOUTH] * 2 + [scan(1) + MOUTH + EAR_UP] * 2 + [scan(0) + MOUTH] * 2,
     # eyes on the agents beside it (drawn on its right), tail going
     'supervising': [look(1) + MOUTH + TAIL_UP] * 3 + [look(1) + MOUTH + TAIL_DOWN] * 3 + [OPEN + MOUTH] * 2,
@@ -121,6 +162,8 @@ F = {
 V = {
     'thinking': [[UP + MOUTH + EAR_UP] * 8],
     'reading': [[scan(-1) + MOUTH] * 3 + [scan(0) + MOUTH] * 3 + [scan(1) + MOUTH] * 2],
+    # or lying about content, eyes half shut, tail still
+    'idle': [[HALF + MOUTH + TAIL_DOWN] * 6 + [breath(HALF + MOUTH + TAIL_DOWN)] * 2],
 }
 T = {
     '*>sleeping': [OPEN + MOUTH, OPEN + OMOUTH, DOWN + OMOUTH, SHUT + OMOUTH, SHUT + MOUTH],
@@ -129,13 +172,22 @@ T = {
     'deepSleep>*': [SHUT + MOUTH, DOWN + MOUTH, OPEN + OMOUTH + EAR_UP, OPEN + OMOUTH, OPEN + MOUTH],
     'deepSleep>waking': [OPEN + OMOUTH],
     'sleeping>deepSleep': [ASLEEP],
+    # a crouch before it springs for joy
+    '*>happy': [breath(OPEN + MOUTH), SMILE + GRIN + TONGUE + TAIL_UP + hop(2) + hop(9)],
+    '*>celebrating': [breath(OPEN + OMOUTH), SMILE + GRIN + TONGUE + TAIL_UP + hop(2) + hop(9)],
+    # and settling back after a reaction
+    'happy>*': [SMILE + MOUTH + TAIL_DOWN, OPEN + MOUTH],
+    'sad>*': [DOWN + FROWN, OPEN + MOUTH],
+    # eyes up and an ear raised as a thought starts; an ear jumps when it begins to sweat
+    '*>thinking': [UP + MOUTH, UP + MOUTH + EAR_UP],
+    '*>sweating': [OPEN + OMOUTH + EAR_UP],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
 
 MOUTH_FACES = ['idle', 'supervising', 'reading', 'compacting', 'watching']
 A = {
-    'blink': {'frames': [SHUT + MOUTH], 'moods': MOUTH_FACES, 'every': [2, 6]},
+    'blink': {'frames': [SHUT + MOUTH], 'moods': MOUTH_FACES + ['running'], 'every': [2, 6]},
     'blinkTwice': {'frames': [SHUT + MOUTH, OPEN + MOUTH, SHUT + MOUTH], 'moods': MOUTH_FACES, 'every': [9, 20]},
     # thinking and searching keep an ear up, blinks included
     'blinkTilt': {'frames': [SHUT + MOUTH + EAR_UP], 'moods': ['thinking', 'searching'], 'every': [2, 6]},
@@ -151,6 +203,10 @@ A = {
     'nod': {'frames': [SHUT + MOUTH] * 3 + [HALF + MOUTH], 'moods': ['sleepy', 'tired'], 'every': [8, 20]},
     'dreamKick': {'frames': [ASLEEP + hop(2), ASLEEP, ASLEEP + hop(9)], 'moods': ['sleeping', 'deepSleep'], 'every': [8, 25]},
     'yawn': {'frames': [SHUT + OMOUTH] * 3, 'moods': ['sleeping'], 'every': [15, 40]},
+    # proud of us: a little strut on the spot, tail wagging, then a smiling blink
+    'strut': {'frames': [SMILE + GRIN + TONGUE + hop(2) + TAIL_UP, SMILE + GRIN + TONGUE + TAIL_DOWN,
+                        SMILE + GRIN + TONGUE + hop(9) + TAIL_UP, SHUT + GRIN + TONGUE + TAIL_DOWN],
+              'moods': ['proud'], 'every': [6, 14]},
 }
 
 MINI_STEP = [(6, 2, '.')], [(6, 5, '.')]
@@ -165,10 +221,10 @@ pack = {
                 'p': '#f2788f', 'w': '#ffffff', 't': '#5ab4ff'},
     'fps': 4,
     'main': {
-        'moods': {m: [paint(HEAD, f) for f in fr] for m, fr in F.items()},
-        'variants': {m: [[paint(HEAD, f) for f in loop] for loop in loops] for m, loops in V.items()},
-        'transitions': {k: [paint(HEAD, f) for f in fr] for k, fr in T.items()},
-        'actions': {k: {'frames': [paint(HEAD, f) for f in a['frames']], 'moods': a['moods'], 'every': a['every']}
+        'moods': {m: [draw(f) for f in fr] for m, fr in F.items()},
+        'variants': {m: [[draw(f) for f in loop] for loop in loops] for m, loops in V.items()},
+        'transitions': {k: [draw(f) for f in fr] for k, fr in T.items()},
+        'actions': {k: {'frames': [draw(f) for f in a['frames']], 'moods': a['moods'], 'every': a['every']}
                     for k, a in A.items()},
     },
     'mini': {'tint': 'b', 'moods': {
