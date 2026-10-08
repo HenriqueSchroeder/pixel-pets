@@ -84,11 +84,14 @@ def render(name, out):
     fps = pack['fps']
     pet_w = len(pack['moods']['sleeping'][0][0])
     main_h = len(pack['moods']['sleeping'][0])
-    mini_h = len(pack['mini']['working'][0])
+    # As hooks/register.tsx: a pack with no mini pets shows no agents on the stage.
+    mini = pack['mini']
+    mini_h = len(mini['working'][0]) if mini else 0
     stage_h = max(main_h * CELL_W, mini_h * CELL_W + CELL_H * 2)
 
     ticks = []
     for seconds, mood, label, agents in SCENE:
+        agents = agents if mini else []
         plan = 'wander' if mood in ('idle', 'proud') and not agents else 'stay'
         tick = {'mood': mood, 'plan': plan, 'room': STAGE_COLUMNS - pet_w - 2,
                 'agents': [kind for kind, _, _ in agents], 'width': AGENT_SLOT + 1,
@@ -101,6 +104,7 @@ def render(name, out):
     height = CELL_H * 2 + stage_h + CELL_H * 2
     frames, tick = [], 0
     for seconds, mood, label, agents in SCENE:
+        agents = agents if mini else []
         for step in range(round(seconds * fps)):
             img = Image.new('RGB', (width, height), BG)
             d = ImageDraw.Draw(img)
@@ -125,7 +129,7 @@ def render(name, out):
                     continue
                 slot_x = left + columns[i] * CELL_W
                 colors = {**pack['colors'], pack['tint']: AGENT_COLORS[[EXPLORE, PLAN, GENERAL].index(kind)]}
-                minis = pack['mini'][mini_mood]
+                minis = mini[mini_mood]
                 mini_w = len(minis[0][0])
                 # On the pet's left a slot leans right, toward the pet.
                 lean = (lambda width: slot_x + AGENT_SLOT * CELL_W - width) if i in pet['left'] else (lambda width: slot_x)
