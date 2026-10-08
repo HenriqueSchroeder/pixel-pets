@@ -8,8 +8,8 @@ import { step } from '../hooks/motion'
 import type { Motion } from '../hooks/motion'
 import { MINI_MOODS, MOODS, PARENT, parsePack } from '../hooks/pack'
 import { mirror } from '../hooks/render'
-import { EMPTY_STAGE, faceFor, moveOnStage } from '../hooks/walk'
-import type { Plan, Stage } from '../hooks/walk'
+import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage } from '../hooks/walk'
+import type { Held, Plan, Stage } from '../hooks/walk'
 import type { Frame, Mood } from '../types'
 
 const args = process.argv.slice(2)
@@ -34,6 +34,7 @@ const play = () => {
   const teleport = pack.walks ? null : pack.teleport
   let motion: Motion | undefined
   let stage: Stage = EMPTY_STAGE
+  let heldFacing: Held
   return ticks.map(({ mood, plan, room, agents, width, leaving = [] }, tick) => {
     const onStage = moveOnStage(stage, {
       tick,
@@ -55,10 +56,15 @@ const play = () => {
     const blinkFrame = teleport === null || blinking === undefined ? undefined : teleport[blinking.phase][blinking.at]
     const isOnTheMove = onStage.moving || blinkFrame !== undefined
     const finishing = agents.slice(0, drawnCount).findLastIndex(id => leaving.includes(id))
-    const facing = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
+    const facesNow = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
+    const once = moved.motion.once
+    const held = holdFacing(heldFacing, once?.isAction ? once : undefined, facesNow)
+    heldFacing = held.held
+    const facing = held.side
     const shape = blinkFrame ?? moved.frame
     const frame = facing === 1 ? shape : mirror(shape)
-    return { frame, x: onStage.standX, left: drawn.left, right: drawn.right, moving: isOnTheMove, startled: moved.startled }
+    const at = { frame, x: onStage.standX, left: drawn.left, right: drawn.right, moving: isOnTheMove }
+    return { ...at, facing, startled: moved.startled }
   })
 }
 

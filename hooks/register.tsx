@@ -16,8 +16,8 @@ import type { Pack } from './pack'
 import { encode, mirror, sizeOf } from './render'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
-import { EMPTY_STAGE, faceFor, moveOnStage, sideIn } from './walk'
-import type { Side, Stage } from './walk'
+import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage, sideIn } from './walk'
+import type { Held, Side, Stage } from './walk'
 
 const asleep: Activity = { mood: 'sleeping', label: { text: 'sleeping', detail: '' } }
 
@@ -321,6 +321,8 @@ export const register: Register = (on, options) => {
   let traits: Traits = USUAL
   let lastState: State = 'awake'
   let stirredUntil = 0
+  // The way it faced as the action it plays began, kept until it ends.
+  let heldFacing: Held
   // When it last woke up glad at the person's first key after a long while away,
   // and whether that was since it went idle at `idleSince`.
   let gladAt: number | null = null
@@ -737,9 +739,14 @@ export const register: Register = (on, options) => {
 
     const moved = step(pack, motion, mood, frame, Math.random)
     motion = moved.motion
-    // It faces the way it walks, else the agent finishing as it says goodbye, else the first.
+    // It faces the way it walks, else the agent finishing as it says goodbye, else the
+    // first; through an action, the way it faced as the action began.
     const finishing = visible.slice(0, drawnCount).findLastIndex(one => one.leaving !== undefined)
-    const facing = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
+    const facesNow = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
+    const once = moved.motion.once
+    const held = holdFacing(heldFacing, once?.isAction ? once : undefined, facesNow)
+    heldFacing = held.held
+    const facing = held.side
     const shape = blinkFrame ?? moved.frame
     const body = facing === 1 ? shape : mirror(shape)
     const cells = encode(body, pack.colors)
@@ -760,8 +767,9 @@ export const register: Register = (on, options) => {
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
-      // The ones still at work jump while the main pet startles them.
-      const miniFrames = pack.mini?.[one.leaving?.mood ?? (moved.startled ? 'startled' : 'working')] ?? []
+      // The ones still at work on the side it faces jump while it startles them.
+      const isStartled = moved.startled && side === facing
+      const miniFrames = pack.mini?.[one.leaving?.mood ?? (isStartled ? 'startled' : 'working')] ?? []
       const mini = miniFrames[frame % miniFrames.length] ?? []
       return (
         // On the left the slot hugs the pet too: its pet and words lean right.
