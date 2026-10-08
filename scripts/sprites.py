@@ -22,7 +22,7 @@ def paint(base, pixels):
 def write(pack):
     # The format takes 16 frames a mood, but a loop past 2 s drags.
     for mood, frames in pack['main']['moods'].items():
-        assert len(frames) <= 2 * pack.get('fps', 4), (mood, len(frames))
+        assert len(frames) <= min(16, 2 * pack.get('fps', 4)), (mood, len(frames))
     out = Path(__file__).resolve().parent.parent / 'pets' / f"{pack['name']}.json"
     out.write_text(json.dumps(pack, indent=2) + '\n')
     print(f'{out}: written')
