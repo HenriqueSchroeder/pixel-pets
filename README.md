@@ -14,6 +14,8 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 ![pixel-pets: the fox in the same scene](screenshots/fox.gif)
 
+![pixel-pets: the capybara in the same scene, chewing grass as a bird lands on its head](screenshots/capybara.gif)
+
 ## What it shows
 
 | Mood | When | Borrows from |
@@ -103,9 +105,10 @@ Shipped pets:
 - [`dog`](pets/dog.json), which wags its tail, pants and tilts its head when it thinks.
 - [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
-- [`clawd`](pets/clawd.json), shown at the top with the dragon, the ghost and the fox: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
+- [`clawd`](pets/clawd.json), shown at the top with the dragon, the ghost, the fox and the capybara: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
 - [`fox`](pets/fox.json), which sways its brush, pounces on mice under the snow and turns side on to walk.
 - [`dragon`](pets/dragon.json), a big red dragon that breathes fire, counts its hoard and flies off to land elsewhere. It draws no mini pets.
+- [`capybara`](pets/capybara.json), the calmest of them all: it chews grass, lets a bird sit on its head and balances an orange. It draws no mini pets.
 
 ![The cat, slime, dog and owl, idle, thinking, happy and asleep](screenshots/gallery.gif)
 
