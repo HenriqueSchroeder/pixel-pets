@@ -23,7 +23,9 @@ export type Mood =
   | 'celebrating'
   | 'sad'
 
-export type MiniMood = 'working' | 'happy' | 'sad'
+// `startled`: the jump the agents give while an action of the main pet that
+// `startles` them plays.
+export type MiniMood = 'working' | 'happy' | 'sad' | 'startled'
 
 // When the pet says something of its own, now and then.
 export type Situation = 'longThink' | 'manyReads' | 'manyAgents' | 'lateNight' | 'bored' | 'dreaming'
@@ -49,7 +51,8 @@ export type PackFile = {
     // Played once on a mood change, keyed "from>to"; either side may be "*".
     transitions?: Record<string, Frame[]>
     // Played once at random while in one of `moods`, every `every` seconds [min, max].
-    actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number] }>
+    // From its frame `startles` on, the agents' mini pets show `startled`.
+    actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number }>
     // A pet that does not walk can teleport instead: `vanish` plays where it was,
     // `appear` where it lands.
     teleport?: { vanish: Frame[]; appear: Frame[] }

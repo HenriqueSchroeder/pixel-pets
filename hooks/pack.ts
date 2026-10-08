@@ -34,7 +34,7 @@ export const PARENT: Record<Mood, Mood | null> = {
 
 export const MOODS = Object.keys(PARENT) as Mood[]
 
-export const MINI_MOODS: readonly MiniMood[] = ['working', 'happy', 'sad']
+export const MINI_MOODS: readonly MiniMood[] = ['working', 'happy', 'sad', 'startled']
 
 export const DEFAULT_PET = 'cat'
 
@@ -52,7 +52,7 @@ const LIMITS = {
   fps: { min: 1, max: 12 },
 }
 
-export type Action = { name: string; frames: Frame[]; moods: Mood[]; every: [number, number] }
+export type Action = { name: string; frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number }
 
 export type Pack = {
   name: string
@@ -161,7 +161,13 @@ const parseActions = (raw: unknown): Action[] => {
     ) {
       throw new Error(`${where}.every: [min, max] seconds, ${min} to ${max}`)
     }
-    return { name, frames: checkFrames(action.frames, `${where}.frames`, LIMITS.main), moods, every: [every[0], every[1]] }
+    const frames = checkFrames(action.frames, `${where}.frames`, LIMITS.main)
+    const { startles } = action
+    if (startles === undefined) return { name, frames, moods, every: [every[0], every[1]] }
+    if (typeof startles !== 'number' || !Number.isInteger(startles) || startles < 0 || startles >= frames.length) {
+      throw new Error(`${where}.startles: one of its frames, 0 to ${frames.length - 1}`)
+    }
+    return { name, frames, moods, every: [every[0], every[1]], startles }
   })
 }
 

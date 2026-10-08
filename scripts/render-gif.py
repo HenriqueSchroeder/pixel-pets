@@ -128,7 +128,8 @@ def render(name, out):
                     continue
                 slot_x = left + columns[i] * CELL_W
                 colors = {**pack['colors'], pack['tint']: AGENT_COLORS[[EXPLORE, PLAN, GENERAL].index(kind)]}
-                minis = mini[mini_mood]
+                # As hooks/register.tsx: the ones at work jump while the pet startles them.
+                minis = mini['startled' if pet['startled'] and mini_mood == 'working' else mini_mood]
                 mini_w = len(minis[0][0])
                 # On the pet's left a slot leans right, toward the pet.
                 lean = (lambda width: slot_x + AGENT_SLOT * CELL_W - width) if i in pet['left'] else (lambda width: slot_x)

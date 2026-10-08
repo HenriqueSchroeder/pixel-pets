@@ -643,6 +643,26 @@ test('a teleport draws its vanish and appear frames', async ($, on) => {
   expect(drawings.size).toBeGreaterThan(1)
 })
 
+test('an action that startles them makes the agents jump', async ($, on) => {
+  const whipper = JSON.parse(pack('cat'))
+  whipper.main.actions = { whip: { frames: [['oo', 'bb'], ['bb', 'oo']], moods: ['supervising'], every: [1, 1], startles: 0 } }
+  whipper.mini.moods.startled = [['bb', 'bb']]
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(whipper) })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.agent.spawn({ ...spawn, background: true })
+  const minis = new Set<unknown>()
+  for (let tick = 0; tick < 12; tick++) {
+    await clock.advance(250)
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    minis.add((await ui.find({ type: 'Raster', key: 'mini-a1' }))?.props.cells)
+  }
+  // At work, then jumping while the whip plays.
+  expect(minis.size).toBe(2)
+})
+
 test('a pet that draws no walking stays put', async ($, on) => {
   expect([...(await idleLabels($, on, pack('cat')))]).toEqual(['· hanging around'])
 })

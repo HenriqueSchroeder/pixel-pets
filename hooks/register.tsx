@@ -760,7 +760,8 @@ export const register: Register = (on, options) => {
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
-      const miniFrames = pack.mini?.[one.leaving?.mood ?? 'working'] ?? []
+      // The ones still at work jump while the main pet startles them.
+      const miniFrames = pack.mini?.[one.leaving?.mood ?? (moved.startled ? 'startled' : 'working')] ?? []
       const mini = miniFrames[frame % miniFrames.length] ?? []
       return (
         // On the left the slot hugs the pet too: its pet and words lean right.

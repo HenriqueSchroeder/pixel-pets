@@ -20,6 +20,7 @@ const pack = parsePack({
     actions: {
       blink: { frames: [f('_._')], moods: ['thinking'], every: [3, 3] },
       nod: { frames: [f('nd1'), f('nd2'), f('nd3'), f('nd4')], moods: ['idle'], every: [2, 2] },
+      whip: { frames: [f('up1'), f('up2'), f('crk'), f('rec')], moods: ['supervising'], every: [2, 2], startles: 2 },
     },
   },
   mini: { tint: 'a', moods: { working: [f('a')] } },
@@ -98,5 +99,16 @@ describe('step', () => {
   test('an action far from its end is cut', () => {
     const nodding = play('idle', 0, 2, always(0)).motion
     expect(play('sleeping', 3, 4, always(0), nodding).seen).toEqual(['yaw', 'nod'])
+  })
+
+  test('an action that startles the agents does so from its frame on, until it ends', () => {
+    const seen: string[] = []
+    let motion: Motion | undefined
+    for (let tick = 0; tick <= 6; tick++) {
+      const moved = step(pack, motion, 'supervising', tick, always(0))
+      motion = moved.motion
+      seen.push(`${moved.frame[0]}${moved.startled ? '!' : ''}`)
+    }
+    expect(seen).toEqual(['hmm', 'hmm', 'up1', 'up2', 'crk!', 'rec!', 'hmm'])
   })
 })
