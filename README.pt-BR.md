@@ -8,11 +8,11 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 ![pixel-pets: o clawd acima do prompt enquanto três subagents trabalham](screenshots/clawd.gif)
 
+![pixel-pets: o dragão na mesma cena, voando para pousar em outro lugar e soltando fogo quando um trabalho longo termina](screenshots/dragon.gif)
+
 ![pixel-pets: o fantasma na mesma cena, sumindo e reaparecendo em outro lugar enquanto passeia](screenshots/ghost.gif)
 
 ![pixel-pets: a raposa na mesma cena](screenshots/fox.gif)
-
-![pixel-pets: o dragão na mesma cena, voando para pousar em outro lugar e soltando fogo quando um trabalho longo termina](screenshots/dragon.gif)
 
 ## O que ele mostra
 
@@ -103,7 +103,7 @@ Pets que vêm junto:
 - [`dog`](pets/dog.json), que abana o rabo, ofega e inclina a cabeça quando pensa.
 - [`ghost`](pets/ghost.json), que flutua em vez de andar, dá um "buu" de vez em quando, vai sumindo enquanto dorme e reaparece em outro lugar com um "buu".
 - [`owl`](pets/owl.json), que pisca devagar e gira a cabeça até dar a volta.
-- [`clawd`](pets/clawd.json), que aparece no topo com o ghost, a fox e o dragon: o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
+- [`clawd`](pets/clawd.json), que aparece no topo com o dragon, o ghost e a fox: o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
 - [`fox`](pets/fox.json), que balança o rabo, pula de cabeça nos ratos sob a neve e fica de lado para andar.
 - [`dragon`](pets/dragon.json), um dragão vermelho grande que solta fogo, conta o seu tesouro e voa para pousar em outro lugar. Não desenha mini pets.
 
