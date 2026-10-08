@@ -362,11 +362,11 @@
           "obbebbbebbo...",
           "obbebbbebbo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..olololo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".oooooooooooo."
+          ".olllelllo.oo.",
+          "..olololo.ollo",
+          ".obblllbboobbo",
+          ".obblllbbobbo.",
+          ".ooooooooooo.."
         ],
         [
           "..............",
@@ -377,11 +377,11 @@
           "obbebbbebbo...",
           "obbebbbebbo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..olololo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".oooooooooooo."
+          ".olllelllo.oo.",
+          "..olololo.ollo",
+          ".obblllbboobbo",
+          ".obblllbbobbo.",
+          ".ooooooooooo.."
         ]
       ],
       "sleepy": [
@@ -947,8 +947,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -962,8 +962,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -974,11 +974,11 @@
           "obbebbbebbo...",
           "obbebbbebbo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..oopppoo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".ooooooo.oooo."
+          ".olllelllo.oo.",
+          "..oopppoo.ollo",
+          ".obblllbboobbo",
+          ".obblllddobbo.",
+          ".oooooo..ooo.."
         ],
         [
           "..............",
@@ -989,11 +989,11 @@
           "obbebbbebbo...",
           "obbebbbebbo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..oopppoo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".ooooooo.oooo."
+          ".olllelllo.oo.",
+          "..oopppoo.ollo",
+          ".obblllbboobbo",
+          ".obblllddobbo.",
+          ".oooooo..ooo.."
         ]
       ],
       "running": [
@@ -1009,8 +1009,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -1024,8 +1024,8 @@
           ".olllelllo....",
           "..oopppoo.....",
           ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".ooooooo.oooo."
+          ".obblllddobblo",
+          ".oooooo..oooo."
         ],
         [
           "..............",
@@ -1039,8 +1039,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -1054,8 +1054,8 @@
           ".olllelllo....",
           "..oopppoo.....",
           ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".ooooooo.oooo."
+          ".obblllddobblo",
+          ".oooooo..oooo."
         ],
         [
           "..............",
@@ -1069,8 +1069,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -1084,8 +1084,8 @@
           ".olllelllo....",
           "..oopppoo.....",
           ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".ooooooo.oooo."
+          ".obblllddobblo",
+          ".oooooo..oooo."
         ]
       ],
       "writing": [
@@ -1101,8 +1101,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -1116,8 +1116,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".o.ooooooooo.."
+          ".oddlllbbobbo.",
+          ".o..oooooooo.."
         ],
         [
           "..............",
@@ -1131,8 +1131,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".ooooooo.ooo.."
+          ".obblllddobbo.",
+          ".oooooo..ooo.."
         ],
         [
           "..............",
@@ -1146,8 +1146,8 @@
           ".olllelllo.oo.",
           "..oopppoo.ollo",
           ".obblllbboobbo",
-          ".obblllbbobbo.",
-          ".ooooooo.ooo.."
+          ".obblllddobbo.",
+          ".oooooo..ooo.."
         ]
       ],
       "reading": [
@@ -1200,8 +1200,8 @@
         ],
         [
           "..............",
-          "..d.....d.....",
-          ".odo...odo....",
+          "..d......d....",
+          ".odo....odo...",
           ".obbooobbo....",
           ".obbbbbbbo....",
           "obbbbbbbbbo...",
@@ -1215,8 +1215,8 @@
         ],
         [
           "..............",
-          "..d.....d.....",
-          ".odo...odo....",
+          "..d......d....",
+          ".odo....odo...",
           ".obbooobbo....",
           ".obbbbbbbo....",
           "obbbbbbbbbo...",
@@ -1260,8 +1260,8 @@
         ],
         [
           "..............",
-          "..d.....d.....",
-          ".odo...odo....",
+          "..d......d....",
+          ".odo....odo...",
           ".obbooobbo....",
           ".obbbbbbbo....",
           "obbbbbbbbbo...",
@@ -1275,8 +1275,8 @@
         ],
         [
           "..............",
-          "..d.....d.....",
-          ".odo...odo....",
+          "..d......d....",
+          ".odo....odo...",
           ".obbooobbo....",
           ".obbbbbbbo....",
           "obbbbbbbbbo...",
@@ -1344,11 +1344,11 @@
           "obbbebbbebo...",
           "obbbebbbebo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..olololo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".oooooooooooo."
+          ".olllelllo.oo.",
+          "..olololo.ollo",
+          ".obblllbboobbo",
+          ".obblllbbobbo.",
+          ".ooooooooooo.."
         ],
         [
           "..............",
@@ -1359,11 +1359,11 @@
           "obbbebbbebo...",
           "obbbebbbebo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..olololo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".oooooooooooo."
+          ".olllelllo.oo.",
+          "..olololo.ollo",
+          ".obblllbboobbo",
+          ".obblllbbobbo.",
+          ".ooooooooooo.."
         ],
         [
           "..............",
@@ -1374,11 +1374,11 @@
           "obbbebbbebo...",
           "obbbebbbebo...",
           "ollbbbbbllo...",
-          ".olllelllo....",
-          "..olololo.....",
-          ".obblllbboooo.",
-          ".obblllbbobblo",
-          ".oooooooooooo."
+          ".olllelllo.oo.",
+          "..olololo.ollo",
+          ".obblllbboobbo",
+          ".obblllbbobbo.",
+          ".ooooooooooo.."
         ],
         [
           "..............",
@@ -2785,18 +2785,18 @@
       "deepSleep>waking": [
         [
           "..............",
-          "..d.....d.....",
-          ".odo...odo....",
-          ".obbooobbo....",
+          "..............",
+          ".d.......d....",
+          "dobbooobbod...",
           ".obbbbbbbo....",
-          "obbbbbbbbbo...",
-          "oboobbboobo...",
+          "obbebbbebbo...",
+          "obbebbbebbo...",
           "ollbbbbbllo...",
           ".olllelllo....",
-          "..obbbbbllo...",
-          ".obblllbbo....",
-          ".obblllbbo....",
-          ".ooooooooo...."
+          "..olopolo.....",
+          ".obblllbboooo.",
+          ".obblllbbobblo",
+          ".oooooooooooo."
         ]
       ],
       "sleeping>deepSleep": [
@@ -3136,7 +3136,77 @@
           ]
         ],
         "moods": [
-          "idle",
+          "idle"
+        ],
+        "every": [
+          6,
+          15
+        ]
+      },
+      "earTwitchReading": {
+        "frames": [
+          [
+            "..............",
+            "..d......d....",
+            ".odo....odo...",
+            ".obbooobbo....",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo.oo.",
+            "..olololo.ollo",
+            ".obblllbboobbo",
+            ".obblllbbobbo.",
+            ".ooooooooooo.."
+          ],
+          [
+            "..............",
+            "..d.....d.....",
+            ".odo...odo....",
+            ".obbooobbo....",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo.oo.",
+            "..olololo.ollo",
+            ".obblllbboobbo",
+            ".obblllbbobbo.",
+            ".ooooooooooo.."
+          ],
+          [
+            "..............",
+            "..d......d....",
+            ".odo....odo...",
+            ".obbooobbo....",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo.oo.",
+            "..olololo.ollo",
+            ".obblllbboobbo",
+            ".obblllbbobbo.",
+            ".ooooooooooo.."
+          ],
+          [
+            "..............",
+            "..d.....d.....",
+            ".odo...odo....",
+            ".obbooobbo....",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo.oo.",
+            "..olololo.ollo",
+            ".obblllbboobbo",
+            ".obblllbbobbo.",
+            ".ooooooooooo.."
+          ]
+        ],
+        "moods": [
           "reading"
         ],
         "every": [
@@ -3155,11 +3225,11 @@
             "obbebbbebbo...",
             "obbebbbebbo...",
             "ollbbbbbllo...",
-            ".olllelllo.oo.",
-            "..olololo.ollo",
-            ".obblllbboobbo",
-            ".obblllbbobbo.",
-            ".ooooooooooo.."
+            ".olllelllo....",
+            "..olololo.....",
+            ".obblllbboooo.",
+            ".obblllbbobblo",
+            ".oooooooooooo."
           ],
           [
             "..............",
@@ -3190,6 +3260,36 @@
             ".obblllbboobbo",
             ".obblllbbobbo.",
             ".ooooooooooo.."
+          ],
+          [
+            "..............",
+            "..d.....d.....",
+            ".odo...odo....",
+            ".obbooobbo....",
+            ".obbbbbbbo....",
+            "obbebbbebbo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo.oo.",
+            "..olololo.ollo",
+            ".obblllbboobbo",
+            ".obblllbbobbo.",
+            ".ooooooooooo.."
+          ],
+          [
+            "..............",
+            "..d.....d.....",
+            ".odo...odo....",
+            ".obbooobbo....",
+            ".obbbbbbbo....",
+            "obbebbbebbo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo....",
+            "..olololo.....",
+            ".obblllbboooo.",
+            ".obblllbbobblo",
+            ".oooooooooooo."
           ],
           [
             "..............",
@@ -3211,8 +3311,8 @@
           "idle"
         ],
         "every": [
-          8,
-          20
+          6,
+          15
         ]
       },
       "pounce": {
@@ -3579,7 +3679,77 @@
           ]
         ],
         "moods": [
-          "sleepy",
+          "sleepy"
+        ],
+        "every": [
+          8,
+          20
+        ]
+      },
+      "nodTired": {
+        "frames": [
+          [
+            "..............",
+            "..............",
+            ".d.......d....",
+            "dobbooobbod...",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "oboobbboobo...",
+            "ollbbbbbllo...",
+            ".olllelllo....",
+            "..ooooooo.....",
+            ".obblllbboooo.",
+            ".obblllbbobblo",
+            ".oooooooooooo."
+          ],
+          [
+            "..............",
+            "..............",
+            ".d.......d....",
+            "dobbooobbod...",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "oboobbboobo...",
+            "ollbbbbbllo...",
+            ".olllelllo....",
+            "..ooooooo.....",
+            ".obblllbboooo.",
+            ".obblllbbobblo",
+            ".oooooooooooo."
+          ],
+          [
+            "..............",
+            "..............",
+            ".d.......d....",
+            "dobbooobbod...",
+            ".obbbbbbbo....",
+            "obbbbbbbbbo...",
+            "oboobbboobo...",
+            "ollbbbbbllo...",
+            ".olllelllo....",
+            "..ooooooo.....",
+            ".obblllbboooo.",
+            ".obblllbbobblo",
+            ".oooooooooooo."
+          ],
+          [
+            "..............",
+            "..............",
+            ".d.......d....",
+            "dobbooobbod...",
+            ".obbbbbbbo....",
+            "oboobbboobo...",
+            "obbebbbebbo...",
+            "ollbbbbbllo...",
+            ".olllelllo....",
+            "..ooooooo.....",
+            ".obblllbboooo.",
+            ".obblllbbobblo",
+            ".oooooooooooo."
+          ]
+        ],
+        "moods": [
           "tired"
         ],
         "every": [
@@ -3636,8 +3806,7 @@
           ]
         ],
         "moods": [
-          "sleeping",
-          "deepSleep"
+          "sleeping"
         ],
         "every": [
           8,
@@ -3657,7 +3826,8 @@
           "obebbebo",
           "llbbbbll",
           ".oleelo.",
-          "...ooo.."
+          "..oooo..",
+          ".....d.."
         ],
         [
           "d......d",
@@ -3666,7 +3836,8 @@
           "obebbebo",
           "llbbbbll",
           ".oleelo.",
-          "...ooo.."
+          "..oooo..",
+          ".....d.."
         ],
         [
           "d......d",
@@ -3675,7 +3846,8 @@
           "obebbebo",
           "llbbbbll",
           ".oleelo.",
-          "..ooo..."
+          "..oooo..",
+          "..d....."
         ],
         [
           "d......d",
@@ -3684,7 +3856,8 @@
           "obebbebo",
           "llbbbbll",
           ".oleelo.",
-          "..ooo..."
+          "..oooo..",
+          "..d....."
         ]
       ],
       "happy": [
@@ -3695,7 +3868,8 @@
           "obobbobo",
           "llbbbbll",
           ".oleelo.",
-          "..oooo.."
+          "..oooo..",
+          "..d..d.."
         ],
         [
           "d......d",
@@ -3704,7 +3878,8 @@
           "obobbobo",
           "llbbbbll",
           ".oleelo.",
-          "..oooo.."
+          "..oooo..",
+          "..d..d.."
         ],
         [
           "d......d",
@@ -3713,7 +3888,8 @@
           "obobbobo",
           "llbbbbll",
           ".oleelo.",
-          "...oo..."
+          "..oooo..",
+          "........"
         ],
         [
           "d......d",
@@ -3722,7 +3898,8 @@
           "obobbobo",
           "llbbbbll",
           ".oleelo.",
-          "...oo..."
+          "..oooo..",
+          "........"
         ]
       ],
       "sad": [
@@ -3733,7 +3910,8 @@
           "obebbebo",
           "lltbbbll",
           ".oleelo.",
-          "..oooo.."
+          "..oooo..",
+          "..d..d.."
         ],
         [
           "d......d",
@@ -3742,7 +3920,8 @@
           "obebbebo",
           "lltbbbll",
           ".oleelo.",
-          "..oooo.."
+          "..oooo..",
+          "..d..d.."
         ],
         [
           "d......d",
@@ -3751,7 +3930,8 @@
           "obebbebo",
           "llbbbbll",
           ".tleelo.",
-          "..oooo.."
+          "..oooo..",
+          "..d..d.."
         ],
         [
           "d......d",
@@ -3760,7 +3940,8 @@
           "obebbebo",
           "llbbbbll",
           ".tleelo.",
-          "..oooo.."
+          "..oooo..",
+          "..d..d.."
         ]
       ]
     }

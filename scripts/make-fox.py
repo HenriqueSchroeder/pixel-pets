@@ -35,6 +35,7 @@ MINI = [
     'llbbbbll',
     '.oleelo.',
     '..oooo..',
+    '..d..d..',
 ]
 
 OPEN = [(5, 3, 'e'), (6, 3, 'e'), (5, 7, 'e'), (6, 7, 'e')]
@@ -82,8 +83,9 @@ def scan(s):
     return [(6, 3 + s, 'e'), (6, 7 + s, 'e')]
 
 
-def hop(c):
-    return [(12, c, '.')]
+def paw(c):
+    """A front paw (columns c and c+1) lifted off the ground."""
+    return [(12, c, '.'), (12, c + 1, '.'), (11, c, 'd'), (11, c + 1, 'd')]
 
 
 def w(*ps):
@@ -135,8 +137,8 @@ F = {
     'deepSleep': [P(ASLEEP + EARS_BACK)] * 2 + [P(ASLEEP + EARS_BACK + w((2, 11)))] * 2
                  + [P(ASLEEP + EARS_BACK + w((2, 11), (1, 12)))] * 2 + [P(ASLEEP + EARS_BACK + w((1, 12), (0, 13)))] * 2,
     'waking': [P(OPEN + OMOUTH + EAR_FLICK + TAIL_UP)] * 3 + [P(SHUT + OMOUTH + TAIL_UP)],
-    # sitting, brush swaying
-    'idle': [P(OPEN + MOUTH + TAIL_UP)] * 2 + [P(OPEN + MOUTH + TAIL_DOWN)] * 2,
+    # sitting; the brush sways in the swish action, so blinks never jump it
+    'idle': [P(OPEN + MOUTH + TAIL_UP)] * 4,
     'sleepy': [P(HALF + MOUTH + TAIL_DOWN)] * 5 + [P(SHUT + MOUTH + TAIL_DOWN)] * 3,
     'tired': [P(HALF + FLAT + TAIL_DOWN + EARS_BACK)] * 4 + [P(HALF + OMOUTH + TAIL_DOWN + EARS_BACK)] * 2
              + [P(SHUT + OMOUTH + TAIL_DOWN + EARS_BACK)] * 2,
@@ -145,14 +147,14 @@ F = {
     'watching': [P(DOWN + MOUTH + TAIL_UP)] * 6 + [P([(6, 4, 'e'), (6, 8, 'e')] + MOUTH + TAIL_UP)] * 2,
     # one ear turned out, listening
     'thinking': [P(look(-1) + MOUTH + EAR_FLICK + TAIL_UP)] * 4 + [P(look(1) + MOUTH + EAR_FLICK + TAIL_UP)] * 4,
-    'typing': [P(OPEN + GRIN + hop(2) + TAIL_UP)] * 2 + [P(OPEN + GRIN + hop(8) + TAIL_DOWN)] * 2,
-    'running': [P(look(1) + GRIN + hop(2) + TAIL_UP), P(look(1) + GRIN + hop(8) + TAIL_DOWN)] * 3,
-    'writing': [P(DOWN + GRIN + hop(2) + TAIL_UP)] * 2 + [P(DOWN + GRIN + hop(8) + TAIL_UP)] * 2,
+    # paws tapping; the brush holds still so a blink never jumps it
+    'typing': [P(OPEN + GRIN + paw(2) + TAIL_UP)] * 2 + [P(OPEN + GRIN + paw(7) + TAIL_UP)] * 2,
+    'running': [P(look(1) + GRIN + paw(2) + TAIL_UP), P(look(1) + GRIN + paw(7) + TAIL_DOWN)] * 3,
+    'writing': [P(DOWN + GRIN + paw(2) + TAIL_UP)] * 2 + [P(DOWN + GRIN + paw(7) + TAIL_UP)] * 2,
     'reading': [P(DOWN + MOUTH + TAIL_UP)],
-    'searching': [P(scan(-1) + MOUTH + EAR_FLICK + TAIL_UP)] * 2 + [P(scan(0) + MOUTH + TAIL_UP)] * 2
-                 + [P(scan(1) + MOUTH + EAR_FLICK + TAIL_UP)] * 2 + [P(scan(0) + MOUTH + TAIL_UP)] * 2,
-    # eyes on the agents beside it (drawn on its right), brush going
-    'supervising': [P(look(1) + MOUTH + TAIL_UP)] * 3 + [P(look(1) + MOUTH + TAIL_DOWN)] * 3 + [P(OPEN + MOUTH + TAIL_UP)] * 2,
+    'searching': [P(scan(s) + MOUTH + EAR_FLICK + TAIL_UP) for s in (-1, -1, 0, 0, 1, 1, 0, 0)],
+    # eyes on the agents beside it (drawn on its right)
+    'supervising': [P(look(1) + MOUTH + TAIL_UP)] * 6 + [P(OPEN + MOUTH + TAIL_UP)] * 2,
     'compacting': [P(DOWN + MOUTH + TAIL_UP + w((0, 3), (1, 11)))] * 2 + [P(DOWN + MOUTH + TAIL_UP + w((1, 3), (0, 11)))] * 2,
     'sweating': [P(OPEN + FROWN + TAIL_DOWN + t(r, 10)) for r in (2, 2, 3, 3, 4, 4)],
     'worried': [P(look(-1) + WAVY + EARS_BACK + TAIL_DOWN)] * 3 + [P(OPEN + WAVY + EARS_BACK + TAIL_DOWN)]
@@ -179,7 +181,7 @@ T = {
                    P(OPEN + OMOUTH + EAR_FLICK + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)],
     'deepSleep>*': [P(ASLEEP + EARS_BACK), P(ASLEEP), P(SHUT + MOUTH + TAIL_DOWN),
                     P(OPEN + OMOUTH + EAR_FLICK + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)],
-    'deepSleep>waking': [P(ASLEEP)],
+    'deepSleep>waking': [P(OPEN + OMOUTH + EARS_BACK + TAIL_DOWN)],
     'sleeping>deepSleep': [P(ASLEEP + EARS_BACK)],
 }
 # celebrating winds down to sleep the way happy does
@@ -193,9 +195,11 @@ A = {
     'blinkFrown': {'frames': [P(SHUT + FROWN + TAIL_DOWN)], 'moods': ['sweating'], 'every': [2, 5]},
     'blinkWorried': {'frames': [P(SHUT + WAVY + EARS_BACK + TAIL_DOWN)], 'moods': ['worried'], 'every': [2, 5]},
     'blinkGrumpy': {'frames': [P(SHUT + BROW + FLAT + EARS_BACK + TAIL_DOWN)], 'moods': ['grumpy'], 'every': [3, 7]},
-    'earTwitch': {'frames': [P(OPEN + MOUTH + EAR_FLICK + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)] * 2,
-                  'moods': ['idle', 'reading'], 'every': [6, 15]},
-    'swish': {'frames': [P(OPEN + MOUTH + TAIL_UP), P(OPEN + MOUTH + TAIL_DOWN)] * 2, 'moods': ['idle'], 'every': [8, 20]},
+    'earTwitch': {'frames': [P(OPEN + MOUTH + EAR_FLICK + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)] * 2, 'moods': ['idle'], 'every': [6, 15]},
+    'earTwitchReading': {'frames': [P(DOWN + MOUTH + EAR_FLICK + TAIL_UP), P(DOWN + MOUTH + TAIL_UP)] * 2,
+                         'moods': ['reading'], 'every': [6, 15]},
+    'swish': {'frames': [P(OPEN + MOUTH + TAIL_DOWN)] * 2 + [P(OPEN + MOUTH + TAIL_UP)] * 2 + [P(OPEN + MOUTH + TAIL_DOWN)] * 2,
+              'moods': ['idle'], 'every': [6, 15]},
     # it hears a mouse under the snow: ear out, a leap, and a dive nose first
     'pounce': {'frames': [P(DOWN + MOUTH + EAR_FLICK + TAIL_UP)] * 2 + [P(HAPPY + TAIL_UP, up=True)] * 2
                + [P(DOWN + OMOUTH + TAIL_DOWN), P(HAPPY + TAIL_UP)],
@@ -205,12 +209,14 @@ A = {
                  'moods': ['idle'], 'every': [20, 45]},
     'sleepyYawn': {'frames': [P(HALF + OMOUTH + TAIL_DOWN), P(SHUT + OMOUTH + TAIL_DOWN), P(SHUT + OMOUTH + TAIL_DOWN), P(HALF + MOUTH + TAIL_DOWN)],
                    'moods': ['sleepy'], 'every': [15, 35]},
-    'nod': {'frames': [P(SHUT + MOUTH + TAIL_DOWN)] * 3 + [P(HALF + MOUTH + TAIL_DOWN)], 'moods': ['sleepy', 'tired'], 'every': [8, 20]},
-    # an ear twitches in its dream
-    'dreamTwitch': {'frames': [P(ASLEEP + EAR_FLICK), P(ASLEEP), P(ASLEEP + EAR_FLICK)], 'moods': ['sleeping', 'deepSleep'], 'every': [8, 25]},
+    'nod': {'frames': [P(SHUT + MOUTH + TAIL_DOWN)] * 3 + [P(HALF + MOUTH + TAIL_DOWN)], 'moods': ['sleepy'], 'every': [8, 20]},
+    'nodTired': {'frames': [P(SHUT + FLAT + TAIL_DOWN + EARS_BACK)] * 3 + [P(HALF + FLAT + TAIL_DOWN + EARS_BACK)],
+                 'moods': ['tired'], 'every': [8, 20]},
+    # an ear twitches in its dream; in a deep sleep the ears lie still
+    'dreamTwitch': {'frames': [P(ASLEEP + EAR_FLICK), P(ASLEEP), P(ASLEEP + EAR_FLICK)], 'moods': ['sleeping'], 'every': [8, 25]},
 }
 
-MINI_STEP = [(6, 2, '.')], [(6, 5, '.')]
+MINI_STEP = [(7, 2, '.')], [(7, 5, '.')]
 MINI_HAPPY = [(3, 2, 'o'), (3, 5, 'o')]
 MINI_SAD = [(4, 2, 't')], [(5, 1, 't')]
 
