@@ -31,14 +31,19 @@ BREATH = ['................'] + CLAWD[:7] + CLAWD[8:]
 DIM, DIMMER = 'd', 'h'
 
 
+# Six columns of air on each side, for the whip it cracks at its agents; pixels are
+# given as on Clawd itself and shifted in.
+PAD = 6
+
+
 def f(*parts, dim=None, breath=False):
     pixels = [p for part in parts for p in part]
     if breath:
         # the rows above the one it drops sit a row lower
         pixels = [(r + 1 if r < 7 else r, c, l) for r, c, l in pixels]
     base = BREATH if breath else CLAWD
-    body = [row.replace('b', dim) for row in base] if dim else base
-    return paint(body, [(r, c, dim if l == 'b' and dim else l) for r, c, l in pixels])
+    body = ['.' * PAD + (row.replace('b', dim) if dim else row) + '.' * PAD for row in base]
+    return paint(body, [(r, c + PAD, dim if l == 'b' and dim else l) for r, c, l in pixels])
 
 
 OPEN = [(3, 4, 'e'), (4, 4, 'e'), (3, 11, 'e'), (4, 11, 'e')]
@@ -79,6 +84,10 @@ def step(c):
 
 def w(*ps):
     return [(r, c, 'w') for r, c in ps]
+
+
+def k(*ps):
+    return [(r, c, 'k') for r, c in ps]
 
 
 def y(*ps):
@@ -168,6 +177,13 @@ A = {
     # proud of us: a little strut on the spot, and a pleased blink
     'strut': {'frames': [f(JOY, BLUSH, step(3)), f(JOY, BLUSH), f(JOY, BLUSH, step(12)), f(JOY, BLUSH)], 'moods': ['proud'], 'every': [6, 14]},
     'blinkProud': {'frames': [f(SHUT, BLUSH)], 'moods': ['proud'], 'every': [3, 8]},
+    # keeping its agents at it: the whip coiled back over its head, swung round and
+    # cracked out at them in a spark, then let fall; they jump from the crack on
+    'whip': {'frames': [f(GLARE, RIGHT_UP, k((2, 14), (1, 13), (0, 12), (0, 11)))] * 2
+                       + [f(GLARE, k((4, 16), (3, 17), (2, 18), (2, 19)))]
+                       + [f(GLARE, k(*[(5, c) for c in range(16, 21)]), y((5, 21)), w((4, 21), (6, 21)))] * 2
+                       + [f(OPEN, k((6, 16), (7, 17), (7, 18), (6, 19)))],
+             'moods': ['supervising'], 'every': [3, 7], 'startles': 3},
 }
 
 MINI = [
@@ -180,19 +196,22 @@ MINI = [
 MINI_STEP = [(4, 2, '.'), (4, 7, '.')], [(4, 4, '.'), (4, 9, '.')]
 MINI_CHEER = [(2, 0, '.'), (1, 0, 'b'), (2, 11, '.'), (1, 11, 'b'), (1, 3, 'b'), (0, 3, 'e'), (1, 8, 'b'), (0, 8, 'e')]
 MINI_SAD = [(3, 3, 't')], [(3, 2, 't')]
+# at the crack of the whip: arms up, feet off the ground, a bead of sweat
+MINI_JUMP = [(4, c, '.') for c in range(12)] + [(2, 0, '.'), (1, 0, 'b'), (2, 11, '.'), (1, 11, 'b'), (0, 11, 't')]
 
 pack = {
     '$schema': SCHEMA,
     'name': 'clawd', 'author': 'Henrique Schroeder',
     'description': "Clawd, the critter on Claude Code's welcome screen (fan art, not by Anthropic), waving its little arms.",
     'palette': {'b': '#d77757', 'd': '#9c4f38', 'h': '#6e3a2a', 'e': '#1a1a1a',
-                'p': '#f2a0b6', 'w': '#ffffff', 't': '#7cc4f2', 'y': '#ffd166'},
+                'p': '#f2a0b6', 'w': '#ffffff', 't': '#7cc4f2', 'y': '#ffd166', 'k': '#5a3a22'},
     'fps': 4,
     'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A},
     'mini': {'tint': 'b', 'moods': {
         'working': [paint(MINI, MINI_STEP[0])] * 2 + [paint(MINI, MINI_STEP[1])] * 2,
         'happy': [paint(MINI, MINI_CHEER)] * 2 + [paint(MINI, MINI_CHEER + MINI_STEP[0])] * 2,
         'sad': [paint(MINI, MINI_SAD[0])] * 2 + [paint(MINI, MINI_SAD[1])] * 2,
+        'startled': [paint(MINI, MINI_JUMP)],
     }},
     'personality': {'energetic': 0.7, 'curious': 0.8, 'affectionate': 0.6},
     'speech': {

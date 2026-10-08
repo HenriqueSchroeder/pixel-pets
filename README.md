@@ -105,7 +105,7 @@ Shipped pets:
 - [`dog`](pets/dog.json), which wags its tail, pants, tilts its head when it thinks and turns side on to walk.
 - [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
-- [`clawd`](pets/clawd.json), shown at the top with the dragon, the ghost, the fox and the capybara: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
+- [`clawd`](pets/clawd.json), shown at the top with the dragon, the ghost, the fox and the capybara: the critter on Claude Code's welcome screen, waving its little arms, cheering with both when a long job is done and cracking a whip at its agents to keep them at it. Fan art: not made or endorsed by Anthropic.
 - [`fox`](pets/fox.json), which sways its brush, pounces on mice under the snow and turns side on to walk.
 - [`dragon`](pets/dragon.json), a big red dragon that breathes fire, counts its hoard and flies off to land elsewhere. It draws no mini pets.
 - [`capybara`](pets/capybara.json), the calmest of them all: it chews grass, lets a bird sit on its head and balances an orange. It draws no mini pets.
@@ -136,7 +136,7 @@ A pack is a palette and some frames. Each frame is rows of palette letters, and 
 - Give a mood several frames and they play in a loop at `fps` frames per second (1–12, default 4). Repeat a frame to hold a pose: at 4 fps, the same frame four times in a row holds it for a second.
 - Every frame of the main pet has the same size, up to 48×32 pixels. The mini pet goes up to 12×12.
 - Two pixel rows fit in one terminal row, so a 12×12 pet takes 12 columns and 6 rows.
-- The mini pet needs `working`. Its `happy` and `sad`, shown when an agent ends, fall back to `working`.
+- The mini pet needs `working`. Its `happy` and `sad`, shown when an agent ends, and `startled`, shown while an action that `startles` plays, fall back to `working`.
 - `mini.tint` (default `b`) is the letter recolored for each subagent.
 - `"mini": false` draws no mini pets: while agents work, the pet shows them only by its own `supervising`. Handy for a wide pet that leaves little room beside it.
 - See every mood of a pack, and what it borrows, in your terminal: `npx tsx scripts/preview-pet.ts <name or path>`.
@@ -160,7 +160,7 @@ A loop alone looks like a machine. Three optional keys under `main` make the pet
 
 - `variants`: more loops for a mood you draw in `moods`. One of them, or the mood's own loop, is picked at random each time the mood starts.
 - `transitions`: frames played once when the mood changes, keyed `from>to`. Either side may be `*`. An exact key wins over `from>*`, which wins over `*>to`.
-- `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm.
+- `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm. An action with `startles`, a frame counted from 0, makes the agents' mini pets show `startled` from that frame until it ends: clawd's whip crack.
 - An action is a whole frame, so keep its face the same as the moods it plays in. The cat has one blink per expression for that reason.
 - A mood holds up to 16 frames; at 4 fps that is 4 seconds.
 
