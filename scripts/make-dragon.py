@@ -290,6 +290,15 @@ T = {
     'deepSleep>*': get_up([asleep(), asleep(HALF)]),
     'deepSleep>waking': [asleep(HALF), frame(WIDE, dy=6), frame(WIDE, dy=3)],
     'sleeping>deepSleep': [asleep()],
+    # a crouch, head low, before it springs up with its wings spread
+    '*>happy': [frame(OPEN, dy=1)] * 2 + [frame(JOY + OPEN_MOUTH, 'up', body=TAP_FRONT + TAP_HIND)] * 2,
+    '*>celebrating': [frame(OPEN + SMALL, dy=1)] * 2 + [frame(JOY + ROAR, 'up', fx=fire(0)), frame(JOY + ROAR, 'up', fx=fire(1))],
+    # and settling back after a reaction
+    'happy>*': [frame(JOY, 'down'), frame(JOY, 'lift'), frame(JOY), frame(OPEN)],
+    'sad>*': [frame(SAD, dy=1), frame(DOWN, dy=1), frame(DOWN), frame(OPEN)],
+    # eyes up as a thought starts; a start, rearing back, when it begins to sweat
+    '*>thinking': [frame(UP)] * 4,
+    '*>sweating': [frame(WIDE + SMALL, dx=-1)] * 2 + [frame(WIDE + SMALL)],
 }
 
 # Flying: it spreads its wings, beats them, and rises out of sight; landing is the reverse.
@@ -301,13 +310,16 @@ TELEPORT = {
 }
 
 # one frame, so a blink never holds up a loop's smoke or claws for long
-QUIET = ['idle', 'watching', 'thinking', 'typing', 'writing', 'reading']
+QUIET = ['idle', 'watching', 'thinking', 'typing', 'writing', 'reading', 'running', 'searching', 'compacting']
 A = {
     'blink': {'frames': [frame(SHUT)], 'moods': QUIET, 'every': [2, 6]},
-    'blinkHot': {'frames': [frame(SHUT, fx=EMBER)], 'moods': ['running'], 'every': [2, 6]},
     'blinkLean': {'frames': [frame(SHUT, dx=1)], 'moods': ['supervising'], 'every': [2, 6]},
     'blinkGlare': {'frames': [frame(GLARE + SHUT)], 'moods': ['grumpy'], 'every': [3, 7]},
     'blinkWorried': {'frames': [frame(SHUT + SMALL)], 'moods': ['worried', 'sweating'], 'every': [2, 5]},
+    # proud: a beat of its spread wings and a puff of smoke
+    'proudFlare': {'frames': [frame(JOY, 'down' if i in (0, 3) else 'up', breath=True, fx=(HOT if i < 3 else EMBER) + puff(i - 1))
+                              for i in range(7)],
+                   'moods': ['proud'], 'every': [8, 18]},
     # it draws a deep breath, rears back, and lets loose
     'fireBreath': {'frames': [frame(OPEN, 'lift', breath=True, fx=EMBER),
                               frame(WIDE, 'lift', breath=True, dx=-1, fx=at(EMBER, -1)),
@@ -333,7 +345,7 @@ A = {
     # a little flame as it snores
     'dreamFlame': {'frames': [asleep(fx=fire(0, dy=SLEEP_DROP)), asleep(fx=fire(1, dy=SLEEP_DROP)),
                               asleep(fx=fire(0, dy=SLEEP_DROP)), asleep(fx=puff(1, dy=SLEEP_DROP))],
-                   'moods': ['sleeping'], 'every': [10, 30]},
+                   'moods': ['sleeping', 'deepSleep'], 'every': [10, 30]},
     'nod': {'frames': [frame(SHUT, dy=1), frame(SHUT, dy=2), frame(SHUT, dy=2), frame(HALF)], 'moods': ['sleepy'], 'every': [8, 20]},
     'nodTired': {'frames': [frame(SHUT + SMALL, dy=2), frame(SHUT + SMALL, dy=3), frame(SHUT + SMALL, dy=3), frame(HALF + SMALL, dy=1)],
                  'moods': ['tired'], 'every': [8, 20]},

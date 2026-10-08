@@ -24,6 +24,8 @@ OWL = [
     '..oooooooo..',
     '..k......k..',
 ]
+# Settling its feathers, or crouching to spring: the head a pixel lower, the body a row shorter.
+BREATH = ['............'] + OWL[:8] + OWL[9:]
 MINI = [
     'oo....oo',
     'oboooobo',
@@ -53,6 +55,20 @@ HOOT = [(6, 5, 'e'), (6, 6, 'e')]
 BACK = [(r, c, 'b') for r in (4, 5) for c in DISCS] + [(5, 5, 'b'), (5, 6, 'b'), (6, 5, 'b'), (6, 6, 'b')]
 # feathers ruffled on its chest
 RUFFLE = [(7, 3, 'b'), (7, 6, 'b'), (8, 4, 'b'), (8, 8, 'b')]
+# chest puffed out: the belly as wide as the body above it
+PUFF = [(9, 0, 'o'), (9, 1, 'b'), (9, 2, 'l'), (9, 9, 'l'), (9, 10, 'b'), (9, 11, 'o')]
+# one eye shut, the other heavy-lidded: dozing, content
+DOZY = [(5, c, 'o') for c in (1, 2, 3)] + [(4, c, 'o') for c in (8, 9, 10)] + [(5, 9, 'e')]
+
+
+class breath(list):
+    """A pose drawn on BREATH: the rows above the one it drops sit a row lower."""
+
+
+def draw(pose):
+    if isinstance(pose, breath):
+        return paint(BREATH, [(r + 1 if r < 8 else r, c, l) for r, c, l in pose])
+    return paint(OWL, pose)
 
 
 def look(s):
@@ -77,17 +93,20 @@ F = {
     'sleeping': [ASLEEP] * 4 + [ASLEEP + w((1, 5))] * 2 + [ASLEEP + w((0, 6))] * 2,
     'deepSleep': [ASLEEP + RUFFLE] * 4 + [ASLEEP + RUFFLE + w((1, 5))] * 2 + [ASLEEP + RUFFLE + w((1, 5), (0, 6))] * 2,
     'waking': [OPEN + HOOT + RUFFLE] * 3 + [SHUT],
-    'idle': [OPEN],
+    # perched, awake, breathing slow
+    'idle': [OPEN] * 6 + [breath(OPEN)] * 2,
     'sleepy': [HALF] * 5 + [SHUT] * 3,
     'tired': [HALF] * 4 + [HALF + HOOT] * 2 + [SHUT + HOOT] * 2,
     # drawn facing right; the core mirrors it to walk left
-    'walking': [look(1) + hop(2), look(1) + hop(9)],
+    # a waddle: one foot up, both down, the other up, both down
+    'walking': [look(1) + hop(2), look(1), look(1) + hop(9), look(1)],
     'watching': [DOWN] * 6 + [[(5, 3, 'e'), (5, 10, 'e')]] * 2,
     'thinking': [look(-1)] * 4 + [look(1)] * 4,
     'typing': [DOWN + hop(2)] * 2 + [DOWN + hop(9)] * 2,
     'running': [look(1) + w((11, c)) for c in range(3, 9)],
     'writing': [DOWN + RUFFLE + hop(2)] * 2 + [DOWN + hop(9)] * 2,
-    'reading': [DOWN],
+    # reading, breathing slow
+    'reading': [DOWN] * 6 + [breath(DOWN)] * 2,
     'searching': [look(-1)] * 2 + [OPEN] * 2 + [look(1)] * 2 + [OPEN] * 2,
     # drawn with its agents on the right; the core mirrors it when they are on the left
     'supervising': [look(1)] * 6 + [OPEN] * 2,
@@ -106,6 +125,7 @@ F = {
 V = {
     'thinking': [[UP] * 8],
     'reading': [[look(-1)] * 3 + [DOWN] * 3 + [look(1)] * 2],
+    'idle': [[DOZY] * 6 + [breath(DOZY)] * 2],
 }
 T = {
     '*>sleeping': [OPEN, HALF, HALF, SHUT],
@@ -114,11 +134,20 @@ T = {
     'deepSleep>*': [SHUT + RUFFLE, HALF, OPEN + HOOT + RUFFLE, OPEN],
     'deepSleep>waking': [OPEN + HOOT],
     'sleeping>deepSleep': [ASLEEP],
+    # a crouch before it springs for joy
+    '*>happy': [breath(OPEN), JOY + BLUSH + hop(2) + hop(9)],
+    '*>celebrating': [breath(OPEN + HOOT), JOY + BLUSH + HOOT + hop(2) + hop(9)],
+    # and settling back after a reaction
+    'happy>*': [JOY, OPEN],
+    'sad>*': [DOWN, OPEN],
+    # eyes up as a thought starts; a start, feathers on end, when it begins to sweat
+    '*>thinking': [UP, UP],
+    '*>sweating': [OPEN + HOOT + RUFFLE],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
 
-OPEN_EYED = ['idle', 'thinking', 'supervising', 'searching', 'reading', 'compacting', 'watching', 'typing', 'running']
+OPEN_EYED = ['idle', 'thinking', 'supervising', 'searching', 'reading', 'compacting', 'watching', 'typing', 'running', 'writing']
 A = {
     # owls blink slowly, lid by lid
     'slowBlink': {'frames': [HALF, SHUT, SHUT, HALF], 'moods': OPEN_EYED, 'every': [3, 8]},
@@ -131,6 +160,9 @@ A = {
     'sleepyYawn': {'frames': [HALF + HOOT, SHUT + HOOT, SHUT + HOOT, HALF], 'moods': ['sleepy'], 'every': [15, 35]},
     'nod': {'frames': [SHUT] * 3 + [HALF], 'moods': ['sleepy', 'tired'], 'every': [8, 20]},
     'dreamRuffle': {'frames': [ASLEEP + RUFFLE, ASLEEP, ASLEEP + RUFFLE], 'moods': ['sleeping'], 'every': [8, 25]},
+    # proud of us: chest puffed out, then a smug slow blink
+    'puffUp': {'frames': [JOY + BLUSH + PUFF] * 3 + [JOY + BLUSH + PUFF + RUFFLE, JOY + BLUSH], 'moods': ['proud'], 'every': [8, 18]},
+    'blinkProud': {'frames': [SHUT + BLUSH] * 2 + [JOY + BLUSH], 'moods': ['proud'], 'every': [3, 8]},
 }
 
 MINI_STEP = [(6, 1, '.')], [(6, 6, '.')]
@@ -145,10 +177,10 @@ pack = {
                 'k': '#f0a030', 'p': '#f2a0b6', 'w': '#ffffff', 't': '#7cc4f2'},
     'fps': 4,
     'main': {
-        'moods': {m: [paint(OWL, f) for f in fr] for m, fr in F.items()},
-        'variants': {m: [[paint(OWL, f) for f in loop] for loop in loops] for m, loops in V.items()},
-        'transitions': {k: [paint(OWL, f) for f in fr] for k, fr in T.items()},
-        'actions': {k: {'frames': [paint(OWL, f) for f in a['frames']], 'moods': a['moods'], 'every': a['every']}
+        'moods': {m: [draw(f) for f in fr] for m, fr in F.items()},
+        'variants': {m: [[draw(f) for f in loop] for loop in loops] for m, loops in V.items()},
+        'transitions': {k: [draw(f) for f in fr] for k, fr in T.items()},
+        'actions': {k: {'frames': [draw(f) for f in a['frames']], 'moods': a['moods'], 'every': a['every']}
                     for k, a in A.items()},
     },
     'mini': {'tint': 'b', 'moods': {

@@ -25,13 +25,19 @@ CLAWD = [
     '...b.b....b.b...',
     '...b.b....b.b...',
 ]
+# Breathing out, or crouching to spring: the body a row shorter, the head a pixel lower.
+BREATH = ['................'] + CLAWD[:7] + CLAWD[8:]
 # Asleep it dims (d), dimmer still (h) in a deep sleep.
 DIM, DIMMER = 'd', 'h'
 
 
-def f(*parts, dim=None):
+def f(*parts, dim=None, breath=False):
     pixels = [p for part in parts for p in part]
-    body = [row.replace('b', dim) for row in CLAWD] if dim else CLAWD
+    if breath:
+        # the rows above the one it drops sit a row lower
+        pixels = [(r + 1 if r < 7 else r, c, l) for r, c, l in pixels]
+    base = BREATH if breath else CLAWD
+    body = [row.replace('b', dim) for row in base] if dim else base
     return paint(body, [(r, c, dim if l == 'b' and dim else l) for r, c, l in pixels])
 
 
@@ -93,14 +99,15 @@ F = {
     'sleepy': [f(HALF)] * 5 + [f(SHUT, dim=DIM)] * 3,
     'tired': [f(HALF, LEFT_DOWN, RIGHT_DOWN)] * 4 + [f(HALF, OMOUTH)] * 2 + [f(SHUT, OMOUTH, dim=DIM)] * 2,
     # drawn facing right; the core mirrors it to walk left
-    'walking': [f(look(1), step(3), step(10)), f(look(1), step(5), step(12))],
+    'walking': [f(look(1), step(3), step(10)), f(look(1)), f(look(1), step(5), step(12)), f(look(1))],
     'watching': [f(DOWN)] * 6 + [f([(4, 5, 'e'), (4, 12, 'e')])] * 2,
     'thinking': [f(look(-1))] * 4 + [f(look(1), RIGHT_UP)] * 4,
     # at the keyboard: arms down, tapping
     'typing': [f(OPEN, LEFT_DOWN), f(OPEN, RIGHT_DOWN)] * 2,
     'running': [f(look(1), step(3 if i % 2 else 5), step(10 if i % 2 else 12)) for i in range(6)],
     'writing': [f(DOWN, LEFT_DOWN), f(DOWN, RIGHT_DOWN)] * 2,
-    'reading': [f(DOWN)],
+    # reading, breathing slow
+    'reading': [f(DOWN)] * 6 + [f(DOWN, breath=True)] * 2,
     'searching': [f(scan(-1))] * 2 + [f(scan(0))] * 2 + [f(scan(1))] * 2 + [f(scan(0))] * 2,
     # drawn with its agents on the right; the core mirrors it when they are on the left
     'supervising': [f(look(1))] * 4 + [f(look(1), RIGHT_UP)] * 2 + [f(OPEN)] * 2,
@@ -119,6 +126,8 @@ F = {
 V = {
     'thinking': [[f(UP)] * 4 + [f(UP, LEFT_UP)] * 4],
     'reading': [[f(scan(-1))] * 3 + [f(scan(0))] * 3 + [f(scan(1))] * 2],
+    # or sitting content, eyes half shut, breathing slow
+    'idle': [[f(HALF)] * 6 + [f(HALF, breath=True)] * 2],
 }
 T = {
     '*>sleeping': [f(OPEN), f(HALF), f(SHUT, OMOUTH), f(SHUT, dim=DIM)],
@@ -128,14 +137,23 @@ T = {
     'deepSleep>*': [f(SHUT, dim=DIMMER), f(SHUT, dim=DIM), f(HALF), f(OPEN, OMOUTH, LEFT_UP, RIGHT_UP), f(OPEN)],
     'deepSleep>waking': [f(SHUT, dim=DIM)],
     'sleeping>deepSleep': [f(SHUT, dim=DIM)],
+    # a crouch before it springs for joy
+    '*>happy': [f(OPEN, breath=True), f(JOY, BLUSH, LEFT_UP, step(3), step(12))],
+    '*>celebrating': [f(OPEN, LEFT_DOWN, RIGHT_DOWN, breath=True), F['celebrating'][0]],
+    # and settling back after a reaction
+    'happy>*': [f(JOY, BLUSH), f(OPEN)],
+    'sad>*': [f(DOWN, LEFT_DOWN, RIGHT_DOWN, dim=DIM), f(DOWN)],
+    # eyes up as a thought starts; a start when it begins to sweat
+    '*>thinking': [f(UP), f(UP)],
+    '*>sweating': [f(OPEN, OMOUTH, LEFT_UP, RIGHT_UP)],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
 
 A = {
-    'blink': {'frames': [f(SHUT)], 'moods': ['idle', 'supervising', 'searching', 'reading', 'compacting', 'watching'], 'every': [2, 6]},
+    'blink': {'frames': [f(SHUT)], 'moods': ['idle', 'supervising', 'searching', 'reading', 'compacting', 'watching', 'running', 'thinking'], 'every': [2, 6]},
     'blinkTwice': {'frames': [f(SHUT), f(OPEN), f(SHUT)], 'moods': ['idle'], 'every': [9, 20]},
-    'blinkTyping': {'frames': [f(SHUT, LEFT_DOWN)], 'moods': ['typing'], 'every': [2, 6]},
+    'blinkTyping': {'frames': [f(SHUT, LEFT_DOWN)], 'moods': ['typing', 'writing'], 'every': [2, 6]},
     'blinkWorried': {'frames': [f(SHUT, WOBBLE)], 'moods': ['worried'], 'every': [2, 5]},
     'blinkGrumpy': {'frames': [f(SHUT, [(3, 3, 'e'), (3, 5, 'e'), (3, 10, 'e'), (3, 12, 'e')], LEFT_DOWN, RIGHT_DOWN)], 'moods': ['grumpy'], 'every': [3, 7]},
     'blinkSweating': {'frames': [f(SHUT)], 'moods': ['sweating'], 'every': [2, 5]},
@@ -147,6 +165,9 @@ A = {
     'sleepyYawn': {'frames': [f(HALF, OMOUTH), f(SHUT, OMOUTH), f(SHUT, OMOUTH), f(HALF)], 'moods': ['sleepy'], 'every': [15, 35]},
     'nod': {'frames': [f(SHUT, dim=DIM)] * 3 + [f(HALF)], 'moods': ['sleepy', 'tired'], 'every': [8, 20]},
     'dreamTwitch': {'frames': [f(SHUT, step(3), dim=DIM), f(SHUT, dim=DIM), f(SHUT, step(12), dim=DIM)], 'moods': ['sleeping', 'deepSleep'], 'every': [8, 25]},
+    # proud of us: a little strut on the spot, and a pleased blink
+    'strut': {'frames': [f(JOY, BLUSH, step(3)), f(JOY, BLUSH), f(JOY, BLUSH, step(12)), f(JOY, BLUSH)], 'moods': ['proud'], 'every': [6, 14]},
+    'blinkProud': {'frames': [f(SHUT, BLUSH)], 'moods': ['proud'], 'every': [3, 8]},
 }
 
 MINI = [

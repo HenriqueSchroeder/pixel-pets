@@ -82,7 +82,8 @@ F = {
     # quick jiggle, a frame each
     'running': [f('base', look(1), grin), f('squish', look(1), grin)] * 3,
     'writing': [f('base', down, grin)] * 2 + [f('squish', down, grin)] * 2,
-    'reading': [f('base', down, small)],
+    # reading, breathing slow
+    'reading': [f('base', down, small)] * 6 + [f('squish', down, small)] * 2,
     'searching': [f('base', look(-1), small)] * 2 + [f('base', open_, small)] * 2 + [f('base', look(1), small)] * 2 + [f('base', open_, small)] * 2,
     # drawn with its agents on the right; the core mirrors it when they are on the left
     'supervising': [f('base', look(1), small)] * 6 + [f('base', open_, small)] * 2,
@@ -108,7 +109,9 @@ F = {
 
 V = {
     'thinking': [[f('base', glance_up(1), side)] * 4 + [f('base', glance_up(-1), side)] * 4],
-    'idle': [[f('base', look(-1), small)] * 3 + [f('base', look(1), small)] * 3 + [f('squish', open_, small)] * 2],
+    'idle': [[f('base', look(-1), small)] * 3 + [f('base', look(1), small)] * 3 + [f('squish', open_, small)] * 2,
+             # or lazing half melted, lids heavy
+             [f('squish', half, small)] * 6 + [f('flat', half, small)] * 2],
 }
 
 T = {
@@ -120,6 +123,15 @@ T = {
     'deepSleep>*': [f('flat', shut, small), f('squish', down, small), f('tall', open_, omouth), f('base', open_, small)],
     'deepSleep>waking': [f('flat', shut, small), f('squish', open_, omouth)],
     'happy>sleeping': [f('tall', joy, smile), f('base', joy, smile), f('squish', shut, omouth), f('squish', shut, small)],
+    # a squish before it springs for joy
+    '*>happy': [f('squish', open_, small), f('tall', joy, smile)],
+    '*>celebrating': [f('squish', open_, omouth), f('tall', joy, smile)],
+    # and settling back after a reaction
+    'happy>*': [f('squish', joy, smile), f('base', open_, small)],
+    'sad>*': [f('squish', down, frown), f('base', open_, small)],
+    # eyes up as a thought starts; a start when it begins to sweat
+    '*>thinking': [f('base', glance_up(-1), small)] * 2,
+    '*>sweating': [f('tall', open_, omouth)],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
@@ -136,7 +148,10 @@ SHINE = lambda body, c: paint(body, open_(ER[body]) + mouth(ER[body] + 2) + [(3,
 A = {
     'blink': {'frames': [f('base', shut, small)], 'moods': EYES_OPEN, 'every': [2, 6]},
     'blinkTwice': {'frames': [f('base', shut, small), f('base', open_, small), f('base', shut, small)], 'moods': EYES_OPEN, 'every': [9, 20]},
-    'blinkGrin': {'frames': [f('base', shut, grin)], 'moods': ['typing', 'writing'], 'every': [2, 6]},
+    'blinkGrin': {'frames': [f('base', shut, grin)], 'moods': ['typing', 'writing', 'running'], 'every': [2, 6]},
+    # proud of us: a happy hop on the spot, then a smiling blink
+    'proudHop': {'frames': [f('squish', joy, smile), f('tall', joy, smile), f('tall', joy, smile), f('squish', joy, smile), f('base', shut, smile)],
+                 'moods': ['proud'], 'every': [5, 12]},
     'blinkFrown': {'frames': [f('base', shut, frown)], 'moods': ['sweating'], 'every': [2, 5]},
     'wobble': {'frames': [f('squish', open_, small), f('tall', open_, small), f('squish', open_, small), f('base', open_, small)],
                'moods': ['idle', 'supervising'], 'every': [7, 16]},

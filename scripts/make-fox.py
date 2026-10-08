@@ -102,6 +102,13 @@ def P(pixels, up=False):
     return rows[1:] + [BLANK] if up else rows
 
 
+def breath(pixels, tail=TAIL_UP):
+    """Breathing out, or crouching to leap: the head a row lower, the body a row
+    shorter; the brush and feet stay put on the ground."""
+    rows = paint(HEAD, pixels)
+    return paint([BLANK] + rows[:11] + rows[12:], tail)
+
+
 # Walking it turns side on, nose to the right, brush trailing behind and black socks.
 SIDE = [
     '..............',
@@ -137,8 +144,8 @@ F = {
     'deepSleep': [P(ASLEEP + EARS_BACK)] * 2 + [P(ASLEEP + EARS_BACK + w((2, 11)))] * 2
                  + [P(ASLEEP + EARS_BACK + w((2, 11), (1, 12)))] * 2 + [P(ASLEEP + EARS_BACK + w((1, 12), (0, 13)))] * 2,
     'waking': [P(OPEN + OMOUTH + EAR_FLICK + TAIL_UP)] * 3 + [P(SHUT + OMOUTH + TAIL_UP)],
-    # sitting; the brush sways in the swish action, so blinks never jump it
-    'idle': [P(OPEN + MOUTH + TAIL_UP)] * 4,
+    # sitting, breathing slow; the brush sways in the swish action, so blinks never jump it
+    'idle': [P(OPEN + MOUTH + TAIL_UP)] * 6 + [breath(OPEN + MOUTH)] * 2,
     'sleepy': [P(HALF + MOUTH + TAIL_DOWN)] * 5 + [P(SHUT + MOUTH + TAIL_DOWN)] * 3,
     'tired': [P(HALF + FLAT + TAIL_DOWN + EARS_BACK)] * 4 + [P(HALF + OMOUTH + TAIL_DOWN + EARS_BACK)] * 2
              + [P(SHUT + OMOUTH + TAIL_DOWN + EARS_BACK)] * 2,
@@ -151,7 +158,8 @@ F = {
     'typing': [P(OPEN + GRIN + paw(2) + TAIL_UP)] * 2 + [P(OPEN + GRIN + paw(7) + TAIL_UP)] * 2,
     'running': [P(look(1) + GRIN + paw(2) + TAIL_UP), P(look(1) + GRIN + paw(7) + TAIL_DOWN)] * 3,
     'writing': [P(DOWN + GRIN + paw(2) + TAIL_UP)] * 2 + [P(DOWN + GRIN + paw(7) + TAIL_UP)] * 2,
-    'reading': [P(DOWN + MOUTH + TAIL_UP)],
+    # reading, breathing slow
+    'reading': [P(DOWN + MOUTH + TAIL_UP)] * 6 + [breath(DOWN + MOUTH)] * 2,
     'searching': [P(scan(s) + MOUTH + EAR_FLICK + TAIL_UP) for s in (-1, -1, 0, 0, 1, 1, 0, 0)],
     # eyes on the agents beside it (drawn on its right)
     'supervising': [P(look(1) + MOUTH + TAIL_UP)] * 6 + [P(OPEN + MOUTH + TAIL_UP)] * 2,
@@ -171,6 +179,8 @@ F = {
 V = {
     'thinking': [[P(UP + MOUTH + EAR_FLICK + TAIL_UP)] * 8],
     'reading': [[P(scan(-1) + MOUTH + TAIL_UP)] * 3 + [P(scan(0) + MOUTH + TAIL_UP)] * 3 + [P(scan(1) + MOUTH + TAIL_UP)] * 2],
+    # or basking, eyes half shut, content; the brush stays up for the idle actions
+    'idle': [[P(HALF + MOUTH + TAIL_UP)] * 6 + [breath(HALF + MOUTH)] * 2],
 }
 T = {
     '*>sleeping': [P(OPEN + MOUTH + TAIL_UP), P(OPEN + OMOUTH + TAIL_DOWN), P(DOWN + OMOUTH + TAIL_DOWN),
@@ -183,6 +193,15 @@ T = {
                     P(OPEN + OMOUTH + EAR_FLICK + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)],
     'deepSleep>waking': [P(OPEN + OMOUTH + EARS_BACK + TAIL_DOWN)],
     'sleeping>deepSleep': [P(ASLEEP + EARS_BACK)],
+    # a crouch before it leaps for joy
+    '*>happy': [breath(OPEN + MOUTH), P(HAPPY + TAIL_UP, up=True)],
+    '*>celebrating': [breath(OPEN + OMOUTH), P(HAPPY + TAIL_DOWN, up=True)],
+    # and settling back after a reaction
+    'happy>*': [P(SMILE + MOUTH + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)],
+    'sad>*': [P(DOWN + FROWN + EARS_BACK + TAIL_DOWN), P(OPEN + MOUTH + TAIL_DOWN)],
+    # eyes up as a thought starts, then the ear turns out; a start when it begins to sweat
+    '*>thinking': [P(UP + MOUTH + TAIL_UP), P(UP + MOUTH + EAR_FLICK + TAIL_UP)],
+    '*>sweating': [P(OPEN + OMOUTH + EARS_BACK + TAIL_DOWN, up=True)],
 }
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
@@ -191,7 +210,7 @@ MOUTH_FACES = ['idle', 'supervising', 'reading', 'compacting', 'watching']
 A = {
     'blink': {'frames': [P(SHUT + MOUTH + TAIL_UP)], 'moods': MOUTH_FACES, 'every': [2, 6]},
     'blinkTilt': {'frames': [P(SHUT + MOUTH + EAR_FLICK + TAIL_UP)], 'moods': ['thinking', 'searching'], 'every': [2, 6]},
-    'blinkGrin': {'frames': [P(SHUT + GRIN + TAIL_UP)], 'moods': ['typing', 'writing'], 'every': [2, 6]},
+    'blinkGrin': {'frames': [P(SHUT + GRIN + TAIL_UP)], 'moods': ['typing', 'writing', 'running'], 'every': [2, 6]},
     'blinkFrown': {'frames': [P(SHUT + FROWN + TAIL_DOWN)], 'moods': ['sweating'], 'every': [2, 5]},
     'blinkWorried': {'frames': [P(SHUT + WAVY + EARS_BACK + TAIL_DOWN)], 'moods': ['worried'], 'every': [2, 5]},
     'blinkGrumpy': {'frames': [P(SHUT + BROW + FLAT + EARS_BACK + TAIL_DOWN)], 'moods': ['grumpy'], 'every': [3, 7]},
@@ -204,7 +223,9 @@ A = {
     'pounce': {'frames': [P(DOWN + MOUTH + EAR_FLICK + TAIL_UP)] * 2 + [P(HAPPY + TAIL_UP, up=True)] * 2
                + [P(DOWN + OMOUTH + TAIL_DOWN), P(HAPPY + TAIL_UP)],
                'moods': ['idle'], 'every': [20, 45]},
-    'bleh': {'frames': [P(SMILE + MOUTH + TONGUE + TAIL_UP)] * 3, 'moods': ['idle', 'proud'], 'every': [15, 35]},
+    # tongue out, the brush flicking; it starts and ends up, so it never jumps
+    'bleh': {'frames': [P(SMILE + MOUTH + TONGUE + TAIL_UP), P(SMILE + MOUTH + TONGUE + TAIL_DOWN), P(SMILE + MOUTH + TONGUE + TAIL_UP)],
+             'moods': ['idle', 'proud'], 'every': [15, 35]},
     'idleYawn': {'frames': [P(OPEN + OMOUTH + TAIL_UP), P(SHUT + OMOUTH + TAIL_UP), P(SHUT + OMOUTH + TAIL_UP), P(OPEN + MOUTH + TAIL_UP)],
                  'moods': ['idle'], 'every': [20, 45]},
     'sleepyYawn': {'frames': [P(HALF + OMOUTH + TAIL_DOWN), P(SHUT + OMOUTH + TAIL_DOWN), P(SHUT + OMOUTH + TAIL_DOWN), P(HALF + MOUTH + TAIL_DOWN)],
