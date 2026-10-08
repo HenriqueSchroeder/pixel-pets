@@ -648,8 +648,8 @@ test('a pet that draws no walking stays put', async ($, on) => {
 
 // A pet asleep, breathing in two frames, with the frame clock running; returns
 // the repaints the clock sends between full redraws.
-const asleepWithClock = async ($: Parameters<TestBody>[0], on: On) => {
-  const breathing = JSON.stringify({ ...JSON.parse(pack('cat')), main: { moods: { sleeping: [['oo', 'bb'], ['bb', 'oo']] } } })
+const asleepWithClock = async ($: Parameters<TestBody>[0], on: On, moods: Record<string, string[][]> = {}, napFor = 5 * 60_000) => {
+  const breathing = JSON.stringify({ ...JSON.parse(pack('cat')), main: { moods: { sleeping: [['oo', 'bb'], ['bb', 'oo']], ...moods } } })
   const { clock } = setup(on, { '/pets/cat.json': breathing })
   const blits: string[] = []
   const engineDraws = { count: 0 }
@@ -666,7 +666,7 @@ const asleepWithClock = async ($: Parameters<TestBody>[0], on: On) => {
     return { value: {} }
   })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
-  await clock.advance(5 * 60_000)
+  await clock.advance(napFor)
   return { clock, blits, engineDraws }
 }
 
@@ -697,6 +697,16 @@ test('a second session.start does not start a second frame clock', async ($, on)
   // Two frames that take turns, four frames a second: at most one repaint a frame.
   await clock.advance(2000)
   expect(blits.length).toBeLessThanOrEqual(8)
+})
+
+test('awake, a pet that may stroll off is redrawn in full, not just repainted', async ($, on) => {
+  const moods = { idle: [['oo', 'bb'], ['bb', 'oo']], walking: [['bo', 'ob']] }
+  const { clock, blits } = await asleepWithClock($, on, moods, 1000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /hanging around|strolling around/ })).toBeDefined()
+
+  await clock.advance(10_000)
+  expect(blits).toEqual([])
 })
 
 test('hidden, nothing is repainted or redrawn', async ($, on) => {
