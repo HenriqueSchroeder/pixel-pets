@@ -87,11 +87,11 @@ def render(name, out):
     # As hooks/register.tsx: a pack with no mini pets shows no agents on the stage.
     mini = pack['mini']
     mini_h = len(mini['working'][0]) if mini else 0
+    scene = SCENE if mini else [(seconds, mood, label, []) for seconds, mood, label, _ in SCENE]
     stage_h = max(main_h * CELL_W, mini_h * CELL_W + CELL_H * 2)
 
     ticks = []
-    for seconds, mood, label, agents in SCENE:
-        agents = agents if mini else []
+    for seconds, mood, label, agents in scene:
         plan = 'wander' if mood in ('idle', 'proud') and not agents else 'stay'
         tick = {'mood': mood, 'plan': plan, 'room': STAGE_COLUMNS - pet_w - 2,
                 'agents': [kind for kind, _, _ in agents], 'width': AGENT_SLOT + 1,
@@ -103,8 +103,7 @@ def render(name, out):
     width = left * 2 + STAGE_COLUMNS * CELL_W
     height = CELL_H * 2 + stage_h + CELL_H * 2
     frames, tick = [], 0
-    for seconds, mood, label, agents in SCENE:
-        agents = agents if mini else []
+    for seconds, mood, label, agents in scene:
         for step in range(round(seconds * fps)):
             img = Image.new('RGB', (width, height), BG)
             d = ImageDraw.Draw(img)
