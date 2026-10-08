@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer, ToolCallInput } from 'claude-code'
 
-import type { Activity, AgentPet, Feelings, Frame, Label, MiniMood, Mood, Reaction, Situation, Traits } from '../types'
+import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation, Traits } from '../types'
 import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, USUAL } from './drives'
 import type { Drives, State } from './drives'
 import { calm, cheer, feel, idleMood, isNight, nightOf } from './feelings'
@@ -16,8 +16,8 @@ import type { Pack } from './pack'
 import { encode, mirror, sizeOf } from './render'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
-import { clamp, faceFor, gather, onTheWay, sideIn, walkStep } from './walk'
-import type { Plan, Side, Walk } from './walk'
+import { EMPTY_STAGE, faceFor, moveOnStage, sideIn } from './walk'
+import type { Side, Stage } from './walk'
 
 const asleep: Activity = { mood: 'sleeping', label: { text: 'sleeping', detail: '' } }
 
@@ -287,9 +287,8 @@ export const register: Register = (on, options) => {
   let frame = 0
   // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
   let motion: Motion | undefined
-  let walk: Walk | undefined
-  // The side each agent's pet stands on, kept so none hops over when another leaves.
-  let sides = new Map<string, Side>()
+  // Where it stands and each agent's side, kept so none hops over when another leaves.
+  let stage: Stage = EMPTY_STAGE
   // A full redraw costs Claude Code far more than repainting the pet, and every
   // open session pays it. While the band shows nothing but the pet's own frame
   // moving, `still` holds what the clock needs to repaint that frame alone; while
@@ -322,8 +321,6 @@ export const register: Register = (on, options) => {
   let traits: Traits = USUAL
   let lastState: State = 'awake'
   let stirredUntil = 0
-  // A pet that teleports, from where and since which tick, while it vanishes and appears.
-  let blink: { from: number; start: number } | undefined
   // When it last woke up glad at the person's first key after a long while away,
   // and whether that was since it went idle at `idleSince`.
   let gladAt: number | null = null
@@ -709,45 +706,29 @@ export const register: Register = (on, options) => {
     const isRestless = shown.mood === 'idle' || shown.mood === 'proud'
     const width = slot + 1
     const extraColumns = hidden > 0 ? OVERFLOW_COLUMNS : 0
-    const wanted = visible.map(one => sides.get(one.id))
-    const placed = gather(clamp(walk?.x ?? 0, room), room, visible.length, width, extraColumns, wanted)
-    const wants: Plan = visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless ? 'wander' : 'stay'
-    // A pet that draws no walking but a teleport gets about by vanishing and
-    // appearing, and goes nowhere else meanwhile.
+    // A pet that draws no walking but a teleport gets about by vanishing and appearing.
     const teleport = pack.walks ? null : pack.teleport
-    const moves = pack.walks || teleport !== null
-    const pace = teleport === null ? paceOf(drives) : { ...paceOf(drives), stride: Infinity }
-    const from = clamp(walk?.x ?? 0, room)
-    const walked = walkStep(walk, moves && blink === undefined ? wants : 'stay', frame, room, pack.fps, Math.random, pace)
-    // A pet that does neither is set down where they fit.
-    walk = moves || placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
-    if (teleport !== null && walked.moving && blink === undefined) blink = { from, start: frame }
-    // Where it shows: where it vanishes from until it is gone, then where it lands.
-    let standX = walk.x
-    let blinkFrame: Frame | undefined
-    if (teleport !== null && blink !== undefined) {
-      const at = frame - blink.start
-      if (at < teleport.vanish.length) {
-        blinkFrame = teleport.vanish[at]
-        standX = clamp(blink.from, room)
-      } else if (at < teleport.vanish.length + teleport.appear.length) blinkFrame = teleport.appear[at - teleport.vanish.length]
-      else blink = undefined
-    }
-    // The agents that do not fit around it yet, and the "+N", join once it gets there.
-    const drawn = onTheWay(standX, placed, room, visible.length, width, wanted)
-    const drawnCount = drawn.left.length + drawn.right.length
-    const showsMore = standX === placed.x && hidden > 0
+    const onStage = moveOnStage(stage, {
+      tick: frame,
+      room,
+      fps: pack.fps,
+      random: Math.random,
+      pace: paceOf(drives),
+      walks: pack.walks,
+      teleport: teleport === null ? null : { vanish: teleport.vanish.length, appear: teleport.appear.length },
+      agents: visible.map(one => one.id),
+      width,
+      extra: extraColumns,
+      wants: placed => (visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless ? 'wander' : 'stay'),
+    })
+    stage = onStage.stage
+    const { drawn, drawnCount, standX, blinking } = onStage
+    const blinkFrame = teleport === null || blinking === undefined ? undefined : teleport[blinking.phase][blinking.at]
+    const showsMore = standX === onStage.placed.x && hidden > 0
     const sideOf = (index: number) => sideIn(drawn, index)
-    // One not drawn yet keeps the side it had, so it does not hop over once it shows.
-    sides = new Map(
-      visible.flatMap((one, i): [string, Side][] => {
-        const side = i < drawnCount ? sideOf(i) : sides.get(one.id)
-        return side === undefined ? [] : [[one.id, side]]
-      }),
-    )
-    const isOnTheMove = walked.moving || blinkFrame !== undefined
-    const isStrolling = isOnTheMove && wants === 'wander'
-    const mood: Mood = pack.walks && walked.moving ? 'walking' : shown.mood
+    const isOnTheMove = onStage.moving || blinkFrame !== undefined
+    const isStrolling = isOnTheMove && onStage.wants === 'wander'
+    const mood: Mood = pack.walks && onStage.moving ? 'walking' : shown.mood
     const labelShown = isStrolling ? label('strolling') : shown.label
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
@@ -758,7 +739,7 @@ export const register: Register = (on, options) => {
     motion = moved.motion
     // It faces the way it walks, else the agent finishing as it says goodbye, else the first.
     const finishing = visible.slice(0, drawnCount).findLastIndex(one => one.leaving !== undefined)
-    const facing = faceFor(isOnTheMove, walk.facing, drawn, Math.max(finishing, 0))
+    const facing = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
     const shape = blinkFrame ?? moved.frame
     const body = facing === 1 ? shape : mirror(shape)
     const cells = encode(body, pack.colors)
@@ -768,8 +749,8 @@ export const register: Register = (on, options) => {
       !e.props.isWorking &&
       list.length === 0 &&
       !isOnTheMove &&
-      blink === undefined &&
-      (!moves || wants === 'stay') &&
+      stage.blink === undefined &&
+      (!(pack.walks || teleport !== null) || onStage.wants === 'stay') &&
       busy === null &&
       !(flash !== null && flash.until > now) &&
       !isQuoting

@@ -8,8 +8,8 @@ import { step } from '../hooks/motion'
 import type { Motion } from '../hooks/motion'
 import { MINI_MOODS, MOODS, PARENT, parsePack } from '../hooks/pack'
 import { mirror } from '../hooks/render'
-import { gather, walkStep } from '../hooks/walk'
-import type { Plan, Side, Walk } from '../hooks/walk'
+import { EMPTY_STAGE, faceFor, moveOnStage } from '../hooks/walk'
+import type { Plan, Stage } from '../hooks/walk'
 import type { Frame, Mood } from '../types'
 
 const args = process.argv.slice(2)
@@ -17,34 +17,49 @@ const arg = args.find(one => !one.startsWith('--')) ?? 'cat'
 const path = existsSync(arg) ? arg : join(import.meta.dirname, '..', 'pets', `${arg}.json`)
 const pack = parsePack(JSON.parse(readFileSync(path, 'utf8')))
 
-// Reads a JSON list of ticks, each `{ mood, plan, room, agents, width }` (the
-// agents by id, each `width` columns), and prints the main pet's frame, column
-// and the agents on each side for each, as the plugin would play, walk and
-// gather them. Seeded, so a GIF renders the same twice.
+// Reads a JSON list of ticks, each `{ mood, plan, room, agents, width, leaving }`
+// (the agents by id, each `width` columns; `leaving`, the ids saying goodbye) and
+// prints the main pet's frame, column and the agents on each side for each, as
+// the plugin would play, walk or teleport and gather them, through the same
+// moveOnStage. `plan` is what it does alone; with agents it makes room for them.
+// Seeded, so a GIF renders the same twice.
 const play = () => {
   let seed = 14
   const random = () => {
     seed = (seed * 1664525 + 1013904223) % 4294967296
     return seed / 4294967296
   }
-  type Tick = { mood: Mood; plan: Plan; room: number; agents: string[]; width: number }
+  type Tick = { mood: Mood; plan: Plan; room: number; agents: string[]; width: number; leaving?: string[] }
   const ticks = JSON.parse(readFileSync(0, 'utf8')) as Tick[]
+  const teleport = pack.walks ? null : pack.teleport
   let motion: Motion | undefined
-  let walk: Walk | undefined
-  let sides = new Map<string, Side>()
-  const played = ticks.map(({ mood, plan, room, agents, width }, tick) => {
-    const walked = walkStep(walk, pack.walks ? plan : 'stay', tick, room, pack.fps, random)
-    const placed = gather(walked.walk.x, room, agents.length, width, 0, agents.map(id => sides.get(id)))
-    walk = placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
-    const sideOf = (index: number): Side => (placed.right.includes(index) ? 1 : -1)
-    sides = new Map(agents.map((id, i) => [id, sideOf(i)]))
-    const moved = step(pack, motion, walked.moving ? 'walking' : mood, tick, random)
+  let stage: Stage = EMPTY_STAGE
+  return ticks.map(({ mood, plan, room, agents, width, leaving = [] }, tick) => {
+    const onStage = moveOnStage(stage, {
+      tick,
+      room,
+      fps: pack.fps,
+      random,
+      pace: { rest: 1, lean: 0 },
+      walks: pack.walks,
+      teleport: teleport === null ? null : { vanish: teleport.vanish.length, appear: teleport.appear.length },
+      agents,
+      width,
+      extra: 0,
+      wants: placed => (agents.length > 0 ? { go: placed.x } : plan),
+    })
+    stage = onStage.stage
+    const { drawn, drawnCount, blinking } = onStage
+    const moved = step(pack, motion, pack.walks && onStage.moving ? 'walking' : mood, tick, random)
     motion = moved.motion
-    const facing = agents.length === 0 ? walk.facing : sideOf(0)
-    const frame = facing === 1 ? moved.frame : mirror(moved.frame)
-    return { frame, x: walk.x, left: placed.left, right: placed.right, moving: walked.moving }
+    const blinkFrame = teleport === null || blinking === undefined ? undefined : teleport[blinking.phase][blinking.at]
+    const isOnTheMove = onStage.moving || blinkFrame !== undefined
+    const finishing = agents.slice(0, drawnCount).findLastIndex(id => leaving.includes(id))
+    const facing = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
+    const shape = blinkFrame ?? moved.frame
+    const frame = facing === 1 ? shape : mirror(shape)
+    return { frame, x: onStage.standX, left: drawn.left, right: drawn.right, moving: isOnTheMove }
   })
-  return played
 }
 
 const rgb = (color: number) => `${(color >> 16) & 255};${(color >> 8) & 255};${color & 255}`

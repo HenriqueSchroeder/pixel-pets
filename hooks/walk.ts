@@ -165,3 +165,67 @@ export const onTheWay = (
   }
   return { x, left: [], right: [], more: 1 }
 }
+
+// What the band keeps between draws about the main pet's spot: where it stands,
+// the teleport it is in the middle of, and the side each agent stood on.
+export type Stage = { walk?: Walk; blink?: { from: number; start: number }; sides: ReadonlyMap<string, Side> }
+
+export const EMPTY_STAGE: Stage = { sides: new Map() }
+
+type Scene = {
+  tick: number
+  room: number
+  fps: number
+  random: Random
+  pace: Pace
+  walks: boolean
+  // The frames of its teleport, as counts; null for a pet that walks or draws none.
+  teleport: { vanish: number; appear: number } | null
+  // The agents to stand around it, by id, `width` columns each, plus `extra` for a "+N".
+  agents: readonly string[]
+  width: number
+  extra: number
+  // What it wants this tick, given where the agents would gather.
+  wants: (placed: Gathering) => Plan
+}
+
+// Moves the main pet one tick and lays its agents out around it, as the band
+// draws them: it walks, or teleports, or is set down where they fit, and the
+// agents that do not fit yet join once it gets there. One teleport plays out
+// before it goes anywhere else; `blinking` is how far into it this tick is.
+export const moveOnStage = (stage: Stage, scene: Scene) => {
+  const { tick, room, teleport, agents } = scene
+  const sides = agents.map(id => stage.sides.get(id))
+  const from = clamp(stage.walk?.x ?? 0, room)
+  const placed = gather(from, room, agents.length, scene.width, scene.extra, sides)
+  const wants = scene.wants(placed)
+  const moves = scene.walks || teleport !== null
+  const pace = teleport === null ? scene.pace : { ...scene.pace, stride: Infinity }
+  const walked = walkStep(stage.walk, moves && stage.blink === undefined ? wants : 'stay', tick, room, scene.fps, scene.random, pace)
+  // A pet that does neither is set down where they fit.
+  const walk = moves || placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }
+
+  let blink = stage.blink ?? (teleport !== null && walked.moving ? { from, start: tick } : undefined)
+  // Where it shows: where it vanishes from until it is gone, then where it lands.
+  let standX = walk.x
+  let blinking: { phase: 'vanish' | 'appear'; at: number } | undefined
+  if (teleport !== null && blink !== undefined) {
+    const at = tick - blink.start
+    if (at < teleport.vanish) {
+      blinking = { phase: 'vanish', at }
+      standX = clamp(blink.from, room)
+    } else if (at < teleport.vanish + teleport.appear) blinking = { phase: 'appear', at: at - teleport.vanish }
+    else blink = undefined
+  }
+
+  const drawn = onTheWay(standX, placed, room, agents.length, scene.width, sides)
+  const drawnCount = drawn.left.length + drawn.right.length
+  // One not drawn yet keeps the side it had, so it does not hop over once it shows.
+  const kept = new Map(
+    agents.flatMap((id, i): [string, Side][] => {
+      const side = i < drawnCount ? sideIn(drawn, i) : stage.sides.get(id)
+      return side === undefined ? [] : [[id, side]]
+    }),
+  )
+  return { stage: { walk, blink, sides: kept }, wants, placed, drawn, drawnCount, standX, moving: walked.moving, blinking }
+}

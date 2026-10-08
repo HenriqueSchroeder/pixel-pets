@@ -1,6 +1,6 @@
 """Renders the README's GIF of the band from a pack's real sprites.
 
-    python3 scripts/render-gif.py cat screenshots/band.gif
+    python3 scripts/render-gif.py clawd screenshots/clawd.gif
 
 Needs Pillow (pip install pillow) and npx. The pack is resolved and played by
 scripts/preview-pet.ts (--json, --play), so the pet moves, walks and has its
@@ -91,7 +91,8 @@ def render(name, out):
     for seconds, mood, label, agents in SCENE:
         plan = 'wander' if mood in ('idle', 'proud') and not agents else 'stay'
         tick = {'mood': mood, 'plan': plan, 'room': STAGE_COLUMNS - pet_w - 2,
-                'agents': [kind for kind, _, _ in agents], 'width': AGENT_SLOT + 1}
+                'agents': [kind for kind, _, _ in agents], 'width': AGENT_SLOT + 1,
+                'leaving': [kind for kind, mini_mood, _ in agents if mini_mood != 'working']}
         ticks += [tick] * round(seconds * fps)
     played = preview(name, '--play', json.dumps(ticks))
 
@@ -119,6 +120,9 @@ def render(name, out):
             columns = {i: pet['x'] + pet_w + 1 + n * (AGENT_SLOT + 1) for n, i in enumerate(pet['right'])}
             columns |= {i: pet['x'] - (n + 1) * (AGENT_SLOT + 1) for n, i in enumerate(pet['left'])}
             for i, (kind, mini_mood, mini_label) in enumerate(agents):
+                # One the pet is still making room for joins once it gets there.
+                if i not in columns:
+                    continue
                 slot_x = left + columns[i] * CELL_W
                 colors = {**pack['colors'], pack['tint']: AGENT_COLORS[[EXPLORE, PLAN, GENERAL].index(kind)]}
                 minis = pack['mini'][mini_mood]
@@ -145,6 +149,6 @@ def render(name, out):
 
 if __name__ == '__main__':
     name = sys.argv[1] if len(sys.argv) > 1 else 'cat'
-    out = Path(sys.argv[2] if len(sys.argv) > 2 else ROOT / 'screenshots/band.gif')
+    out = Path(sys.argv[2] if len(sys.argv) > 2 else ROOT / f'screenshots/{name}.gif')
     out.parent.mkdir(parents=True, exist_ok=True)
     render(name, out)

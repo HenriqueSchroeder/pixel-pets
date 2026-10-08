@@ -2,7 +2,8 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import type { Random } from '../hooks/motion'
 import { mirror } from '../hooks/render'
-import { faceFor, gather, layoutAt, onTheWay, walkStep } from '../hooks/walk'
+import { EMPTY_STAGE, faceFor, gather, layoutAt, moveOnStage, onTheWay, walkStep } from '../hooks/walk'
+import type { Stage } from '../hooks/walk'
 import type { Plan, Walk } from '../hooks/walk'
 
 const always = (value: number): Random => () => value
@@ -187,6 +188,32 @@ describe('faceFor', () => {
 
   test('with no agent drawn, it keeps its way', () => {
     expect(faceFor(false, -1, { x: 0, left: [], right: [], more: 1 }, 0)).toBe(-1)
+  })
+})
+
+describe('moveOnStage', () => {
+  test('a teleport vanishes where it stood, appears where it landed, then is done', () => {
+    let stage: Stage = EMPTY_STAGE
+    const seen: string[] = []
+    for (let tick = 0; tick <= 4; tick++) {
+      const moved = moveOnStage(stage, {
+        tick,
+        room: 40,
+        fps: 1,
+        random: always(0.9),
+        pace: { rest: 1, lean: 0 },
+        walks: false,
+        teleport: { vanish: 2, appear: 1 },
+        agents: [],
+        width: 10,
+        extra: 0,
+        wants: () => 'wander',
+      })
+      stage = moved.stage
+      seen.push(`${moved.blinking?.phase ?? '-'}@${moved.standX}`)
+    }
+    // It lands on 36 at tick 1, but shows where it was until it has vanished.
+    expect(seen).toEqual(['-@0', 'vanish@0', 'vanish@0', 'appear@36', '-@36'])
   })
 })
 
