@@ -633,8 +633,9 @@ test('a teleport draws its vanish and appear frames', async ($, on) => {
   await $.turn.complete(finished)
   await clock.advance(3000)
   const drawings = new Set<unknown>()
-  for (let tick = 0; tick < 120; tick++) {
-    await clock.advance(250)
+  // A second apart is enough: the draw it lands on shows the first vanish frame.
+  for (let second = 0; second < 30; second++) {
+    await clock.advance(1000)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
     drawings.add((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells)
   }
