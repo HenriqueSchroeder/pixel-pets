@@ -67,8 +67,10 @@ export type Pack = {
   // null when the pack draws no mini pets: its agents show only as its own `supervising`.
   mini: Record<MiniMood, Frame[]> | null
   tint: string
-  // Only a pack that draws `walking` leaves its spot: the rest stay put.
+  // Only a pack that draws `walking` leaves its spot by walking; one that draws
+  // `teleport` and no `walking` gets about by vanishing and appearing.
   walks: boolean
+  teleport: { vanish: Frame[]; appear: Frame[] } | null
   speech: Record<string, Partial<Record<Situation, string[]>>>
   personality: Traits
 }
@@ -163,6 +165,15 @@ const parseActions = (raw: unknown): Action[] => {
   })
 }
 
+const parseTeleport = (raw: unknown) => {
+  if (raw === undefined) return null
+  if (!isRecord(raw)) throw new Error('main.teleport: an object with vanish and appear frames')
+  return {
+    vanish: checkFrames(raw.vanish, 'main.teleport.vanish', LIMITS.main),
+    appear: checkFrames(raw.appear, 'main.teleport.appear', LIMITS.main),
+  }
+}
+
 // Each trait a number from 0 to 1; one left out is the usual.
 const parsePersonality = (raw: unknown): Traits => {
   if (raw === undefined) return USUAL
@@ -249,8 +260,15 @@ export const parsePack = (raw: unknown): Pack => {
   }
   const transitions = parseTransitions(file.main.transitions)
   const actions = parseActions(file.main.actions)
+  const teleport = parseTeleport(file.main.teleport)
   sameSize(
-    [...drawn.values(), ...[...extra.values()].flat(), ...Object.values(transitions), ...actions.map(a => a.frames)].flat(),
+    [
+      ...drawn.values(),
+      ...[...extra.values()].flat(),
+      ...Object.values(transitions),
+      ...actions.map(a => a.frames),
+      ...(teleport === null ? [] : [teleport.vanish, teleport.appear]),
+    ].flat(),
     'main',
   )
 
@@ -259,7 +277,21 @@ export const parsePack = (raw: unknown): Pack => {
   const speech = parseSpeech(file.speech)
   const personality = parsePersonality(file.personality)
 
-  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking'), speech, personality }
+  return {
+    name: file.name,
+    colors,
+    fps,
+    moods,
+    variants,
+    transitions,
+    actions,
+    mini,
+    tint,
+    walks: drawn.has('walking'),
+    teleport,
+    speech,
+    personality,
+  }
 }
 
 const parseMini = (raw: unknown, colors: Colors) => {

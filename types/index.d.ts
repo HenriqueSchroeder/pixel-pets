@@ -50,6 +50,9 @@ export type PackFile = {
     transitions?: Record<string, Frame[]>
     // Played once at random while in one of `moods`, every `every` seconds [min, max].
     actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number] }>
+    // A pet that does not walk can teleport instead: `vanish` plays where it was,
+    // `appear` where it lands.
+    teleport?: { vanish: Frame[]; appear: Frame[] }
   }
   // false: no mini pets, the agents show only as the pet's own `supervising`
   mini: false | { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }

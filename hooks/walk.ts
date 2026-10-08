@@ -28,8 +28,9 @@ const BREAK_CHANCE = 0.3
 const LOOK_SECONDS: [number, number] = [1, 2]
 
 // How it strolls: `rest` stretches the pauses, `lean` (0 to 1) draws its spots
-// toward the left, where the prompt starts.
-export type Pace = { rest: number; lean: number }
+// toward the left, where the prompt starts, and `stride` sets the columns a tick
+// in place of the usual walk: Infinity lands it there at once, as a teleport.
+export type Pace = { rest: number; lean: number; stride?: number }
 
 const EVEN: Pace = { rest: 1, lean: 0 }
 
@@ -63,7 +64,8 @@ export const walkStep = (
       onward = undefined
     } else {
       target = Math.round(random() ** (1 + 2 * pace.lean) * maxX)
-      if (Math.abs(target - x) >= BREAK_FROM_COLUMNS && random() < BREAK_CHANCE) {
+      const breaks = pace.stride === undefined && Math.abs(target - x) >= BREAK_FROM_COLUMNS
+      if (breaks && random() < BREAK_CHANCE) {
         onward = target
         target = Math.round((x + target) / 2)
       }
@@ -74,7 +76,7 @@ export const walkStep = (
   if (x === target) return { walk: { x, target, facing, restUntil, tick, moving: false, onward }, moving: false }
 
   const direction = target > x ? 1 : -1
-  const speed = typeof plan === 'object' ? HURRY_COLUMNS_PER_TICK : COLUMNS_PER_TICK
+  const speed = pace.stride ?? (typeof plan === 'object' ? HURRY_COLUMNS_PER_TICK : COLUMNS_PER_TICK)
   const next = x + direction * Math.min(speed, Math.abs(target - x))
   if (next === target && plan === 'wander') restUntil = onward === undefined ? pause(REST_SECONDS, pace.rest) : pause(LOOK_SECONDS, 1)
   return { walk: { x: next, target, facing: direction, restUntil, tick, moving: true, onward }, moving: true }

@@ -559,6 +559,33 @@ test('a pet that draws walking strolls while idle', async ($, on) => {
   expect(await idleLabels($, on, JSON.stringify(walker))).toContain('· strolling around')
 })
 
+test('a pet that draws a teleport and no walking gets about by vanishing and appearing', async ($, on) => {
+  const blinker = JSON.parse(pack('cat'))
+  blinker.main.teleport = { vanish: [['o.', '..']], appear: [['..', 'b.']] }
+  expect(await idleLabels($, on, JSON.stringify(blinker))).toContain('· strolling around')
+})
+
+test('a teleport draws its vanish and appear frames', async ($, on) => {
+  const blinker = JSON.parse(pack('cat'))
+  // Unlike the pet, which looks the same either way it faces.
+  blinker.main.teleport = { vanish: [['o.', '..']], appear: [['..', 'b.']] }
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(blinker) })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  const drawings = new Set<unknown>()
+  for (let tick = 0; tick < 120; tick++) {
+    await clock.advance(250)
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    drawings.add((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells)
+  }
+  // The pet itself, then the teleport's own frames.
+  expect(drawings.size).toBeGreaterThan(1)
+})
+
 test('a pet that draws no walking stays put', async ($, on) => {
   expect([...(await idleLabels($, on, pack('cat')))]).toEqual(['· hanging around'])
 })

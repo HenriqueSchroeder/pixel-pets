@@ -123,6 +123,16 @@ describe('parsePack', () => {
     expect(refused({ en: { longThink: Array(9).fill('hm') } })).toThrow(/1 to 8 lines/)
   })
 
+  test('takes teleport frames, checked like any other', () => {
+    expect(parsePack(tiny()).teleport).toBeNull()
+    const blink = { vanish: [['.b', '..']], appear: [['b.', '..'], ['bb', 'oo']] }
+    expect(parsePack({ ...tiny(), main: { ...tiny().main, teleport: blink } }).teleport).toEqual(blink)
+    const refused = (teleport: unknown) => () => parsePack({ ...tiny(), main: { ...tiny().main, teleport } })
+    expect(refused({ vanish: [['.b', '..']] })).toThrow(/teleport.appear/)
+    expect(refused({ vanish: [['.bb', '...']], appear: [['bb', 'oo']] })).toThrow(/same size/)
+    expect(refused([['bb', 'oo']])).toThrow(/vanish and appear/)
+  })
+
   test('takes its personality, the usual 0.5 for a trait left out, and checks it', () => {
     expect(parsePack(tiny()).personality).toEqual({ energetic: 0.5, curious: 0.5, affectionate: 0.5 })
     expect(parsePack({ ...tiny(), personality: { curious: 0.9, affectionate: 0 } }).personality).toEqual({

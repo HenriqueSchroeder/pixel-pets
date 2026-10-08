@@ -98,6 +98,15 @@ describe('a long stroll', () => {
     expect(xs.slice(16, 21)).toEqual([17, 18, 18, 19, 20])
   })
 
+  test('a pet that teleports lands there at once, and never breaks', () => {
+    const blink = { rest: 1, lean: 0, stride: Infinity }
+    const start: Walk = { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false }
+    const landed = walkStep(start, 'wander', 1, 40, 1, inTurn(0.9, 0.1, 0.5), blink).walk
+    expect(landed).toMatchObject({ x: 36, target: 36, facing: 1 })
+    expect(landed.onward).toBeUndefined()
+    expect(walkStep(start, { go: 20 }, 1, 40, 1, inTurn(0), blink).walk.x).toBe(20)
+  })
+
   test('a short stroll never breaks', () => {
     const { xs } = trail('wander', 1, 6, 10, inTurn(0.5, 0), { x: 0, target: 0, facing: 1, restUntil: 0, tick: 0, moving: false })
     expect(xs).toEqual([1, 2, 3, 4, 5, 5])

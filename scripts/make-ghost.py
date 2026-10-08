@@ -63,6 +63,16 @@ TONGUE = [(8, 5, 'p'), (8, 6, 'p')]
 WIDE = [(3, 4, 'e'), (4, 4, 'e'), (5, 4, 'e'), (3, 7, 'e'), (4, 7, 'e'), (5, 7, 'e')]
 
 
+def wisp():
+    """All of it translucent, outline too, no face: half there."""
+    return [row.replace('b', FAINTER).replace('o', FAINTER) for row in body(True, None)]
+
+
+def sparks(*ps):
+    """Only a few sparks where it floats."""
+    return paint([BLANK] * len(body(True, None)), [(r, c, 'w') for r, c in ps])
+
+
 def look(s):
     return [(r, c + s, l) for r, c, l in OPEN]
 
@@ -164,14 +174,21 @@ def mini(px, lift=True):
     return paint(rows, [(r + (0 if lift else 1), c, l) for r, c, l in px])
 
 
+# It never walks: it fades out, sparks, and turns up somewhere else with a boo.
+SPARK_OUT, SPARK_IN = sparks((3, 3), (6, 8), (9, 5)), sparks((2, 8), (5, 2), (8, 6))
+TELEPORT = {
+    'vanish': [f(WIDE + OMOUTH), f(SHUT + MOUTH, True, FAINT), f(SHUT + MOUTH, True, FAINTER), wisp(), SPARK_OUT, [BLANK] * len(body(True, None))],
+    'appear': [SPARK_IN, wisp(), f(SHUT + MOUTH, True, FAINTER), f(DOWN + MOUTH, True, FAINT), f(WIDE + OMOUTH)],
+}
+
 pack = {
     '$schema': SCHEMA,
     'name': 'ghost', 'author': 'Henrique Schroeder',
-    'description': 'A friendly ghost that floats instead of walking and fades as it sleeps.',
+    'description': 'A friendly ghost that floats instead of walking, fades as it sleeps and turns up elsewhere with a boo.',
     'palette': {'o': '#5b5b7a', 'b': '#f4f2ff', 'f': '#b9b5d6', 'h': '#7f7b9e', 'e': '#2b2b3a',
                 'p': '#f2a0b6', 'w': '#ffffff', 't': '#7cc4f2'},
     'fps': 4,
-    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A},
+    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A, 'teleport': TELEPORT},
     'mini': {'tint': 'b', 'moods': {
         'working': [mini([])] * 2 + [mini([], False)] * 2,
         'happy': [mini([(2, 2, 'o'), (2, 5, 'o')])] * 2 + [mini([(2, 2, 'o'), (2, 5, 'o')], False)] * 2,

@@ -20,8 +20,11 @@ TALL = ['...oooooo...', '..obbbbbbo..', '..obbbbbbo..', '.obwbbbbbbo.', '.obbbbb
         '.obbbbbbbbo.', '.obbbbbbbbo.', '.obbbbbbbbo.', '..oooooooo..', '............']
 FLAT = ['............', '............', '............', '...oooooo...', '.oobbbbbboo.',
         'obwbbbbbbbbo', 'obbbbbbbbbbo', 'obbbbbbbbbbo', 'oooooooooooo', '............']
+# All but gone: the last of it, as it sinks away to teleport and wells up again.
+DROP = ['............'] * 6 + ['....oooo....', '..obbbbbbo..', '.oooooooooo.', '............']
+EMPTY = ['............'] * 10
 ER = {'base': 4, 'squish': 4, 'tall': 4, 'flat': 5}
-BODY = {'base': BASE, 'squish': SQUISH, 'tall': TALL, 'flat': FLAT}
+BODY = {'base': BASE, 'squish': SQUISH, 'tall': TALL, 'flat': FLAT, 'drop': DROP}
 
 
 def open_(er, s=0): return [(er, 4 + s, 'e'), (er + 1, 4 + s, 'e'), (er, 7 + s, 'e'), (er + 1, 7 + s, 'e')]
@@ -121,6 +124,12 @@ T = {
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
 
+# It never walks: it melts into the floor and wells up somewhere else.
+TELEPORT = {
+    'vanish': [f('base', open_, omouth), f('squish', shut, omouth), f('flat', shut, small), paint('drop', []), EMPTY],
+    'appear': [paint('drop', []), f('flat', shut, small), f('squish', down, small), f('tall', open_, omouth), f('base', open_, small)],
+}
+
 EYES_OPEN = ['idle', 'thinking', 'supervising', 'searching', 'reading', 'watching']
 # its shine slides along the top as it wobbles
 SHINE = lambda body, c: paint(body, open_(ER[body]) + mouth(ER[body] + 2) + [(3, 3, 'b'), (3, c, 'w')])
@@ -157,7 +166,7 @@ me = lambda r: [(r, 2, 'e'), (r, 5, 'e')]
 pack = {
     '$schema': SCHEMA,
     'name': 'slime', 'author': 'Henrique Schroeder',
-    'description': 'A green slime that bounces in place, melts into a puddle when it sleeps deep, and never walks.',
+    'description': 'A green slime that bounces in place, melts into a puddle when it sleeps deep, and never walks: it sinks away and wells up elsewhere.',
     'palette': {'o': '#14381c', 'b': '#5fd068', 'w': '#d9ffd9', 'e': '#0b1f0f', 't': '#5ab4ff'},
     'fps': 4,
     'main': {
@@ -165,6 +174,7 @@ pack = {
         'variants': V,
         'transitions': T,
         'actions': A,
+        'teleport': TELEPORT,
     },
     'mini': {'tint': 'b', 'moods': {
         'working': [mini(MINI, me(2))] * 2 + [mini(MINI_SQ, me(2))] * 2,

@@ -40,7 +40,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
 
-The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. When they do not fit where it stands, it walks aside to make room and they join as it gets there. Only a pack that draws `walking` moves: leave it out and the pet stays put at the left, as the slime and the ghost do. Packs draw their pet facing right; pixel-pets mirrors it to walk left.
+The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. When they do not fit where it stands, it walks aside to make room and they join as it gets there. Only a pack that draws `walking` walks. One that draws `main.teleport` instead gets about by vanishing and turning up elsewhere, as the slime and the ghost do; a pack with neither stays put at the left. Packs draw their pet facing right; pixel-pets mirrors it to face left.
 
 It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. These last for the session only.
 
@@ -95,9 +95,9 @@ A pack in `~/.claude/pets/` wins over a shipped one with the same name. If a pac
 
 Shipped pets:
 
-- [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks. Both are shown at the top.
+- [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks: it sinks into the floor and wells up somewhere else. Both are shown at the top.
 - [`dog`](pets/dog.json), which wags its tail, pants and tilts its head when it thinks.
-- [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then and fades as it sleeps.
+- [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
 - [`clawd`](pets/clawd.json), the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
 
@@ -165,6 +165,8 @@ Give it a voice with `speech`, at the top level: lines by language code and situ
 ```
 
 The situations are `longThink`, `manyReads`, `manyAgents`, `lateNight`, `bored` and `dreaming`. Up to 8 lines each, one line of up to 40 characters.
+
+A pet that does not walk can teleport: give `main` a `teleport` with `vanish`, played where it stands, and `appear`, played where it lands, frames like any other. It is how it strolls and how it makes room for agents.
 
 Give it a nature with `personality`, at the root of the pack: three traits from 0 to 1, each the usual 0.5 when left out. `energetic` tires slower, `curious` gets bored and up from a nap sooner (0 never does), `affectionate` misses you sooner (0 never does). The dog is `{ "energetic": 0.8, "curious": 0.6, "affectionate": 0.9 }`; the slime, lazy, is `{ "energetic": 0.2, "curious": 0.3, "affectionate": 0.6 }`.
 

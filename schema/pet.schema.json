@@ -400,6 +400,23 @@
           "propertyNames": {
             "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,31}$"
           }
+        },
+        "teleport": {
+          "description": "For a pet that does not walk: played to get about instead. `vanish` plays where it stands, then it lands at the new spot and `appear` plays there. A pack that draws `walking` walks and never teleports.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vanish",
+            "appear"
+          ],
+          "properties": {
+            "vanish": {
+              "$ref": "#/$defs/mainFrames"
+            },
+            "appear": {
+              "$ref": "#/$defs/mainFrames"
+            }
+          }
         }
       }
     },
