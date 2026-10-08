@@ -55,7 +55,7 @@
       ],
       "properties": {
         "moods": {
-          "description": "Frames per mood. Only sleeping is required; a missing mood borrows its nearest drawn parent's frames (see README). Every frame of the main pet has the same size, at most 24x24.",
+          "description": "Frames per mood. Only sleeping is required; a missing mood borrows its nearest drawn parent's frames (see README). Every frame of the main pet has the same size, at most 48x32.",
           "type": "object",
           "required": [
             "sleeping"
