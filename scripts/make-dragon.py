@@ -134,6 +134,8 @@ TAP_FRONT = [(19, c, 'o') for c in range(21, 24)] + [(18, c, 'n') for c in range
 TAP_HIND = [(19, c, 'o') for c in range(11, 15)] + [(18, c, 'n') for c in range(11, 15)]
 
 HEAD_ROWS, HEAD_COLS = range(0, 9), range(17, 32)
+# where the neck meets the head: it stretches when the head moves sideways
+NECK = {(r, c) for r in (7, 8) for c in range(17, 22)}
 # lying down, its head rests on its front paws
 SLEEP_DROP = 9
 
@@ -144,7 +146,8 @@ def move_head(g, dx, dy):
     cells = [list(r) for r in g]
     head = [(r, c, g[r][c]) for r in HEAD_ROWS for c in HEAD_COLS if g[r][c] != '.']
     for r, c, _ in head:
-        cells[r][c] = '.'
+        if dy or (r, c) not in NECK:
+            cells[r][c] = '.'
     for r, c, ch in head:
         if 0 <= r + dy < H and 0 <= c + dx < W:
             cells[r + dy][c + dx] = ch
@@ -164,13 +167,14 @@ def at(pixels, dx=0, dy=0):
     return [(r + dy, c + dx, ch) for r, c, ch in pixels]
 
 
-def frame(face=(), wing='fold', breath=False, dx=0, dy=0, body=(), fx=(), up=0):
+def frame(face=(), wing='fold', breath=False, dx=0, dy=0, body=(), fx=(), up=0, ground=()):
     """`face` is painted on the head before it moves by (`dx`, `dy`); `fx` is
-    painted where it is, after; `up` flies the whole frame up."""
+    painted where it is, after; `up` flies the whole frame up, and `ground`
+    stays on the ground."""
     g = over(BODY, WINGS[wing])
     g = paint(g, list(face) + (BREATH if breath else []) + list(body))
     g = move_head(g, dx, dy)
-    return lift(paint(g, list(fx)), up)
+    return paint(lift(paint(g, list(fx)), up), list(ground))
 
 
 def asleep(face=SHUT, breath=False, fx=(), dy=SLEEP_DROP):
@@ -253,8 +257,9 @@ F = {
     # chest out, wings half spread
     'proud': [frame(JOY, 'up', breath=True, fx=EMBER + ([(12, 22, 'n')] if i % 8 < 2 else []))
               for i in range(16)],
-    # wings flapping, hopping
-    'happy': [frame(JOY + OPEN_MOUTH, 'up' if i % 4 < 2 else 'down', up=1 if i % 4 < 2 else 0) for i in range(16)],
+    # wings flapping, hopping off all four feet
+    'happy': [frame(JOY + OPEN_MOUTH, 'up' if i % 4 < 2 else 'down', body=TAP_FRONT + TAP_HIND if i % 4 < 2 else ())
+              for i in range(16)],
     # a long job done: a roar of fire, wings beating, sparks raining down
     'celebrating': [frame(JOY + ROAR, 'up' if i % 4 < 2 else 'down', fx=fire(2 + i % 2) + SPARKS[i % 4]) for i in range(16)],
     # head low, a tear running down
@@ -264,7 +269,7 @@ F = {
 V = {
     'idle': [breathing(BACK)],
     'thinking': [[frame(UP, 'lift' if i >= 8 else 'fold', breath=i >= 8, fx=EMBER if i % 4 < 2 else HOT) for i in range(16)]],
-    'reading': [[frame(DOWN, dx=d) for d in (-1, -1, -1, -1, 0, 0, 0, 0)] + [frame(DOWN)] * 8],
+    'reading': [[frame(BACK)] * 4 + [frame(OPEN)] * 4 + [frame(DOWN)] * 8],
 }
 
 
@@ -289,16 +294,18 @@ T = {
 
 # Flying: it spreads its wings, beats them, and rises out of sight; landing is the reverse.
 TELEPORT = {
-    'vanish': [frame(OPEN, 'up'), frame(OPEN, 'down', fx=DUST), frame(OPEN, 'up', fx=DUST, up=2),
+    'vanish': [frame(OPEN, 'up'), frame(OPEN, 'down', ground=DUST), frame(OPEN, 'up', ground=DUST, up=2),
                frame(OPEN, 'down', up=5), frame(OPEN, 'up', up=9), frame(OPEN, 'down', up=14), [EMPTY] * H],
     'appear': [frame(OPEN, 'down', up=14), frame(OPEN, 'up', up=9), frame(OPEN, 'down', up=5),
-               frame(OPEN, 'up', up=2), frame(OPEN, 'down', fx=DUST), frame(OPEN, 'up', fx=DUST), frame(OPEN)],
+               frame(OPEN, 'up', up=2), frame(OPEN, 'down', ground=DUST), frame(OPEN, 'up', ground=DUST), frame(OPEN)],
 }
 
-QUIET = ['idle', 'watching', 'thinking', 'typing', 'running', 'writing', 'reading']
+# one frame, so a blink never holds up a loop's smoke or claws for long
+QUIET = ['idle', 'watching', 'thinking', 'typing', 'writing', 'reading']
 A = {
-    'blink': {'frames': [frame(SHUT), frame(HALF)], 'moods': QUIET, 'every': [2, 6]},
-    'blinkLean': {'frames': [frame(SHUT, dx=1), frame(HALF, dx=1)], 'moods': ['supervising'], 'every': [2, 6]},
+    'blink': {'frames': [frame(SHUT)], 'moods': QUIET, 'every': [2, 6]},
+    'blinkHot': {'frames': [frame(SHUT, fx=EMBER)], 'moods': ['running'], 'every': [2, 6]},
+    'blinkLean': {'frames': [frame(SHUT, dx=1)], 'moods': ['supervising'], 'every': [2, 6]},
     'blinkGlare': {'frames': [frame(GLARE + SHUT)], 'moods': ['grumpy'], 'every': [3, 7]},
     'blinkWorried': {'frames': [frame(SHUT + SMALL)], 'moods': ['worried', 'sweating'], 'every': [2, 5]},
     # it draws a deep breath, rears back, and lets loose
