@@ -32,8 +32,21 @@ describe('parsePack', () => {
     expect(parsePack({ ...tiny(), main: { moods: { sleeping: [['oo']], walking: [['bb']] } } }).walks).toBe(true)
   })
 
-  test('mini happy and sad fall back to working', () => {
+  test('mini happy, sad and startled fall back to working', () => {
     expect(parsePack(tiny()).mini?.happy).toEqual([['ob', 'bo']])
+    expect(parsePack(tiny()).mini?.startled).toEqual([['ob', 'bo']])
+  })
+
+  test('an action may startle the agents from one of its frames on', () => {
+    const withAction = (action: unknown) => ({
+      ...tiny(),
+      main: { ...tiny().main, actions: { whip: { frames: [['oo', 'bb'], ['bb', 'oo']], moods: ['supervising'], every: [2, 4], ...(action as object) } } },
+    })
+    expect(parsePack(withAction({ startles: 1 })).actions[0]?.startles).toBe(1)
+    expect(parsePack(withAction({})).actions[0]?.startles).toBeUndefined()
+    expect(() => parsePack(withAction({ startles: 2 }))).toThrow(/startles: one of its frames, 0 to 1/)
+    expect(() => parsePack(withAction({ startles: 0.5 }))).toThrow(/startles/)
+    expect(() => parsePack(withAction({ startles: '1' }))).toThrow(/startles/)
   })
 
   test('mini: false draws no mini pets; leaving mini out is still a mistake', () => {

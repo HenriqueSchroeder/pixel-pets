@@ -10,8 +10,9 @@ export type Motion = {
   began: number
   // The tick the loop's first frame plays on.
   since: number
-  // A transition or an action, played once from `start`.
-  once?: { frames: Frame[]; start: number; isAction: boolean }
+  // A transition or an action, played once from `start`; an action that startles
+  // the agents does so from its frame `startles` on.
+  once?: { frames: Frame[]; start: number; isAction: boolean; startles?: number }
   // The tick from which each action may play again.
   next: Record<string, number>
 }
@@ -60,8 +61,8 @@ const holds = (pack: Pack, motion: Motion, mood: Mood, tick: number) => {
   return motion.once?.isAction === true && left > 0 && left <= FOLLOW_THROUGH_TICKS
 }
 
-// The frame to draw on `tick`. Safe to call more than once per tick: the same
-// tick gives the same frame.
+// The frame to draw on `tick`, and whether it startles the agents. Safe to call
+// more than once per tick: the same tick gives the same frame.
 export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick: number, random: Random) => {
   let motion =
     previous !== undefined && (previous.mood === mood || holds(pack, previous, mood, tick))
@@ -69,8 +70,10 @@ export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick:
       : start(pack, previous, mood, tick, random)
 
   if (motion.once !== undefined) {
-    const frame = motion.once.frames[tick - motion.once.start]
-    if (frame !== undefined) return { motion, frame }
+    const at = tick - motion.once.start
+    const frame = motion.once.frames[at]
+    const startles = motion.once.startles
+    if (frame !== undefined) return { motion, frame, startled: startles !== undefined && at >= startles }
     motion = { ...motion, once: undefined }
   }
 
@@ -79,10 +82,11 @@ export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick:
   const due = isLeaving ? undefined : pack.actions.find(action => (motion.next[action.name] ?? Infinity) <= tick)
   if (due !== undefined) {
     const again = tick + due.frames.length + someTime(due.every, pack.fps, random)
-    motion = { ...motion, once: { frames: due.frames, start: tick, isAction: true }, next: { ...motion.next, [due.name]: again } }
-    return { motion, frame: due.frames[0] ?? [] }
+    const once = { frames: due.frames, start: tick, isAction: true, startles: due.startles }
+    motion = { ...motion, once, next: { ...motion.next, [due.name]: again } }
+    return { motion, frame: due.frames[0] ?? [], startled: due.startles === 0 }
   }
 
   const at = (((tick - motion.since) % motion.loop.length) + motion.loop.length) % motion.loop.length
-  return { motion, frame: motion.loop[at] ?? [] }
+  return { motion, frame: motion.loop[at] ?? [], startled: false }
 }

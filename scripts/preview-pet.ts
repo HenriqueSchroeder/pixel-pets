@@ -58,7 +58,7 @@ const play = () => {
     const facing = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
     const shape = blinkFrame ?? moved.frame
     const frame = facing === 1 ? shape : mirror(shape)
-    return { frame, x: onStage.standX, left: drawn.left, right: drawn.right, moving: isOnTheMove }
+    return { frame, x: onStage.standX, left: drawn.left, right: drawn.right, moving: isOnTheMove, startled: moved.startled }
   })
 }
 
