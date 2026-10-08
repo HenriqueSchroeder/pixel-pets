@@ -226,10 +226,10 @@ test('loads the pet picked in the config', { options: { pet: 'owl' } }, async ($
   expect(reads.at(-1)).toMatch(/\/pets\/owl\.json$/)
 })
 
-test('custom loads the person\'s own pack', { options: { pet: 'custom', customPet: 'dragon' } }, async ($, on) => {
-  const { reads } = setup(on, { '/pets/dragon.json': pack('dragon'), '/pets/cat.json': pack('cat') })
+test('custom loads the person\'s own pack', { options: { pet: 'custom', customPet: 'my-pet' } }, async ($, on) => {
+  const { reads } = setup(on, { '/pets/my-pet.json': pack('my-pet'), '/pets/cat.json': pack('cat') })
   await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(reads.at(-1)).toMatch(/\/pets\/dragon\.json$/)
+  expect(reads.at(-1)).toMatch(/\/pets\/my-pet\.json$/)
 })
 
 test('refuses a pet name that walks out of the pets folder', { options: { pet: 'custom', customPet: '../../.ssh/id_rsa' } }, async ($, on) => {
