@@ -147,6 +147,18 @@ export const sideIn = (drawn: Gathering, index: number): Side => (drawn.right.in
 export const faceFor = (moving: boolean, facing: Side, drawn: Gathering, at: number): Side =>
   moving || drawn.left.length + drawn.right.length === 0 ? facing : sideIn(drawn, at)
 
+// The way it faced as the action playing now began.
+export type Held = { start: number; side: Side } | undefined
+
+// While an action plays it keeps the way it faced as the action began, so a whip
+// raised at one side cracks there though an agent comes or goes meanwhile; with
+// no action it faces `side`.
+export const holdFacing = (held: Held, action: { start: number } | undefined, side: Side) => {
+  if (action === undefined) return { held: undefined, side }
+  if (held?.start === action.start) return { held, side: held.side }
+  return { held: { start: action.start, side }, side }
+}
+
 // Who shows while the pet is on its way to `placed`: all of them once it stands
 // there, else as many as already fit around `x`, with no room kept for a "+N".
 export const onTheWay = (

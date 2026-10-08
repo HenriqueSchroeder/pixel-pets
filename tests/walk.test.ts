@@ -2,7 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import type { Random } from '../hooks/motion'
 import { mirror } from '../hooks/render'
-import { EMPTY_STAGE, faceFor, gather, layoutAt, moveOnStage, onTheWay, walkStep } from '../hooks/walk'
+import { EMPTY_STAGE, faceFor, gather, holdFacing, layoutAt, moveOnStage, onTheWay, walkStep } from '../hooks/walk'
 import type { Stage } from '../hooks/walk'
 import type { Plan, Walk } from '../hooks/walk'
 
@@ -171,6 +171,21 @@ describe('onTheWay', () => {
 
   test('all show once it gets there', () => {
     expect(onTheWay(placed.x, placed, 30, 3, 10)).toBe(placed)
+  })
+})
+
+describe('holdFacing', () => {
+  test('through an action it keeps the way it faced as the action began', () => {
+    const began = holdFacing(undefined, { start: 10 }, 1)
+    expect(began.side).toBe(1)
+    // An agent comes on its left mid-action: it does not turn.
+    expect(holdFacing(began.held, { start: 10 }, -1).side).toBe(1)
+  })
+
+  test('a new action faces anew, and with none it faces as it would', () => {
+    const began = holdFacing(undefined, { start: 10 }, 1)
+    expect(holdFacing(began.held, { start: 20 }, -1).side).toBe(-1)
+    expect(holdFacing(began.held, undefined, -1)).toEqual({ held: undefined, side: -1 })
   })
 })
 
