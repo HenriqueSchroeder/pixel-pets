@@ -101,8 +101,8 @@ A pack in `~/.claude/pets/` wins over a shipped one with the same name. If a pac
 
 Shipped pets:
 
-- [`cat`](pets/cat.json), the default, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks: it sinks into the floor and wells up somewhere else.
-- [`dog`](pets/dog.json), which wags its tail, pants and tilts its head when it thinks.
+- [`cat`](pets/cat.json), the default, which turns side on to walk, and [`slime`](pets/slime.json), which bounces in place, melts into a puddle in a deep sleep and never walks: it sinks into the floor and wells up somewhere else.
+- [`dog`](pets/dog.json), which wags its tail, pants, tilts its head when it thinks and turns side on to walk.
 - [`ghost`](pets/ghost.json), which floats instead of walking, says boo now and then, fades as it sleeps and turns up elsewhere with a boo.
 - [`owl`](pets/owl.json), which blinks slowly and turns its head all the way round.
 - [`clawd`](pets/clawd.json), shown at the top with the dragon, the ghost, the fox and the capybara: the critter on Claude Code's welcome screen, waving its little arms and cheering with both when a long job is done. Fan art: not made or endorsed by Anthropic.
