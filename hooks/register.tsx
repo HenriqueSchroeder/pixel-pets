@@ -278,8 +278,9 @@ export const register: Register = (on, options) => {
   const configured = typeof picked === 'string' && picked !== '' ? picked : DEFAULT_PET
   // The project's own pet, if `/pet <name>` picked one, else the settings'.
   let petName = configured
-  // The pack the frame clock plays, and a way to start it again at another pack's pace.
+  // The pack the frame clock plays, the clock, and a way to start it again at another pack's pace.
   let playing: Pack | undefined
+  let timer: Timer | undefined
   let restartClock = () => {}
   const language = typeof options.language === 'string' ? options.language : 'auto'
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
@@ -312,7 +313,8 @@ export const register: Register = (on, options) => {
   let readsThisTurn = 0
   // An agent finished since the pet last cheered: the turn that reports it is worth a cheer.
   let agentsDone = false
-  let saidLateNight = false
+  // The night it last said it was getting late, by its evening's date.
+  let saidNight: string | null = null
   // What it wants, from the first draw on, and what the band showed last, which is
   // what it has been up to since; plus until when it is up on its own.
   let drives: Drives | undefined
@@ -348,7 +350,6 @@ export const register: Register = (on, options) => {
     playing = await packOf($, petName, locale)
     const now = await $.clock.now()
     await update($, lastActiveAt, () => now)
-    let timer: Timer | undefined
     const tick = () => {
       const pack = playing
       frame += 1
@@ -366,9 +367,13 @@ export const register: Register = (on, options) => {
       if (cells === scene.cells) return
       still = { ...scene, cells }
       // Refused when the band is no longer drawn as it was: redraw it in full.
-      void $.ui.blit({ requestId: scene.requestId, key: 'main', cells }).then(done => {
-        if (done.deny !== undefined) $.ui.invalidate('ui.render')
-      })
+      void $.ui
+        .blit({ requestId: scene.requestId, key: 'main', cells })
+        .then(done => done.deny !== undefined)
+        .catch(() => true)
+        .then(refused => {
+          if (refused) $.ui.invalidate('ui.render')
+        })
     }
     restartClock = () => {
       timer?.cancel()
@@ -389,12 +394,15 @@ export const register: Register = (on, options) => {
       return { text: `${say(locale, hidden ? 'hidden' : 'shown')}${await together($, locale)}` }
     }
 
-    // Tried before it is kept: a pack that does not load leaves things as they were.
-    const name = asked === DEFAULT_ARG ? configured : asked
-    const found = await findPack($, name, locale)
+    // A pet asked by name is tried before it is kept: one that does not load leaves
+    // things as they were. `default` always lets go of the project's own, even when
+    // the settings' pet is broken and falls back to the shipped one.
+    const isDefault = asked === DEFAULT_ARG
+    const name = isDefault ? configured : asked
+    const found = isDefault ? await readPack($, name, locale) : await findPack($, name, locale)
     if (typeof found === 'string') return { text: say(locale, 'projectPetFailed', found) }
     try {
-      await keepProjectPet($, await $.session.root(), asked === DEFAULT_ARG ? undefined : name)
+      await keepProjectPet($, await $.session.root(), isDefault ? undefined : name)
     } catch {
       // No store: the pet changes for this session alone.
     }
@@ -405,7 +413,7 @@ export const register: Register = (on, options) => {
     still = null
     restartClock()
     $.ui.invalidate('ui.render')
-    return { text: say(locale, asked === DEFAULT_ARG ? 'projectPetDefault' : 'projectPet', name) }
+    return { text: say(locale, isDefault ? 'projectPetDefault' : 'projectPet', name) }
   })
 
   // The pet looks at the prompt while the person types in it, glad at the first key
@@ -441,12 +449,15 @@ export const register: Register = (on, options) => {
     touch(now, seen)
     if (isInteractive) await atThePrompt($, now)
     // Once a night across every session: the first to see the person late says it.
-    if (!saidLateNight && isNight(hourOf(now))) {
+    const tonight = nightOf(now)
+    if (isNight(hourOf(now)) && saidNight !== tonight) {
       if (await quietTonight($, now)) {
         const locale = await localeOf($, language)
-        saidLateNight = speak('lateNight', now, await packOf($, petName, locale), locale)
-        if (saidLateNight) await saidTonight($, now)
-      } else saidLateNight = true
+        if (speak('lateNight', now, await packOf($, petName, locale), locale)) {
+          saidNight = tonight
+          await saidTonight($, now)
+        }
+      } else saidNight = tonight
     }
     return next(e)
   }).catch(($, e, next) => next(e))

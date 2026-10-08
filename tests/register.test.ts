@@ -185,6 +185,12 @@ test("/pet default goes back to the settings' pet", async ($, on) => {
   expect(kept.projectPets).toEqual({ '/other': 'dog' })
 })
 
+test("/pet default lets go of the project's pet even when the settings' one is broken", { options: { pet: 'custom', customPet: 'gone' } }, async ($, on) => {
+  const { kept } = inProject(on, { projectPets: { '/repo': 'dog' } })
+  expect(await $.command.run({ ...runPet, args: 'default' })).toEqual({ text: "This project is back to your settings' pet: gone." })
+  expect(kept.projectPets).toEqual({})
+})
+
 test("the person's own pets folder wins over the shipped pack", async ($, on) => {
   const { reads } = setup(on, { [`${HOME}/.claude/pets/cat.json`]: pack('my-cat'), '/pets/cat.json': pack('cat') })
 
@@ -684,6 +690,15 @@ test('with agents around, the band is redrawn in full, not just the pet', async 
   expect(blits).toEqual([])
 })
 
+test('a second session.start does not start a second frame clock', async ($, on) => {
+  const { clock, blits } = await asleepWithClock($, on)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  // Two frames that take turns, four frames a second: at most one repaint a frame.
+  await clock.advance(2000)
+  expect(blits.length).toBeLessThanOrEqual(8)
+})
+
 test('hidden, nothing is repainted or redrawn', async ($, on) => {
   const { clock, blits, engineDraws } = await asleepWithClock($, on)
   await $.ui.mount({ ...band(false), surface: 'terminal' })
@@ -967,6 +982,20 @@ test('late at night it says so, once a night across sessions', async ($, on) => 
   await $.turn.start({ text: 'one more thing', turnId: 't2' })
   await $.prompt.submit(prompt)
   expect(await line($)).not.toMatch(/late/)
+})
+
+test('a session open for days says it again the next night', async ($, on) => {
+  const { clock } = setup(on, undefined, undefined, at(23))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  const prompt = { text: 'one more thing', wait: false, origin: { kind: 'composer' } } as const
+
+  await $.prompt.submit(prompt)
+  expect(await line($)).toBe("· “it's getting late…”")
+  await clock.advance(24 * 60 * 60_000)
+  await $.turn.start({ text: 'one more thing', turnId: 't2' })
+  await $.prompt.submit(prompt)
+  expect(await line($)).toBe("· “it's getting late…”")
 })
 
 test('late at night it stays quiet if another session said so tonight', async ($, on) => {
