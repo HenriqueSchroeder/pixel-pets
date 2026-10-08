@@ -101,8 +101,8 @@ Um pack em `~/.claude/pets/` ganha de um embutido com o mesmo nome. Se um pack n
 
 Pets que vêm junto:
 
-- [`cat`](pets/cat.json), o padrão, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda: afunda no chão e brota em outro lugar.
-- [`dog`](pets/dog.json), que abana o rabo, ofega e inclina a cabeça quando pensa.
+- [`cat`](pets/cat.json), o padrão, que fica de lado para andar, e [`slime`](pets/slime.json), que quica no lugar, derrete numa poça no sono profundo e nunca anda: afunda no chão e brota em outro lugar.
+- [`dog`](pets/dog.json), que abana o rabo, ofega, inclina a cabeça quando pensa e fica de lado para andar.
 - [`ghost`](pets/ghost.json), que flutua em vez de andar, dá um "buu" de vez em quando, vai sumindo enquanto dorme e reaparece em outro lugar com um "buu".
 - [`owl`](pets/owl.json), que pisca devagar e gira a cabeça até dar a volta.
 - [`clawd`](pets/clawd.json), que aparece no topo com o dragon, o ghost, a fox e a capybara: o bichinho da tela de abertura do Claude Code, que acena com os bracinhos e comemora com os dois quando um trabalho longo termina. Fan art: não é feito nem endossado pela Anthropic.
