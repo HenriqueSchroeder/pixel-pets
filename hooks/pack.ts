@@ -1,4 +1,5 @@
-import type { Frame, MiniMood, Mood, PackFile, Situation } from '../types'
+import type { Frame, MiniMood, Mood, PackFile, Situation, Traits } from '../types'
+import { USUAL } from './drives'
 import { hexColor } from './render'
 import { SITUATIONS } from './speech'
 import type { Colors } from './render'
@@ -69,6 +70,7 @@ export type Pack = {
   // Only a pack that draws `walking` leaves its spot: the rest stay put.
   walks: boolean
   speech: Record<string, Partial<Record<Situation, string[]>>>
+  personality: Traits
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -161,6 +163,19 @@ const parseActions = (raw: unknown): Action[] => {
   })
 }
 
+// Each trait a number from 0 to 1; one left out is the usual.
+const parsePersonality = (raw: unknown): Traits => {
+  if (raw === undefined) return USUAL
+  if (!isRecord(raw)) throw new Error('personality: an object of trait to a number from 0 to 1')
+  const traits = { ...USUAL }
+  for (const [trait, value] of Object.entries(raw)) {
+    if (!Object.hasOwn(USUAL, trait)) throw new Error(`personality.${trait}: unknown trait, use ${Object.keys(USUAL).join(', ')}`)
+    if (typeof value !== 'number' || !(value >= 0 && value <= 1)) throw new Error(`personality.${trait}: a number from 0 to 1`)
+    traits[trait as keyof Traits] = value
+  }
+  return traits
+}
+
 const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/
 
 // Lines are shown as they are: plain one-line text, short enough for the band.
@@ -242,8 +257,9 @@ export const parsePack = (raw: unknown): Pack => {
   const { mini, tint } = file.mini === false ? { mini: null, tint: 'b' } : parseMini(file.mini, colors)
 
   const speech = parseSpeech(file.speech)
+  const personality = parsePersonality(file.personality)
 
-  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking'), speech }
+  return { name: file.name, colors, fps, moods, variants, transitions, actions, mini, tint, walks: drawn.has('walking'), speech, personality }
 }
 
 const parseMini = (raw: unknown, colors: Colors) => {

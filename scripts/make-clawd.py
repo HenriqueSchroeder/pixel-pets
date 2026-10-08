@@ -173,11 +173,12 @@ pack = {
         'happy': [paint(MINI, MINI_CHEER)] * 2 + [paint(MINI, MINI_CHEER + MINI_STEP[0])] * 2,
         'sad': [paint(MINI, MINI_SAD[0])] * 2 + [paint(MINI, MINI_SAD[1])] * 2,
     }},
+    'personality': {'energetic': 0.7, 'curious': 0.8, 'affectionate': 0.6},
     'speech': {
         'en': {'longThink': ['hmm… let me think', 'hmm…'], 'manyReads': ['so many files to read!'],
-               'manyAgents': ['the whole team is here!'], 'lateNight': ['late night coding, huh?']},
+               'manyAgents': ['the whole team is here!'], 'lateNight': ['late night coding, huh?'], 'bored': ['nothing to build…'], 'dreaming': ['zzz… so many tokens…']},
         'pt-BR': {'longThink': ['hmm… deixa eu pensar', 'hmm…'], 'manyReads': ['quanto arquivo pra ler!'],
-                  'manyAgents': ['o time todo tá aqui!'], 'lateNight': ['codando de madrugada, hein?']},
+                  'manyAgents': ['o time todo tá aqui!'], 'lateNight': ['codando de madrugada, hein?'], 'bored': ['nada pra construir…'], 'dreaming': ['zzz… quanto token…']},
     },
 }
 write(pack)

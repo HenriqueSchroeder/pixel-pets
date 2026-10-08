@@ -2930,6 +2930,11 @@
       ]
     }
   },
+  "personality": {
+    "energetic": 0.2,
+    "curious": 0.3,
+    "affectionate": 0.6
+  },
   "speech": {
     "en": {
       "longThink": [
@@ -2943,6 +2948,12 @@
       ],
       "lateNight": [
         "*melts a little* late\u2026"
+      ],
+      "bored": [
+        "*wobbles* bored\u2026"
+      ],
+      "dreaming": [
+        "blub\u2026 zzz\u2026 blub\u2026"
       ]
     },
     "pt-BR": {
@@ -2957,6 +2968,12 @@
       ],
       "lateNight": [
         "*derrete um pouco* t\u00e1 tarde\u2026"
+      ],
+      "bored": [
+        "*balan\u00e7a* que t\u00e9dio\u2026"
+      ],
+      "dreaming": [
+        "blub\u2026 zzz\u2026 blub\u2026"
       ]
     }
   }

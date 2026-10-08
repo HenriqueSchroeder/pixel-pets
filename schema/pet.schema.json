@@ -460,6 +460,31 @@
         }
       ]
     },
+    "personality": {
+      "description": "How the pet is made: each trait from 0 to 1, the usual 0.5 when left out. They shape its wants, not its drawing.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "energetic": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How slowly it tires while awake or at work: 1 tires at half the usual pace, 0 at one and a half."
+        },
+        "curious": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How soon it gets bored with nothing to do, and gets up from a nap on its own: 0 never does."
+        },
+        "affectionate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How soon it misses you while you are away: 0 never does."
+        }
+      }
+    },
     "speech": {
       "description": "The pet's own lines, by language code (\"en\", \"pt-BR\"). Shown now and then in quotes on Claude's line; a language or situation left out says the locale's line.",
       "type": "object",

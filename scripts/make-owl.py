@@ -156,11 +156,12 @@ pack = {
         'happy': [paint(MINI, MINI_HAPPY)] * 2 + [paint(MINI, MINI_HAPPY + MINI_STEP[0] + MINI_STEP[1])] * 2,
         'sad': [paint(MINI, MINI_SAD[0])] * 2 + [paint(MINI, MINI_SAD[1])] * 2,
     }},
+    'personality': {'energetic': 0.4, 'curious': 0.5, 'affectionate': 0.4},
     'speech': {
         'en': {'longThink': ['hoo… hmm'], 'manyReads': ['so much to read! hoo!'],
-               'manyAgents': ['a parliament of agents!'], 'lateNight': ['hoo! night owls, us.']},
+               'manyAgents': ['a parliament of agents!'], 'lateNight': ['hoo! night owls, us.'], 'bored': ['hoo… nothing to read'], 'dreaming': ['hoo… zzz… mice…']},
         'pt-BR': {'longThink': ['huu… hmm'], 'manyReads': ['quanta leitura! huu!'],
-                  'manyAgents': ['um parlamento de agents!'], 'lateNight': ['huu! somos corujas, né?']},
+                  'manyAgents': ['um parlamento de agents!'], 'lateNight': ['huu! somos corujas, né?'], 'bored': ['huu… nada pra ler'], 'dreaming': ['huu… zzz… ratinhos…']},
     },
 }
 write(pack)

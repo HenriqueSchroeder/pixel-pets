@@ -3518,6 +3518,11 @@
       ]
     }
   },
+  "personality": {
+    "energetic": 0.5,
+    "curious": 0.7,
+    "affectionate": 0.3
+  },
   "speech": {
     "en": {
       "longThink": [
@@ -3532,6 +3537,13 @@
       ],
       "lateNight": [
         "*yawn* it's late\u2026"
+      ],
+      "bored": [
+        "*paws at nothing* bored\u2026"
+      ],
+      "dreaming": [
+        "mrrp\u2026 fish\u2026",
+        "zzz\u2026 *twitches*"
       ]
     },
     "pt-BR": {
@@ -3547,6 +3559,13 @@
       ],
       "lateNight": [
         "*boceja* j\u00e1 t\u00e1 tarde\u2026"
+      ],
+      "bored": [
+        "*cutuca o nada* que t\u00e9dio\u2026"
+      ],
+      "dreaming": [
+        "mrrp\u2026 peixe\u2026",
+        "zzz\u2026 *se mexe*"
       ]
     }
   }

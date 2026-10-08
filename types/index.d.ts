@@ -31,6 +31,10 @@ export type Situation = 'longThink' | 'manyReads' | 'manyAgents' | 'lateNight' |
 // A sprite frame: rows of palette letters, '.' see-through.
 export type Frame = string[]
 
+// How a pet is made, each in [0, 1] with 0.5 the usual: how slowly it tires, how
+// soon it gets bored, how much it misses the person.
+export type Traits = { energetic: number; curious: number; affectionate: number }
+
 // A pet pack as read from JSON, before validation.
 export type PackFile = {
   name: string
@@ -49,6 +53,8 @@ export type PackFile = {
   }
   // false: no mini pets, the agents show only as the pet's own `supervising`
   mini: false | { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }
+  // How it is made; a trait left out is the usual 0.5.
+  personality?: Partial<Traits>
   // The pet's own lines, by language code ("en", "pt-BR"); a language or situation
   // left out says the locale's line.
   speech?: Record<string, Partial<Record<Situation, string[]>>>

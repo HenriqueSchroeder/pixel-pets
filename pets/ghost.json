@@ -3510,6 +3510,11 @@
       ]
     }
   },
+  "personality": {
+    "energetic": 0.6,
+    "curious": 0.8,
+    "affectionate": 0.3
+  },
   "speech": {
     "en": {
       "longThink": [
@@ -3523,6 +3528,12 @@
       ],
       "lateNight": [
         "the night is mine\u2026 boo"
+      ],
+      "bored": [
+        "nothing to haunt\u2026"
+      ],
+      "dreaming": [
+        "ooo\u2026 zzz\u2026 boo\u2026"
       ]
     },
     "pt-BR": {
@@ -3537,6 +3548,12 @@
       ],
       "lateNight": [
         "a noite \u00e9 minha\u2026 buu"
+      ],
+      "bored": [
+        "nada pra assombrar\u2026"
+      ],
+      "dreaming": [
+        "uuu\u2026 zzz\u2026 buu\u2026"
       ]
     }
   }

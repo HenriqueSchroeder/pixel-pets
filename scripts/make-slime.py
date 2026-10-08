@@ -171,9 +171,10 @@ pack = {
         'happy': [mini(MINI, [(2, 2, 'o'), (2, 5, 'o')])] * 2 + [mini(MINI_SQ, [(2, 2, 'o'), (2, 5, 'o')])] * 2,
         'sad': [mini(MINI_SQ, me(2) + [(3, 2, 't')])] * 2 + [mini(MINI_SQ, me(2) + [(3, 1, 't')])] * 2,
     }},
+    'personality': {'energetic': 0.2, 'curious': 0.3, 'affectionate': 0.6},
     'speech': {
-        'en': {'longThink': ['blub… hmm'], 'manyReads': ['so many files… blub!'], 'manyAgents': ['the whole goo gang!'], 'lateNight': ['*melts a little* late…']},
-        'pt-BR': {'longThink': ['blub… hmm'], 'manyReads': ['quanto arquivo… blub!'], 'manyAgents': ['a gosmada toda!'], 'lateNight': ['*derrete um pouco* tá tarde…']},
+        'en': {'longThink': ['blub… hmm'], 'manyReads': ['so many files… blub!'], 'manyAgents': ['the whole goo gang!'], 'lateNight': ['*melts a little* late…'], 'bored': ['*wobbles* bored…'], 'dreaming': ['blub… zzz… blub…']},
+        'pt-BR': {'longThink': ['blub… hmm'], 'manyReads': ['quanto arquivo… blub!'], 'manyAgents': ['a gosmada toda!'], 'lateNight': ['*derrete um pouco* tá tarde…'], 'bored': ['*balança* que tédio…'], 'dreaming': ['blub… zzz… blub…']},
     },
 }
 write(pack)

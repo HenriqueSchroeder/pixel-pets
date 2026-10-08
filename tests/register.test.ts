@@ -381,6 +381,24 @@ test('bored in a nap, it gets up on its own for a while, but not out of a deep s
   expect(await label()).toBe('· fast asleep')
 })
 
+test('a pet made with no curiosity never gets up from a nap out of boredom', async ($, on) => {
+  const incurious = { ...JSON.parse(pack('cat')), personality: { curious: 0 } }
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(incurious) })
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await clock.advance(3000)
+  await label()
+  await clock.advance(2 * 60_000)
+  await label()
+  await clock.advance(4 * 60_000)
+  expect(await label()).toBe('· sleeping')
+})
+
 test('asleep, it talks in its sleep now and then', async ($, on) => {
   const { clock } = setup(on)
   on('turn.complete', () => ({ text: '' }))

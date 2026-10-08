@@ -176,11 +176,12 @@ pack = {
         'happy': [paint(MINI, MINI_HAPPY)] * 2 + [paint(MINI, MINI_HAPPY + MINI_STEP[0] + MINI_STEP[1])] * 2,
         'sad': [paint(MINI, MINI_SAD[0])] * 2 + [paint(MINI, MINI_SAD[1])] * 2,
     }},
+    'personality': {'energetic': 0.8, 'curious': 0.6, 'affectionate': 0.9},
     'speech': {
         'en': {'longThink': ['wuf… hmm', '*tilts head* hmm…'], 'manyReads': ['so many files! woof!'],
-               'manyAgents': ['a whole pack of agents!'], 'lateNight': ['*yawn* walk tomorrow?']},
+               'manyAgents': ['a whole pack of agents!'], 'lateNight': ['*yawn* walk tomorrow?'], 'bored': ['*sighs* ball?', '*flops* so bored…'], 'dreaming': ['wuf… wuf… squirrel…', 'zzz… *paws twitch*']},
         'pt-BR': {'longThink': ['au… hmm', '*inclina a cabeça* hmm…'], 'manyReads': ['quanto arquivo! au!'],
-                  'manyAgents': ['uma matilha de agents!'], 'lateNight': ['*boceja* passeio amanhã?']},
+                  'manyAgents': ['uma matilha de agents!'], 'lateNight': ['*boceja* passeio amanhã?'], 'bored': ['*suspira* bolinha?', '*se joga* que tédio…'], 'dreaming': ['au… au… esquilo…', 'zzz… *patas mexem*']},
     },
 }
 write(pack)

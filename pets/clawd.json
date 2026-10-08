@@ -2930,6 +2930,11 @@
       ]
     }
   },
+  "personality": {
+    "energetic": 0.7,
+    "curious": 0.8,
+    "affectionate": 0.6
+  },
   "speech": {
     "en": {
       "longThink": [
@@ -2944,6 +2949,12 @@
       ],
       "lateNight": [
         "late night coding, huh?"
+      ],
+      "bored": [
+        "nothing to build\u2026"
+      ],
+      "dreaming": [
+        "zzz\u2026 so many tokens\u2026"
       ]
     },
     "pt-BR": {
@@ -2959,6 +2970,12 @@
       ],
       "lateNight": [
         "codando de madrugada, hein?"
+      ],
+      "bored": [
+        "nada pra construir\u2026"
+      ],
+      "dreaming": [
+        "zzz\u2026 quanto token\u2026"
       ]
     }
   }

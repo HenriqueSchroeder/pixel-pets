@@ -177,11 +177,12 @@ pack = {
         'happy': [mini([(2, 2, 'o'), (2, 5, 'o')])] * 2 + [mini([(2, 2, 'o'), (2, 5, 'o')], False)] * 2,
         'sad': [mini([(3, 2, 't')], False)] * 2 + [mini([(4, 2, 't')], False)] * 2,
     }},
+    'personality': {'energetic': 0.6, 'curious': 0.8, 'affectionate': 0.3},
     'speech': {
         'en': {'longThink': ['ooOOoo… hmm'], 'manyReads': ['so many files… spooky!'],
-               'manyAgents': ['a whole haunting of agents!'], 'lateNight': ['the night is mine… boo']},
+               'manyAgents': ['a whole haunting of agents!'], 'lateNight': ['the night is mine… boo'], 'bored': ['nothing to haunt…'], 'dreaming': ['ooo… zzz… boo…']},
         'pt-BR': {'longThink': ['uuUUuu… hmm'], 'manyReads': ['quanto arquivo… assombroso!'],
-                  'manyAgents': ['uma assombração de agents!'], 'lateNight': ['a noite é minha… buu']},
+                  'manyAgents': ['uma assombração de agents!'], 'lateNight': ['a noite é minha… buu'], 'bored': ['nada pra assombrar…'], 'dreaming': ['uuu… zzz… buu…']},
     },
 }
 write(pack)

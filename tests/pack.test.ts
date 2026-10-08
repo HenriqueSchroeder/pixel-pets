@@ -122,4 +122,19 @@ describe('parsePack', () => {
     expect(refused({ en: { longThink: ['two\nlines'] } })).toThrow(/one line each/)
     expect(refused({ en: { longThink: Array(9).fill('hm') } })).toThrow(/1 to 8 lines/)
   })
+
+  test('takes its personality, the usual 0.5 for a trait left out, and checks it', () => {
+    expect(parsePack(tiny()).personality).toEqual({ energetic: 0.5, curious: 0.5, affectionate: 0.5 })
+    expect(parsePack({ ...tiny(), personality: { curious: 0.9, affectionate: 0 } }).personality).toEqual({
+      energetic: 0.5,
+      curious: 0.9,
+      affectionate: 0,
+    })
+    const refused = (personality: unknown) => () => parsePack({ ...tiny(), personality })
+    expect(refused({ grumpy: 1 })).toThrow(/unknown trait/)
+    expect(refused({ toString: 1 })).toThrow(/unknown trait/)
+    expect(refused({ curious: 2 })).toThrow(/from 0 to 1/)
+    expect(refused({ curious: '0.5' })).toThrow(/from 0 to 1/)
+    expect(refused([0.5])).toThrow(/personality/)
+  })
 })

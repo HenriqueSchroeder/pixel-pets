@@ -1,3 +1,4 @@
+import type { Traits } from '../types'
 import type { Pace } from './walk'
 
 // What the pet wants, apart from what Claude is doing: each in [0, 1], drifting
@@ -26,19 +27,24 @@ const LOW_ENERGY = 0.5
 // Missing the person this much, it greets their first key.
 const MISSING = 0.5
 
+export const USUAL: Traits = { energetic: 0.5, curious: 0.5, affectionate: 0.5 }
+
 export const rested = (now: number): Drives => ({ energy: 1, boredom: 0, longing: 0, at: now })
 
 const unit = (value: number) => Math.min(1, Math.max(0, value))
 
-// The drives at `now`, after spending the time since `at` in `state`.
-export const drift = (drives: Drives, now: number, state: State): Drives => {
+// The drives at `now`, after spending the time since `at` in `state`, as a pet
+// made with `traits`: an energetic one tires slower, a curious one gets bored
+// sooner, an affectionate one misses the person sooner. The usual traits change nothing.
+export const drift = (drives: Drives, now: number, state: State, traits: Traits = USUAL): Drives => {
   const hours = (now - drives.at) / HOUR_MS
   if (hours <= 0) return drives
   const rate = RATES[state]
+  const tiring = rate.energy < 0 ? 1.5 - traits.energetic : 1
   return {
-    energy: unit(drives.energy + rate.energy * hours),
-    boredom: unit(drives.boredom + rate.boredom * hours),
-    longing: unit(drives.longing + rate.longing * hours),
+    energy: unit(drives.energy + rate.energy * tiring * hours),
+    boredom: unit(drives.boredom + rate.boredom * traits.curious * 2 * hours),
+    longing: unit(drives.longing + rate.longing * traits.affectionate * 2 * hours),
     at: now,
   }
 }

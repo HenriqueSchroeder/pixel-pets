@@ -122,9 +122,10 @@ pack={
    'happy':[paint(MINI,MINI_HAPPY)]*2+[paint(MINI,MINI_HAPPY+MINI_STEP[0]+MINI_STEP[1])]*2,
    'sad':[paint(MINI,MINI_SAD+t(4,2))]*2+[paint(MINI,MINI_SAD+t(5,2))]*2,
  }},
+ 'personality':{'energetic':0.5,'curious':0.7,'affectionate':0.3},
  'speech':{
-   'en':{'longThink':['mrrp… hmm','hmm… *tail flick*'],'manyReads':['so many files… mrow!'],'manyAgents':['a whole litter of agents!'],'lateNight':["*yawn* it's late…"]},
-   'pt-BR':{'longThink':['mrrp… hmm','hmm… *mexe o rabo*'],'manyReads':['quanto arquivo… miau!'],'manyAgents':['uma ninhada de agents!'],'lateNight':['*boceja* já tá tarde…']},
+   'en':{'longThink':['mrrp… hmm','hmm… *tail flick*'],'manyReads':['so many files… mrow!'],'manyAgents':['a whole litter of agents!'],'lateNight':["*yawn* it's late…"],'bored':['*paws at nothing* bored…'],'dreaming':['mrrp… fish…','zzz… *twitches*']},
+   'pt-BR':{'longThink':['mrrp… hmm','hmm… *mexe o rabo*'],'manyReads':['quanto arquivo… miau!'],'manyAgents':['uma ninhada de agents!'],'lateNight':['*boceja* já tá tarde…'],'bored':['*cutuca o nada* que tédio…'],'dreaming':['mrrp… peixe…','zzz… *se mexe*']},
  },
 }
 write(pack)

@@ -3221,6 +3221,11 @@
       ]
     }
   },
+  "personality": {
+    "energetic": 0.4,
+    "curious": 0.5,
+    "affectionate": 0.4
+  },
   "speech": {
     "en": {
       "longThink": [
@@ -3234,6 +3239,12 @@
       ],
       "lateNight": [
         "hoo! night owls, us."
+      ],
+      "bored": [
+        "hoo\u2026 nothing to read"
+      ],
+      "dreaming": [
+        "hoo\u2026 zzz\u2026 mice\u2026"
       ]
     },
     "pt-BR": {
@@ -3248,6 +3259,12 @@
       ],
       "lateNight": [
         "huu! somos corujas, n\u00e9?"
+      ],
+      "bored": [
+        "huu\u2026 nada pra ler"
+      ],
+      "dreaming": [
+        "huu\u2026 zzz\u2026 ratinhos\u2026"
       ]
     }
   }

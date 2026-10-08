@@ -166,6 +166,8 @@ Give it a voice with `speech`, at the top level: lines by language code and situ
 
 The situations are `longThink`, `manyReads`, `manyAgents`, `lateNight`, `bored` and `dreaming`. Up to 8 lines each, one line of up to 40 characters.
 
+Give it a nature with `personality`, at the root of the pack: three traits from 0 to 1, each the usual 0.5 when left out. `energetic` tires slower, `curious` gets bored and up from a nap sooner (0 never does), `affectionate` misses you sooner (0 never does). The dog is `{ "energetic": 0.8, "curious": 0.6, "affectionate": 0.9 }`; the slime, lazy, is `{ "energetic": 0.2, "curious": 0.3, "affectionate": 0.6 }`.
+
 The [schema](schema/pet.schema.json) gives your editor completion and checks. To share a pet, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Check what it does before you install

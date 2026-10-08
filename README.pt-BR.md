@@ -128,6 +128,8 @@ Só um loop parece máquina. Três chaves opcionais em `main` deixam o pet impre
 
 Dê uma voz a ele com `speech`, na raiz do pack: falas por código de idioma e situação, uma sorteada a cada vez. O idioma ou a situação que você deixar de fora diz a fala padrão. As situações são `longThink`, `manyReads`, `manyAgents`, `lateNight`, `bored` e `dreaming`, com até 8 falas cada, de uma linha e até 40 caracteres (o formato está no [README em inglês](README.md#make-it-feel-alive)).
 
+Dê um jeito de ser a ele com `personality`, na raiz do pack: três traços de 0 a 1, cada um 0.5 quando fica de fora. `energetic` cansa mais devagar, `curious` se entedia e levanta de um cochilo mais cedo (0 nunca), `affectionate` sente sua falta mais cedo (0 nunca). O cachorro é `{ "energetic": 0.8, "curious": 0.6, "affectionate": 0.9 }`; o slime, preguiçoso, é `{ "energetic": 0.2, "curious": 0.3, "affectionate": 0.6 }`.
+
 Para compartilhar um pet, veja o [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Confira o que ele faz antes de instalar

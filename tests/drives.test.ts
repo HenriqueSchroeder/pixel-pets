@@ -2,6 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs } from '../hooks/drives'
 import type { Drives } from '../hooks/drives'
+import type { Traits } from '../types'
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
@@ -23,6 +24,21 @@ describe('drives', () => {
 
   test('longing builds while the person is away, even as Claude works', () => {
     expect(drift(rested(0), 30 * MINUTE, 'working').longing).toBe(0.5)
+  })
+
+  test('how it is made sets how fast it tires, gets bored and misses the person', () => {
+    const lively: Traits = { energetic: 1, curious: 1, affectionate: 0 }
+    const after = drift(rested(0), HOUR, 'working', lively)
+    expect(after.energy).toBe(0.875)
+    expect(drift(rested(0), 6 * MINUTE, 'awake', lively).boredom).toBe(0.8)
+    expect(after.longing).toBe(0)
+    // Sleep fills energy the same for every pet.
+    expect(drift({ ...rested(0), energy: 0 }, HOUR, 'asleep', lively).energy).toBe(0.5)
+  })
+
+  test('the usual traits change nothing', () => {
+    const usual: Traits = { energetic: 0.5, curious: 0.5, affectionate: 0.5 }
+    expect(drift(rested(0), HOUR, 'awake', usual)).toEqual(drift(rested(0), HOUR, 'awake'))
   })
 
   test('no time passed, nothing changes', () => {

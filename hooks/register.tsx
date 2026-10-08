@@ -1,8 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
 
-import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation } from '../types'
-import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs } from './drives'
+import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation, Traits } from '../types'
+import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, USUAL } from './drives'
 import type { Drives, State } from './drives'
 import { calm, cheer, feel, idleMood, isNight } from './feelings'
 import { pickLocale, say } from './i18n'
@@ -15,7 +15,7 @@ import type { Pack } from './pack'
 import { encode, mirror, sizeOf } from './render'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
-import { clamp, gather, onTheWay, walkStep } from './walk'
+import { clamp, faceFor, gather, onTheWay, sideIn, walkStep } from './walk'
 import type { Plan, Side, Walk } from './walk'
 
 const asleep: Activity = { mood: 'sleeping', label: { text: 'sleeping', detail: '' } }
@@ -230,6 +230,8 @@ export const register: Register = (on, options) => {
   // What it wants, from the first draw on, and what the band showed last, which is
   // what it has been up to since; plus until when it is up on its own.
   let drives: Drives | undefined
+  // How the pet is made, from its pack once the band has drawn it.
+  let traits: Traits = USUAL
   let lastState: State = 'awake'
   let stirredUntil = 0
   // When it last woke up glad at the person's first key after a long while away,
@@ -240,7 +242,7 @@ export const register: Register = (on, options) => {
   const wokeForThem = (idleSince: number | null) => gladAt !== null && idleSince !== null && gladAt >= idleSince
   // Brings the drives up to `now` before `change` touches them.
   const touch = (now: number, change: (settled: Drives) => Drives) => {
-    if (drives !== undefined) drives = change(drift(drives, now, lastState))
+    if (drives !== undefined) drives = change(drift(drives, now, lastState, traits))
   }
 
   // Says the line for `situation`, unless it spoke too lately or already did this turn.
@@ -473,7 +475,8 @@ export const register: Register = (on, options) => {
     const words = (one: Label) => say(locale, one.text, one.detail)
     // ponytail: the drives move only when the band is drawn, so a band hidden by /pet
     // counts all that time as what it last showed; give them a clock of their own if that skews them.
-    drives = drives === undefined ? rested(now) : drift(drives, now, lastState)
+    traits = pack.personality
+    drives = drives === undefined ? rested(now) : drift(drives, now, lastState, traits)
 
     let shown: Activity
     let extra = ''
@@ -567,7 +570,7 @@ export const register: Register = (on, options) => {
     const drawn = onTheWay(walk.x, placed, room, visible.length, width, wanted)
     const drawnCount = drawn.left.length + drawn.right.length
     const showsMore = walk.x === placed.x && hidden > 0
-    const sideOf = (index: number): Side => (drawn.right.includes(index) ? 1 : -1)
+    const sideOf = (index: number) => sideIn(drawn, index)
     // One not drawn yet keeps the side it had, so it does not hop over once it shows.
     sides = new Map(
       visible.flatMap((one, i): [string, Side][] => {
@@ -585,8 +588,9 @@ export const register: Register = (on, options) => {
 
     const moved = step(pack, motion, mood, frame, Math.random)
     motion = moved.motion
-    // It faces the way it walks, else the first agent while there are any.
-    const facing = walked.moving || drawnCount === 0 ? walk.facing : sideOf(0)
+    // It faces the way it walks, else the agent finishing as it says goodbye, else the first.
+    const finishing = visible.slice(0, drawnCount).findLastIndex(one => one.leaving !== undefined)
+    const facing = faceFor(walked.moving, walk.facing, drawn, Math.max(finishing, 0))
     const body = facing === 1 ? moved.frame : mirror(moved.frame)
 
     const { Box, Raster, Text } = $.ui.resolve(e)
