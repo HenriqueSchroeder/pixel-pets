@@ -233,11 +233,15 @@ pack = {
         'happy': [paint(MINI, MINI_HAPPY)] * 2 + [paint(MINI, MINI_HAPPY + MINI_STEP[0] + MINI_STEP[1])] * 2,
         'sad': [paint(MINI, MINI_SAD[0])] * 2 + [paint(MINI, MINI_SAD[1])] * 2,
     }},
+    # curious above all, quick on its feet, and a little aloof
+    'personality': {'energetic': 0.7, 'curious': 0.9, 'affectionate': 0.4},
     'speech': {
         'en': {'longThink': ['hmm… *ears up*', '*tilts head* hmm…'], 'manyReads': ['so many files! any mice?'],
-               'manyAgents': ['a whole skulk of agents!'], 'lateNight': ['foxes like the night… you too?']},
+               'manyAgents': ['a whole skulk of agents!'], 'lateNight': ['foxes like the night… you too?'],
+               'bored': ['*sniffs around* anything to dig?', '*paws at the ground* so bored…'], 'dreaming': ['zzz… mice… under the snow…', 'zzz… *ear twitches*']},
         'pt-BR': {'longThink': ['hmm… *orelhas em pé*', '*inclina a cabeça* hmm…'], 'manyReads': ['quanto arquivo! cadê o rato?'],
-                  'manyAgents': ['um bando de agents!'], 'lateNight': ['raposa gosta da noite… você também?']},
+                  'manyAgents': ['um bando de agents!'], 'lateNight': ['raposa gosta da noite… você também?'],
+                  'bored': ['*fareja em volta* algo pra cavar?', '*cava o chão* que tédio…'], 'dreaming': ['zzz… ratos… sob a neve…', 'zzz… *orelha mexe*']},
     },
 }
 

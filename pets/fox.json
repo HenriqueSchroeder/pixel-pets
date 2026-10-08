@@ -3946,6 +3946,11 @@
       ]
     }
   },
+  "personality": {
+    "energetic": 0.7,
+    "curious": 0.9,
+    "affectionate": 0.4
+  },
   "speech": {
     "en": {
       "longThink": [
@@ -3960,6 +3965,14 @@
       ],
       "lateNight": [
         "foxes like the night\u2026 you too?"
+      ],
+      "bored": [
+        "*sniffs around* anything to dig?",
+        "*paws at the ground* so bored\u2026"
+      ],
+      "dreaming": [
+        "zzz\u2026 mice\u2026 under the snow\u2026",
+        "zzz\u2026 *ear twitches*"
       ]
     },
     "pt-BR": {
@@ -3975,6 +3988,14 @@
       ],
       "lateNight": [
         "raposa gosta da noite\u2026 voc\u00ea tamb\u00e9m?"
+      ],
+      "bored": [
+        "*fareja em volta* algo pra cavar?",
+        "*cava o ch\u00e3o* que t\u00e9dio\u2026"
+      ],
+      "dreaming": [
+        "zzz\u2026 ratos\u2026 sob a neve\u2026",
+        "zzz\u2026 *orelha mexe*"
       ]
     }
   }
