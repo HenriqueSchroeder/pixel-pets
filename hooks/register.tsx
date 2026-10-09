@@ -9,11 +9,12 @@ import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
 import { asVisit, daysBetween, welcome } from './memory'
 import type { Visit } from './memory'
-import { step } from './motion'
+import { activityIn, step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
 import { encode, mirror, sizeOf } from './render'
+import { isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
 import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage, sideIn } from './walk'
@@ -36,7 +37,6 @@ const REACTION_MS = 2000
 const WAKING_MS = 1200
 const LEAVING_MS = 1500
 const LONG_TURN_MS = 2 * 60_000
-const DEEP_SLEEP_MS = 10 * 60_000
 // A break this long rests it, as far as getting tired goes.
 const BREAK_MS = 60 * 60_000
 const GREETING_MS = 2500
@@ -47,8 +47,8 @@ const CELEBRATION_MS = 4000
 const SPEECH_MS = 4000
 // How long the pet keeps watching the prompt after the last key.
 const TYPING_MS = 2000
-// How long it stays up when boredom gets it out of a nap.
-const STIR_MS = 45_000
+// How long it stays up when boredom gets it out of a nap, in seconds.
+const STIR_SECONDS: [number, number] = [30, 90]
 // How long into a nap it may talk in its sleep, in minutes.
 const DREAM_MINUTES: [number, number] = [10, 20]
 const AGENT_SLOT = 20
@@ -326,9 +326,15 @@ export const register: Register = (on, options) => {
   // When it last woke up glad at the person's first key after a long while away,
   // and whether that was since it went idle at `idleSince`.
   let gladAt: number | null = null
-  // When it talks in its sleep next; null while awake.
+  // When it talks in its sleep next; null until it naps after a turn. Up on its own
+  // for a moment, it keeps the time, or a long pause would leave it no time to dream.
   let dreamAt: number | null = null
   const wokeForThem = (idleSince: number | null) => gladAt !== null && idleSince !== null && gladAt >= idleSince
+  // Busy with an activity, it is up whatever the time: sleep would cut it short.
+  const isPlaying = () => activityIn(motion, frame) !== undefined
+  // In a deep spell of the pause that began at `idleSince`, and not up on its own nor glad to see them.
+  const isFastAsleep = (idleSince: number | null, now: number) =>
+    idleSince !== null && now >= stirredUntil && !isPlaying() && isDeep(idleSince, now - idleSince) && !wokeForThem(idleSince)
   // Brings the drives up to `now` before `change` touches them.
   const touch = (now: number, change: (settled: Drives) => Drives) => {
     if (drives !== undefined) drives = change(drift(drives, now, lastState, traits))
@@ -441,8 +447,7 @@ export const register: Register = (on, options) => {
     const idleSince = await read($, lastActiveAt)
     const busySince = await read($, turnStartedAt)
     const isSupervising = stillHere(await read($, agents), now).some(one => one.leaving === undefined)
-    const isFastAsleep = idleSince !== null && now - idleSince > DEEP_SLEEP_MS && !wokeForThem(idleSince)
-    if (busySince === null && !isSupervising && isFastAsleep) {
+    if (busySince === null && !isSupervising && isFastAsleep(idleSince, now)) {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
     touch(now, seen)
@@ -650,17 +655,18 @@ export const register: Register = (on, options) => {
       const awakeFor = (isNight(hour) ? awakeMs / 2 : awakeMs) * alertness(drives)
       const idleFor = idleSince === null ? awakeFor + 1 : now - idleSince
       const isTyping = typedAt !== null && now - typedAt < TYPING_MS
-      // Fast asleep it does not look up, unless it woke up glad to see them since.
-      if (isTyping && (idleFor <= DEEP_SLEEP_MS || wokeForThem(idleSince))) shown = { mood: 'watching', label: label('watching') }
+      // Once glad to see them it only dozes, so the prompt it sends does not startle it.
+      const isDeeplyAsleep = isFastAsleep(idleSince, now)
+      // Fast asleep it does not look up.
+      if (isTyping && !isDeeplyAsleep) shown = { mood: 'watching', label: label('watching') }
       // Background agents still at work: it keeps an eye on them rather than dozing off.
       else if (list.some(one => one.leaving === undefined)) shown = { mood: 'supervising', label: label('waitingForAgents') }
-      // Once glad to see them it only dozes, so the prompt it sends does not startle it.
-      else if (idleSince !== null && idleFor > DEEP_SLEEP_MS && !wokeForThem(idleSince)) shown = { mood: 'deepSleep', label: label('deepSleep') }
-      else if (idleFor > awakeFor && now >= stirredUntil && !stirs(drives)) shown = asleep
+      else if (isDeeplyAsleep) shown = { mood: 'deepSleep', label: label('deepSleep') }
+      else if (idleFor > awakeFor && now >= stirredUntil && !isPlaying() && !stirs(drives)) shown = asleep
       else {
         // Bored in a nap, it gets up for a while on its own.
-        if (idleFor > awakeFor && now >= stirredUntil) {
-          stirredUntil = now + STIR_MS
+        if (idleFor > awakeFor && now >= stirredUntil && !isPlaying()) {
+          stirredUntil = now + (STIR_SECONDS[0] + (STIR_SECONDS[1] - STIR_SECONDS[0]) * Math.random()) * 1000
           drives = stirred(drives)
           speak('bored', now, pack, locale)
         }
@@ -672,11 +678,13 @@ export const register: Register = (on, options) => {
     lastState = shown.mood === 'sleeping' || shown.mood === 'deepSleep' ? 'asleep' : e.props.isWorking ? 'working' : 'awake'
     // Asleep, it talks in its sleep now and then, as rarely as it speaks at all.
     const dreamGap = () => (DREAM_MINUTES[0] + (DREAM_MINUTES[1] - DREAM_MINUTES[0]) * Math.random()) * 60_000
-    if (lastState !== 'asleep') dreamAt = null
-    else if (dreamAt === null) dreamAt = now + dreamGap()
-    else if (now >= dreamAt) {
-      speak('dreaming', now, pack, locale)
-      dreamAt = now + dreamGap()
+    if (lastState === 'working') dreamAt = null
+    else if (lastState === 'asleep') {
+      if (dreamAt === null) dreamAt = now + dreamGap()
+      else if (now >= dreamAt) {
+        speak('dreaming', now, pack, locale)
+        dreamAt = now + dreamGap()
+      }
     }
 
     const miniSize = sizeOf(pack.mini?.working[0] ?? [])
@@ -721,7 +729,9 @@ export const register: Register = (on, options) => {
       agents: visible.map(one => one.id),
       width,
       extra: extraColumns,
-      wants: placed => (visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless ? 'wander' : 'stay'),
+      // Busy with an activity it stays put: a step would cut it short.
+      wants: placed =>
+        visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless && activityIn(motion, frame) === undefined ? 'wander' : 'stay',
     })
     stage = onStage.stage
     const { drawn, drawnCount, standX, blinking } = onStage
@@ -735,10 +745,12 @@ export const register: Register = (on, options) => {
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
     const isQuoting = saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
-    const said = isQuoting ? `“${saying?.text}”` : words(labelShown)
 
     const moved = step(pack, motion, mood, frame, Math.random)
     motion = moved.motion
+    // Busy with an activity, the line says what, in its language or else in English.
+    const pastime = pack.actions.find(one => one.name === activityIn(moved.motion, frame))?.activity?.label
+    const said = isQuoting ? `“${saying?.text}”` : (pastime?.[locale.code] ?? pastime?.en ?? words(labelShown))
     // It faces the way it walks, else the agent finishing as it says goodbye, else the
     // first; through an action, the way it faced as the action began.
     const finishing = visible.slice(0, drawnCount).findLastIndex(one => one.leaving !== undefined)
