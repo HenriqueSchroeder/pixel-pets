@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { step } from '../hooks/motion'
+import { activityIn, step } from '../hooks/motion'
 import type { Motion } from '../hooks/motion'
 import { MINI_MOODS, MOODS, PARENT, parsePack } from '../hooks/pack'
 import { facingFrame, isGlyphs } from '../hooks/render'
@@ -47,7 +47,7 @@ const play = () => {
       agents,
       width,
       extra: 0,
-      wants: placed => (agents.length > 0 ? { go: placed.x } : plan),
+      wants: placed => (agents.length > 0 ? { go: placed.x } : plan === 'wander' && activityIn(motion, tick) !== undefined ? 'stay' : plan),
     })
     stage = onStage.stage
     const { drawn, drawnCount, blinking } = onStage
@@ -115,7 +115,13 @@ const preview = () => {
     }
   }
   for (const [key, frames] of Object.entries(pack.transitions)) row(`transition ${key}`, frames, pack.colors)
-  for (const action of pack.actions) row(`action ${action.name} (${action.moods.join(', ')}, every ${action.every.join('-')}s)`, action.frames, pack.colors)
+  for (const action of pack.actions) {
+    const { activity } = action
+    const kind = activity === undefined ? 'action' : 'activity'
+    const loops = activity === undefined ? '' : `, loop ${activity.seconds.join('-')}s`
+    const frames = activity === undefined ? action.frames : [...action.frames, ...activity.loop, ...activity.end]
+    row(`${kind} ${action.name} (${action.moods.join(', ')}, every ${action.every.join('-')}s${loops})`, frames, pack.colors)
+  }
   if (pack.mini !== null) for (const mood of MINI_MOODS) row(`mini ${mood} (tint "${pack.tint}")`, pack.mini[mood], { ...pack.colors, [pack.tint]: 0x7cc4f2 })
 }
 

@@ -23,7 +23,7 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | Humor | Quando | Herda de |
 | --- | --- | --- |
 | `sleeping` | nenhum turno rodando | (obrigatório) |
-| `deepSleep` | nada aconteceu por 10 minutos | sleeping |
+| `deepSleep` | nada aconteceu por 10 minutos; daí em diante em trechos de 8 a 15 minutos, com um sono leve de 3 a 6 entre eles | sleeping |
 | `idle` | acordado sem nada para fazer, por um tempo depois que o Claude termina (veja `awakeMinutes`) | thinking |
 | `sleepy` | à toa à noite, das 22h às 6h | idle |
 | `tired` | à toa depois de 3 horas de trabalho sem uma pausa de uma hora | sleepy |
@@ -52,7 +52,7 @@ O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, 
 
 Ele acompanha como a sessão está indo. Uma tool ou um turno que falha o deixa preocupado, e um turno que dá certo o deixa orgulhoso; um turno que falha encerra a sequência de orgulho. Os dois perdem um ponto a cada cinco minutos, e quando ele está à toa aparece o sentimento mais forte: emburrado, depois preocupado, depois cansado, depois orgulhoso, depois com sono à noite. Preocupação e orgulho valem só para a sessão; o cansaço conta o seu trabalho em todas as sessões, e uma pausa é uma hora sem prompt em nenhuma delas.
 
-Ele também tem vontades próprias, que valem só para a sessão. Energia: dormir enche e trabalhar gasta, e um pet com pouca energia cochila mais cedo e descansa mais entre os passeios. Tédio: cresce enquanto nada acontece, e um pet entediado levanta sozinho de um cochilo por um tempo, mas nunca de um sono profundo. Saudade: cresce enquanto você está fora, e um pet com saudade passeia perto do prompt e cumprimenta a sua primeira tecla depois de meia hora fora ("senti sua falta!"), a não ser que um turno esteja rodando.
+Ele também tem vontades próprias, que valem só para a sessão. Energia: dormir enche e trabalhar gasta, e um pet com pouca energia cochila mais cedo e descansa mais entre os passeios. Tédio: cresce enquanto nada acontece, e um pet entediado levanta sozinho de um cochilo por meio minuto a um minuto e meio, mas nunca de um sono profundo: espera esse sono ficar leve, mesmo depois de horas. Saudade: cresce enquanto você está fora, e um pet com saudade passeia perto do prompt e cumprimenta a sua primeira tecla depois de meia hora fora ("senti sua falta!"), a não ser que um turno esteja rodando.
 
 A hora do dia é a sua hora local. À noite ele fica com sono e cochila na metade do `awakeMinutes`. Ele lembra de você entre sessões. A primeira vez que ele te vê no dia vem com uma saudação: um aniversário (uma semana, um mês, 100 dias, cada ano juntos), "senti sua falta!" depois de dois dias ou mais fora, ou bom dia. O `/pet` também diz há quanto tempo vocês estão juntos. Tarde da noite ele comenta uma vez só, na sessão que te vir primeiro. Um `claude -p` não conta como te ver.
 
@@ -142,11 +142,12 @@ Com `"style": "ascii"`, um quadro passa a ser linhas de texto: cada caractere oc
 
 ### Dê vida ao pet
 
-Só um loop parece máquina. Três chaves opcionais em `main` deixam o pet imprevisível (o formato está no [README em inglês](README.md#make-it-feel-alive)):
+Só um loop parece máquina. Quatro chaves opcionais em `main` deixam o pet imprevisível (o formato está no [README em inglês](README.md#make-it-feel-alive)):
 
 - `variants`: mais loops para um humor que você desenha em `moods`. Um deles, ou o loop do próprio humor, é sorteado cada vez que o humor começa.
 - `transitions`: quadros tocados uma vez quando o humor muda, com chave `de>para`. Um dos lados pode ser `*`. A chave exata ganha de `de>*`, que ganha de `*>para`.
 - `actions`: quadros tocados uma vez num momento aleatório enquanto o pet está num dos `moods`, `every` [mín, máx] segundos depois da última vez. Piscadas, orelhas mexendo e bocejos ficam aqui, e os loops podem ficar calmos. Uma ação com `startles`, um quadro contado a partir de 0, faz os mini pets dos agents do lado para onde o pet olha tocarem o `startled` desse quadro até ela acabar, sempre a partir do primeiro quadro: o estalo do chicote do clawd.
+- `activities`: brincadeiras mais longas, com o tempo marcado como numa ação. O `start` toca uma vez, o `loop` se repete em voltas inteiras por `seconds` [mín, máx] e o `end` toca uma vez; `start` e `end` são opcionais. Enquanto ela toca, o `label` (por código de idioma, uma linha de até 40 caracteres) aparece no lugar do status, e o pet não cochila nem sai passeando. Qualquer outro humor a interrompe, sem tocar o `end`. Ao levantar de um cochilo, o pet logo começa uma. O gato caça borboleta, brinca com o novelo e amassa pãozinho. Até 8; uma atividade não pode ter o nome de uma ação.
 - Uma ação é um quadro inteiro, então mantenha a mesma cara dos humores em que ela toca. Por isso o gato tem uma piscada para cada expressão.
 - Um humor tem até 16 quadros; a 4 fps, são 4 segundos.
 

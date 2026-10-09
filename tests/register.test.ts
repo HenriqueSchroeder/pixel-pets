@@ -2,6 +2,8 @@ import type { Args, On } from 'claude-code'
 import type { TestBody } from 'claude-code/testing'
 import { expect, mock, test } from 'claude-code/testing'
 
+import { DEEP_SLEEP_MS, isDeep } from '../hooks/sleep'
+
 const HOME = '/home/someone'
 
 const pack = (name: string) =>
@@ -16,6 +18,14 @@ const pack = (name: string) =>
 // missing. Returns the paths read, in order.
 // Local times, so the time of day reads the same on any machine.
 const at = (hour: number, day = 15) => new Date(2026, 0, day, hour, 0).getTime()
+
+// How far into an idle stretch that began at `idleSince` its first light spell
+// after a deep one starts, plus half a minute to be well inside it.
+const firstLightAfterDeep = (idleSince: number) => {
+  let idleFor = DEEP_SLEEP_MS + 1
+  while (isDeep(idleSince, idleFor)) idleFor += 1000
+  return idleFor + 30_000
+}
 
 const setup = (
   on: On,
@@ -280,6 +290,18 @@ test('a prompt startles the pet only out of a deep sleep', async ($, on) => {
   expect(await startled()).toBe(false)
 })
 
+test('once its deep sleep turns light again, a prompt does not startle it', async ($, on) => {
+  const { clock } = setup(on)
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+
+  await clock.advance(firstLightAfterDeep(at(14)))
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.find({ text: /waking up/ })).toBeUndefined()
+})
+
 test('sweats when a turn runs long, and says for how long', async ($, on) => {
   const { clock } = setup(on)
   on('turn.start', (_$, e) => ({ turnId: e.turnId }))
@@ -391,6 +413,76 @@ test('stays awake, hanging around, for a while after a turn, then naps', async (
   expect(await label()).toBe('· sleeping')
 })
 
+// Awake five minutes, so a long stroll before the activity does not run into its nap.
+test('now and then it plays an activity, staying put and saying what it is up to', { options: { awakeMinutes: 5 } }, async ($, on) => {
+  const playful = {
+    ...JSON.parse(pack('cat')),
+    main: {
+      moods: { sleeping: [['oo', 'bb']], typing: [['bb', 'oo']], walking: [['ob', 'bo']] },
+      activities: { yarn: { loop: [['bo', 'ob']], seconds: [10, 10], moods: ['idle'], every: [20, 20], label: { en: 'playing with yarn' } } },
+    },
+  }
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(playful) })
+  // The frame clock only runs from session.start.
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  // Due 20 seconds in, once it stops strolling.
+  await label()
+  let seconds = 0
+  while ((await label()) !== '· playing with yarn' && seconds < 40) {
+    await clock.advance(1000)
+    seconds += 1
+  }
+  expect(seconds).toBeLessThan(40)
+  // Ten seconds of yarn, standing still: a step would make it "strolling around".
+  // Eight seconds outlast its longest rest between strolls.
+  for (let i = 0; i < 8; i++) {
+    await clock.advance(1000)
+    expect(await label()).toBe('· playing with yarn')
+  }
+  await clock.advance(5000)
+  expect(await label()).not.toBe('· playing with yarn')
+})
+
+test('an activity holds off its nap until it is done', async ($, on) => {
+  const playful = {
+    ...JSON.parse(pack('cat')),
+    main: {
+      moods: { sleeping: [['oo', 'bb']], typing: [['bb', 'oo']] },
+      activities: { yarn: { loop: [['bo', 'ob']], seconds: [60, 60], moods: ['idle'], every: [20, 20], label: { en: 'playing with yarn' } } },
+    },
+  }
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(playful) })
+  // The frame clock only runs from session.start.
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  // Standing still (it draws no walking), its minute of yarn starts 20 seconds in.
+  await label()
+  await clock.advance(21_000)
+  expect(await label()).toBe('· playing with yarn')
+  // Its minute awake is up, but not its yarn.
+  await clock.advance(45_000)
+  expect(await label()).toBe('· playing with yarn')
+  await clock.advance(20_000)
+  expect(await label()).toBe('· sleeping')
+})
+
 test('after hours of work it runs low on energy and dozes off sooner', async ($, on) => {
   const { clock } = setup(on)
   on('turn.start', (_$, e) => ({ turnId: e.turnId }))
@@ -413,7 +505,7 @@ test('after hours of work it runs low on energy and dozes off sooner', async ($,
   expect(await label()).toBe('· sleeping')
 })
 
-test('bored in a nap, it gets up on its own for a while, but not out of a deep sleep', async ($, on) => {
+test('bored in a nap, it gets up on its own for a while; fast asleep it does not, until its sleep turns light', async ($, on) => {
   const { clock } = setup(on)
   on('turn.complete', () => ({ text: '' }))
   await $.turn.complete(finished)
@@ -427,14 +519,49 @@ test('bored in a nap, it gets up on its own for a while, but not out of a deep s
   await clock.advance(2 * 60_000)
   expect(await label()).toBe('· sleeping')
   await clock.advance(4 * 60_000)
-  // Up on its own, it says so for a moment.
+  // Up on its own, it says so for a moment, and stays up 30 to 90 seconds.
   expect(await label()).toBe('· “nothing to do…”')
-  await clock.advance(30_000)
-  expect(await label()).toBe('· hanging around')
-  await clock.advance(30_000)
+  await clock.advance(25_000)
+  expect(await label()).toMatch(/hanging around|strolling around/)
+  await clock.advance(70_000)
   expect(await label()).toBe('· sleeping')
   await clock.advance(4 * 60_000)
   expect(await label()).toBe('· fast asleep')
+
+  // Bored all through its deep sleep, it is up again once that sleep turns light.
+  const elapsed = 3000 + 2 * 60_000 + 4 * 60_000 + 25_000 + 70_000 + 4 * 60_000
+  const lightAt = firstLightAfterDeep(at(14)) - 30_000
+  const seen: (string | undefined)[] = []
+  for (let idleFor = elapsed + 20_000; idleFor <= lightAt + 2 * 60_000; idleFor += 20_000) {
+    await clock.advance(20_000)
+    seen.push(await label())
+  }
+  expect(seen.some(text => /hanging around|strolling around|nothing to do/.test(text ?? ''))).toBe(true)
+})
+
+test('up on its own near the end of a light spell, the deep one coming round neither knocks it out nor startles it', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  // Asleep in its first deep spell, then looked at only 20 seconds before that light spell ends.
+  let lightEnd = firstLightAfterDeep(at(14))
+  while (!isDeep(at(14), lightEnd)) lightEnd += 1000
+  await clock.advance(DEEP_SLEEP_MS + 60_000)
+  expect(await label()).toBe('· fast asleep')
+  await clock.advance(lightEnd - 20_000 - DEEP_SLEEP_MS - 60_000)
+  expect(await label()).toBe('· “nothing to do…”')
+
+  // Into the next deep spell, but still within the 30 seconds it stays up at least.
+  await clock.advance(25_000)
+  expect(await label()).toMatch(/hanging around|strolling around/)
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await label()).not.toBe('· waking up')
 })
 
 test('a pet made with no curiosity never gets up from a nap out of boredom', async ($, on) => {
@@ -465,7 +592,7 @@ test('asleep, it talks in its sleep now and then', async ($, on) => {
     return (await ui.find({ text: /^· / }))?.text
   }
 
-  // Bored, it is up around minute 5; back asleep by minute 7, it dreams 10 to 20 minutes later.
+  // Asleep from minute 1, it dreams 10 to 20 minutes later; getting up now and then does not put that off.
   const seen = new Set<string | undefined>()
   for (let minute = 0; minute <= 30; minute++) {
     await clock.advance(60_000)
@@ -523,6 +650,29 @@ test('after a long while away, the first key it sees is greeted; a short while i
   // Glad to see them, it was up already: a prompt does not startle it.
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   expect(await label()).not.toBe('· waking up')
+})
+
+test('fast asleep it does not look up at a key; once its sleep turns light it does', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  on('prompt.edit', (_$, e) => ({ text: e.text + e.inputText, cursor: e.cursor + e.inputText.length }))
+  await $.turn.complete(finished)
+  // The kit raises prompt.edit, though its types leave the call out.
+  const raise = ($.prompt as unknown as { edit: (e: Args<'prompt.edit'>) => Promise<unknown> }).edit
+  const key = () => raise({ origin: { kind: 'composer' }, text: '', cursor: 0, start: 0, end: 0, inputText: 'h' })
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  await label()
+  await clock.advance(DEEP_SLEEP_MS + 60_000)
+  await key()
+  expect(await label()).toBe('· fast asleep')
+
+  await clock.advance(firstLightAfterDeep(at(14)) - DEEP_SLEEP_MS - 60_000)
+  await key()
+  expect(await label()).toBe('· watching you type')
 })
 
 test('a key during a long turn is not greeted: the band keeps showing the work', async ($, on) => {

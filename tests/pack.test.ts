@@ -80,6 +80,63 @@ describe('parsePack', () => {
     expect(bad({ actions: { blink: { frames: [['ooo']], moods: ['thinking'], every: [2, 6] } } })).toThrow(/same size/)
   })
 
+  test('an activity is read as an action that loops for a while, with its words', () => {
+    const raw = {
+      ...tiny(),
+      main: {
+        moods: { sleeping: [['oo', 'bb']] },
+        activities: {
+          yarn: {
+            start: [['bo', 'bo']],
+            loop: [['ob', 'ob'], ['bb', 'bb']],
+            seconds: [10, 20],
+            moods: ['idle'],
+            every: [60, 120],
+            label: { en: 'playing with yarn', 'pt-BR': 'brincando com o novelo' },
+          },
+          knead: { loop: [['oo', 'oo']], seconds: [5, 5], moods: ['idle'], every: [30, 30] },
+        },
+      },
+    }
+    const [yarn, knead] = parsePack(raw).actions
+    expect(yarn).toEqual({
+      name: 'yarn',
+      frames: [['bo', 'bo']],
+      moods: ['idle'],
+      every: [60, 120],
+      activity: {
+        loop: [['ob', 'ob'], ['bb', 'bb']],
+        seconds: [10, 20],
+        end: [],
+        label: { en: 'playing with yarn', 'pt-BR': 'brincando com o novelo' },
+      },
+    })
+    expect(knead?.frames).toEqual([])
+    expect(knead?.activity?.label).toEqual({})
+  })
+
+  test('activities are checked', () => {
+    const loop = [['oo', 'bb']]
+    const withActivities = (activities: unknown, actions?: unknown) => ({
+      ...tiny(),
+      main: { moods: { sleeping: [['oo', 'bb']] }, activities, ...(actions === undefined ? {} : { actions }) },
+    })
+    const ok = { loop, seconds: [5, 10], moods: ['idle'], every: [30, 60] }
+    expect(() => parsePack(withActivities({ play: ok }))).not.toThrow()
+    expect(() => parsePack(withActivities([]))).toThrow(/main.activities: an object/)
+    expect(() => parsePack(withActivities({ play: { ...ok, loop: undefined } }))).toThrow(/activities.play.loop: needs at least one frame/)
+    expect(() => parsePack(withActivities({ play: { ...ok, seconds: [4, 10] } }))).toThrow(/activities.play.seconds: \[min, max\] seconds, 5 to 300/)
+    expect(() => parsePack(withActivities({ play: { ...ok, seconds: [20, 10] } }))).toThrow(/activities.play.seconds/)
+    expect(() => parsePack(withActivities({ play: { ...ok, every: [0, 10] } }))).toThrow(/activities.play.every/)
+    expect(() => parsePack(withActivities({ play: { ...ok, moods: ['dancing'] } }))).toThrow(/activities.play.moods/)
+    expect(() => parsePack(withActivities({ play: { ...ok, end: [['ooo', 'bbb']] } }))).toThrow(/every frame needs the same size/)
+    expect(() => parsePack(withActivities({ play: { ...ok, label: { english: 'hi' } } }))).toThrow(/activities.play.label: "english" is not a language code/)
+    expect(() => parsePack(withActivities({ play: { ...ok, label: { en: 'x'.repeat(41) } } }))).toThrow(/activities.play.label.en: one line, up to 40 characters/)
+    expect(() => parsePack(withActivities({ blink: ok }, { blink: { frames: loop, moods: ['idle'], every: [2, 6] } }))).toThrow(/activities.blink: an action has this name already/)
+    const nine = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`a${i}`, ok]))
+    expect(() => parsePack(withActivities(nine))).toThrow(/main.activities: at most 8/)
+  })
+
   test('needs a sleeping mood', () => {
     const raw = { ...tiny(), main: { moods: { typing: [['oo']] } } }
     expect(() => parsePack(raw)).toThrow(/sleeping: required/)
