@@ -803,8 +803,9 @@ const idleLabels = async ($: Parameters<TestBody>[0], on: On, petFile: string) =
   await $.turn.complete(finished)
   await clock.advance(3000)
   const seen = new Set<string | undefined>()
-  for (let second = 0; second < 30; second++) {
-    await clock.advance(1000)
+  // Every other frame: a teleport of two frames is over in half a second, between two seconds.
+  for (let half = 0; half < 60; half++) {
+    await clock.advance(500)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
     seen.add((await ui.find({ text: /^· / }))?.text)
   }
@@ -835,9 +836,9 @@ test('a teleport draws its vanish and appear frames', async ($, on) => {
   await $.turn.complete(finished)
   await clock.advance(3000)
   const drawings = new Set<unknown>()
-  // A second apart is enough: the draw it lands on shows the first vanish frame.
-  for (let second = 0; second < 30; second++) {
-    await clock.advance(1000)
+  // Every other frame: a teleport of two frames is over in half a second, between two seconds.
+  for (let half = 0; half < 60; half++) {
+    await clock.advance(500)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
     drawings.add((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells)
   }
