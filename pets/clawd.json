@@ -1226,9 +1226,9 @@
           "............................",
           "............................",
           "........bbbbbbbbbbbb........",
-          "........bbbebbbbbbeb.b......",
-          "........bbbebbbbbbebb.......",
-          "......bbbbbbbbbbbbbb........",
+          "........bbebbbbbbebb........",
+          "........bbebbbbbbebb........",
+          "......bbbbbbbbbbbbbbbb......",
           "........bbbbbbbbbbbb........",
           "........bbbbbbbbbbbb........",
           ".........b.b....b.b.........",
@@ -1238,9 +1238,9 @@
           "............................",
           "............................",
           "........bbbbbbbbbbbb........",
-          "........bbbebbbbbbeb.b......",
-          "........bbbebbbbbbebb.......",
-          "......bbbbbbbbbbbbbb........",
+          "........bebbbbbbebbb........",
+          "........bebbbbbbebbb........",
+          "......bbbbbbbbbbbbbbbb......",
           "........bbbbbbbbbbbb........",
           "........bbbbbbbbbbbb........",
           ".........b.b....b.b.........",
@@ -1250,8 +1250,8 @@
           "............................",
           "............................",
           "........bbbbbbbbbbbb........",
-          "........bbebbbbbbebb........",
-          "........bbebbbbbbebb........",
+          "........bebbbbbbebbb........",
+          "........bebbbbbbebbb........",
           "......bbbbbbbbbbbbbbbb......",
           "........bbbbbbbbbbbb........",
           "........bbbbbbbbbbbb........",
@@ -3362,6 +3362,7 @@
     "moods": {
       "working": [
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3369,6 +3370,7 @@
           "....b....b.."
         ],
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3376,6 +3378,7 @@
           "....b....b.."
         ],
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3383,6 +3386,7 @@
           "..b....b...."
         ],
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3392,6 +3396,7 @@
       ],
       "happy": [
         [
+          "............",
           "..bebbbbeb..",
           "b.bbbbbbbb.b",
           ".bbbbbbbbbb.",
@@ -3399,6 +3404,7 @@
           "..b.b..b.b.."
         ],
         [
+          "............",
           "..bebbbbeb..",
           "b.bbbbbbbb.b",
           ".bbbbbbbbbb.",
@@ -3406,6 +3412,7 @@
           "..b.b..b.b.."
         ],
         [
+          "............",
           "..bebbbbeb..",
           "b.bbbbbbbb.b",
           ".bbbbbbbbbb.",
@@ -3413,6 +3420,7 @@
           "....b....b.."
         ],
         [
+          "............",
           "..bebbbbeb..",
           "b.bbbbbbbb.b",
           ".bbbbbbbbbb.",
@@ -3422,6 +3430,7 @@
       ],
       "sad": [
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3429,6 +3438,7 @@
           "..b.b..b.b.."
         ],
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3436,6 +3446,7 @@
           "..b.b..b.b.."
         ],
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3443,6 +3454,7 @@
           "..b.b..b.b.."
         ],
         [
+          "............",
           "..bbbbbbbb..",
           "..bebbbbeb..",
           "bbbbbbbbbbbb",
@@ -3452,11 +3464,28 @@
       ],
       "startled": [
         [
-          "..bbbbbbbb.t",
+          "..bbbbbbbb..",
           "b.bebbbbeb.b",
           ".bbbbbbbbbb.",
           "..bbbbbbbb..",
+          "............",
           "............"
+        ],
+        [
+          "..bbbbbbbb..",
+          "b.bebbbbeb.b",
+          ".bbbbbbbbbb.",
+          "..bbbbbbbb..",
+          "............",
+          "............"
+        ],
+        [
+          "............",
+          "..bbbbbbbb.t",
+          "..bebbbbeb..",
+          "bbbbbbbbbbbb",
+          "..bbbbbbbb..",
+          "..b.b..b.b.."
         ]
       ]
     }

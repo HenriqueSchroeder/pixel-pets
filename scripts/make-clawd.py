@@ -118,8 +118,9 @@ F = {
     # reading, breathing slow
     'reading': [f(DOWN)] * 6 + [f(DOWN, breath=True)] * 2,
     'searching': [f(scan(-1))] * 2 + [f(scan(0))] * 2 + [f(scan(1))] * 2 + [f(scan(0))] * 2,
-    # drawn with its agents on the right; the core mirrors it when they are on the left
-    'supervising': [f(look(1))] * 4 + [f(look(1), RIGHT_UP)] * 2 + [f(OPEN)] * 2,
+    # drawn with its agents on the right; the core mirrors it when they are on the left.
+    # No raised arm here: that is the whip's windup, and in the loop it read as one given up.
+    'supervising': [f(look(1))] * 4 + [f(OPEN)] + [f(look(-1))] * 2 + [f(OPEN)],
     'compacting': [f(DOWN, w((0, 1), (1, 14)))] * 2 + [f(DOWN, w((1, 1), (0, 14)))] * 2,
     'sweating': [f(OPEN, t(r, 13)) for r in (2, 2, 3, 3, 4, 4)],
     'worried': [f(look(-1), WOBBLE)] * 3 + [f(OPEN, WOBBLE)] + [f(look(1), WOBBLE, t(2, 13))] * 3 + [f(OPEN, WOBBLE)],
@@ -186,18 +187,29 @@ A = {
              'moods': ['supervising'], 'every': [3, 7], 'startles': 3},
 }
 
+# the top row is room to jump into: six pixel rows take the same three cells as five
 MINI = [
+    '............',
     '..bbbbbbbb..',
     '..bebbbbeb..',
     'bbbbbbbbbbbb',
     '..bbbbbbbb..',
     '..b.b..b.b..',
 ]
-MINI_STEP = [(4, 2, '.'), (4, 7, '.')], [(4, 4, '.'), (4, 9, '.')]
-MINI_CHEER = [(2, 0, '.'), (1, 0, 'b'), (2, 11, '.'), (1, 11, 'b'), (1, 3, 'b'), (0, 3, 'e'), (1, 8, 'b'), (0, 8, 'e')]
-MINI_SAD = [(3, 3, 't')], [(3, 2, 't')]
-# at the crack of the whip: arms up, feet off the ground, a bead of sweat
-MINI_JUMP = [(4, c, '.') for c in range(12)] + [(2, 0, '.'), (1, 0, 'b'), (2, 11, '.'), (1, 11, 'b'), (0, 11, 't')]
+MINI_STEP = [(5, 2, '.'), (5, 7, '.')], [(5, 4, '.'), (5, 9, '.')]
+MINI_CHEER = [(3, 0, '.'), (2, 0, 'b'), (3, 11, '.'), (2, 11, 'b'), (2, 3, 'b'), (1, 3, 'e'), (2, 8, 'b'), (1, 8, 'e')]
+MINI_SAD = [(4, 3, 't')], [(4, 2, 't')]
+# at the crack of the whip: up a pixel with its arms thrown up and its legs tucked,
+# then down on all four with a bead of sweat
+MINI_AIR = [
+    '..bbbbbbbb..',
+    'b.bebbbbeb.b',
+    '.bbbbbbbbbb.',
+    '..bbbbbbbb..',
+    '............',
+    '............',
+]
+MINI_LAND = paint(MINI, [(1, 11, 't')])
 
 pack = {
     '$schema': SCHEMA,
@@ -211,7 +223,8 @@ pack = {
         'working': [paint(MINI, MINI_STEP[0])] * 2 + [paint(MINI, MINI_STEP[1])] * 2,
         'happy': [paint(MINI, MINI_CHEER)] * 2 + [paint(MINI, MINI_CHEER + MINI_STEP[0])] * 2,
         'sad': [paint(MINI, MINI_SAD[0])] * 2 + [paint(MINI, MINI_SAD[1])] * 2,
-        'startled': [paint(MINI, MINI_JUMP)],
+        # one frame for each of the whip's from its crack: two in the air, then down
+        'startled': [MINI_AIR] * 2 + [MINI_LAND],
     }},
     'personality': {'energetic': 0.7, 'curious': 0.8, 'affectionate': 0.6},
     'speech': {
