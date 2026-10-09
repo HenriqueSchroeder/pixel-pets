@@ -767,10 +767,11 @@ export const register: Register = (on, options) => {
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
-      // The ones still at work on the side it faces jump while it startles them.
-      const isStartled = moved.startled && side === facing
-      const miniFrames = pack.mini?.[one.leaving?.mood ?? (isStartled ? 'startled' : 'working')] ?? []
-      const mini = miniFrames[frame % miniFrames.length] ?? []
+      // The ones still at work on the side it faces jump while it startles them, their
+      // jump played from its first frame as it does, not with the clock.
+      const startledAt = side === facing && one.leaving === undefined ? moved.startled : undefined
+      const miniFrames = pack.mini?.[one.leaving?.mood ?? (startledAt === undefined ? 'working' : 'startled')] ?? []
+      const mini = miniFrames[(startledAt ?? frame) % miniFrames.length] ?? []
       return (
         // On the left the slot hugs the pet too: its pet and words lean right.
         <Box

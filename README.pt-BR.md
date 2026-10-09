@@ -131,7 +131,7 @@ Só um loop parece máquina. Três chaves opcionais em `main` deixam o pet impre
 
 - `variants`: mais loops para um humor que você desenha em `moods`. Um deles, ou o loop do próprio humor, é sorteado cada vez que o humor começa.
 - `transitions`: quadros tocados uma vez quando o humor muda, com chave `de>para`. Um dos lados pode ser `*`. A chave exata ganha de `de>*`, que ganha de `*>para`.
-- `actions`: quadros tocados uma vez num momento aleatório enquanto o pet está num dos `moods`, `every` [mín, máx] segundos depois da última vez. Piscadas, orelhas mexendo e bocejos ficam aqui, e os loops podem ficar calmos. Uma ação com `startles`, um quadro contado a partir de 0, faz os mini pets dos agents mostrarem `startled` desse quadro até ela acabar: o estalo do chicote do clawd.
+- `actions`: quadros tocados uma vez num momento aleatório enquanto o pet está num dos `moods`, `every` [mín, máx] segundos depois da última vez. Piscadas, orelhas mexendo e bocejos ficam aqui, e os loops podem ficar calmos. Uma ação com `startles`, um quadro contado a partir de 0, faz os mini pets dos agents do lado para onde o pet olha tocarem o `startled` desse quadro até ela acabar, sempre a partir do primeiro quadro: o estalo do chicote do clawd.
 - Uma ação é um quadro inteiro, então mantenha a mesma cara dos humores em que ela toca. Por isso o gato tem uma piscada para cada expressão.
 - Um humor tem até 16 quadros; a 4 fps, são 4 segundos.
 

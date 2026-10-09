@@ -396,7 +396,7 @@
                 }
               },
               "startles": {
-                "description": "The frame, counted from 0, from which the agents' mini pets show `startled` until the action ends: a whip's crack, a roar.",
+                "description": "The frame, counted from 0, from which the agents' mini pets play `startled`, from its first frame, until the action ends: a whip's crack, a roar.",
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 15

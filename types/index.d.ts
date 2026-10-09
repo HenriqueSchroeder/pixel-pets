@@ -51,7 +51,7 @@ export type PackFile = {
     // Played once on a mood change, keyed "from>to"; either side may be "*".
     transitions?: Record<string, Frame[]>
     // Played once at random while in one of `moods`, every `every` seconds [min, max].
-    // From its frame `startles` on, the agents' mini pets show `startled`.
+    // From its frame `startles` on, the agents' mini pets play `startled` from its first frame.
     actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number }>
     // A pet that does not walk can teleport instead: `vanish` plays where it was,
     // `appear` where it lands.

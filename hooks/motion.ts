@@ -61,8 +61,9 @@ const holds = (pack: Pack, motion: Motion, mood: Mood, tick: number) => {
   return motion.once?.isAction === true && left > 0 && left <= FOLLOW_THROUGH_TICKS
 }
 
-// The frame to draw on `tick`, and whether it startles the agents. Safe to call
-// more than once per tick: the same tick gives the same frame.
+// The frame to draw on `tick`, and how many ticks ago it began to startle the
+// agents, if it does. Safe to call more than once per tick: the same tick gives
+// the same frame.
 export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick: number, random: Random) => {
   let motion =
     previous !== undefined && (previous.mood === mood || holds(pack, previous, mood, tick))
@@ -72,8 +73,9 @@ export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick:
   if (motion.once !== undefined) {
     const at = tick - motion.once.start
     const frame = motion.once.frames[at]
-    const startles = motion.once.startles
-    if (frame !== undefined) return { motion, frame, startled: startles !== undefined && at >= startles }
+    const { startles } = motion.once
+    const startled = startles !== undefined && at >= startles ? at - startles : undefined
+    if (frame !== undefined) return { motion, frame, startled }
     motion = { ...motion, once: undefined }
   }
 
@@ -84,9 +86,9 @@ export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick:
     const again = tick + due.frames.length + someTime(due.every, pack.fps, random)
     const once = { frames: due.frames, start: tick, isAction: true, startles: due.startles }
     motion = { ...motion, once, next: { ...motion.next, [due.name]: again } }
-    return { motion, frame: due.frames[0] ?? [], startled: due.startles === 0 }
+    return { motion, frame: due.frames[0] ?? [], startled: due.startles === 0 ? 0 : undefined }
   }
 
   const at = (((tick - motion.since) % motion.loop.length) + motion.loop.length) % motion.loop.length
-  return { motion, frame: motion.loop[at] ?? [], startled: false }
+  return { motion, frame: motion.loop[at] ?? [], startled: undefined }
 }
