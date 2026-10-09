@@ -50,6 +50,18 @@
       "title": "Awake minutes",
       "description": "How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep",
       "default": 1
+    },
+    "labelLine": {
+      "type": "boolean",
+      "title": "Label line",
+      "description": "Show Claude's line above the pet, with what it is doing and what the pet says. Off, the band is one row shorter",
+      "default": true
+    },
+    "agentLabels": {
+      "type": "boolean",
+      "title": "Agent labels",
+      "description": "Show each subagent's name and what it is doing under its mini pet. Off, the mini pets stand closer, without text",
+      "default": true
     }
   }
 }
