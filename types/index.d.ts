@@ -53,6 +53,21 @@ export type PackFile = {
     // Played once at random while in one of `moods`, every `every` seconds [min, max].
     // From its frame `startles` on, the agents' mini pets play `startled` from its first frame.
     actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number }>
+    // Longer scenes played now and then while in one of `moods`, every `every` seconds:
+    // `start` once, `loop` for `seconds` [min, max], `end` once. `label` is what Claude's
+    // line says meanwhile, by language code.
+    activities?: Record<
+      string,
+      {
+        start?: Frame[]
+        loop: Frame[]
+        end?: Frame[]
+        seconds: [number, number]
+        moods: Mood[]
+        every: [number, number]
+        label?: Record<string, string>
+      }
+    >
     // A pet that does not walk can teleport instead: `vanish` plays where it was,
     // `appear` where it lands.
     teleport?: { vanish: Frame[]; appear: Frame[] }

@@ -45,6 +45,8 @@ const LIMITS = {
   variantsPerMood: 4,
   transitions: 32,
   actions: 16,
+  activities: 8,
+  activitySeconds: { min: 5, max: 300 },
   everySeconds: { min: 1, max: 600 },
   linesPerSituation: 8,
   lineLength: 40,
@@ -52,7 +54,10 @@ const LIMITS = {
   fps: { min: 1, max: 12 },
 }
 
-export type Action = { name: string; frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number }
+// A longer scene: `frames` (its start) once, `loop` for `seconds`, `end` once.
+export type Activity = { loop: Frame[]; seconds: [number, number]; end: Frame[]; label: Record<string, string> }
+
+export type Action = { name: string; frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number; activity?: Activity }
 
 export type Pack = {
   name: string
@@ -141,6 +146,29 @@ const parseTransitions = (raw: unknown) => {
 
 const ACTION_NAME = /^[a-zA-Z][a-zA-Z0-9_-]{0,31}$/
 
+const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/
+
+// Plain one-line text, short enough for the band.
+const isLine = (line: unknown): line is string =>
+  typeof line === 'string' && line.trim() !== '' && line.length <= LIMITS.lineLength && !/[\u0000-\u001f\u007f]/.test(line)
+
+const checkMoods = (moods: unknown, where: string): Mood[] => {
+  if (!Array.isArray(moods) || moods.length === 0 || !moods.every(isMood)) throw new Error(`${where}.moods: a list of moods`)
+  return moods
+}
+
+const checkRange = (range: unknown, where: string, { min, max }: { min: number; max: number }): [number, number] => {
+  if (
+    !Array.isArray(range) ||
+    range.length !== 2 ||
+    !range.every(n => typeof n === 'number' && n >= min && n <= max) ||
+    range[0] > range[1]
+  ) {
+    throw new Error(`${where}: [min, max] seconds, ${min} to ${max}`)
+  }
+  return [range[0], range[1]]
+}
+
 const parseActions = (raw: unknown): Action[] => {
   if (raw === undefined) return []
   if (!isRecord(raw)) throw new Error('main.actions: an object of name to action')
@@ -150,24 +178,51 @@ const parseActions = (raw: unknown): Action[] => {
     const where = `main.actions.${name}`
     if (!ACTION_NAME.test(name)) throw new Error(`${where}: name with letters, digits, - or _ (up to 32)`)
     if (!isRecord(action)) throw new Error(`${where}: needs frames, moods and every`)
-    const { moods, every } = action
-    if (!Array.isArray(moods) || moods.length === 0 || !moods.every(isMood)) throw new Error(`${where}.moods: a list of moods`)
-    const { min, max } = LIMITS.everySeconds
-    if (
-      !Array.isArray(every) ||
-      every.length !== 2 ||
-      !every.every(n => typeof n === 'number' && n >= min && n <= max) ||
-      every[0] > every[1]
-    ) {
-      throw new Error(`${where}.every: [min, max] seconds, ${min} to ${max}`)
-    }
+    const moods = checkMoods(action.moods, where)
+    const every = checkRange(action.every, `${where}.every`, LIMITS.everySeconds)
     const frames = checkFrames(action.frames, `${where}.frames`, LIMITS.main)
     const { startles } = action
-    if (startles === undefined) return { name, frames, moods, every: [every[0], every[1]] }
+    if (startles === undefined) return { name, frames, moods, every }
     if (typeof startles !== 'number' || !Number.isInteger(startles) || startles < 0 || startles >= frames.length) {
       throw new Error(`${where}.startles: one of its frames, 0 to ${frames.length - 1}`)
     }
-    return { name, frames, moods, every: [every[0], every[1]], startles }
+    return { name, frames, moods, every, startles }
+  })
+}
+
+const parseActivities = (raw: unknown, taken: ReadonlySet<string>): Action[] => {
+  if (raw === undefined) return []
+  if (!isRecord(raw)) throw new Error('main.activities: an object of name to activity')
+  const entries = Object.entries(raw)
+  if (entries.length > LIMITS.activities) throw new Error(`main.activities: at most ${LIMITS.activities}`)
+  return entries.map(([name, activity]) => {
+    const where = `main.activities.${name}`
+    if (!ACTION_NAME.test(name)) throw new Error(`${where}: name with letters, digits, - or _ (up to 32)`)
+    // Actions and activities keep their timers side by side, by name.
+    if (taken.has(name)) throw new Error(`${where}: an action has this name already`)
+    if (!isRecord(activity)) throw new Error(`${where}: needs loop, seconds, moods and every`)
+    const optional = (frames: unknown, part: string) => (frames === undefined ? [] : checkFrames(frames, `${where}.${part}`, LIMITS.main))
+    const label: Record<string, string> = {}
+    if (activity.label !== undefined) {
+      if (!isRecord(activity.label)) throw new Error(`${where}.label: an object of language to words`)
+      for (const [code, words] of Object.entries(activity.label)) {
+        if (!LANGUAGE.test(code)) throw new Error(`${where}.label: "${code}" is not a language code like "en" or "pt-BR"`)
+        if (!isLine(words)) throw new Error(`${where}.label.${code}: one line, up to ${LIMITS.lineLength} characters`)
+        label[code] = words
+      }
+    }
+    return {
+      name,
+      frames: optional(activity.start, 'start'),
+      moods: checkMoods(activity.moods, where),
+      every: checkRange(activity.every, `${where}.every`, LIMITS.everySeconds),
+      activity: {
+        loop: checkFrames(activity.loop, `${where}.loop`, LIMITS.main),
+        seconds: checkRange(activity.seconds, `${where}.seconds`, LIMITS.activitySeconds),
+        end: optional(activity.end, 'end'),
+        label,
+      },
+    }
   })
 }
 
@@ -193,7 +248,6 @@ const parsePersonality = (raw: unknown): Traits => {
   return traits
 }
 
-const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/
 
 // Lines are shown as they are: plain one-line text, short enough for the band.
 const parseSpeech = (raw: unknown) => {
@@ -208,12 +262,7 @@ const parseSpeech = (raw: unknown) => {
       const where = `speech.${code}.${situation}`
       if (!SITUATIONS.includes(situation as Situation)) throw new Error(`${where}: unknown situation, use ${SITUATIONS.join(', ')}`)
       const { linesPerSituation: most, lineLength: longest } = LIMITS
-      if (
-        !Array.isArray(list) ||
-        list.length === 0 ||
-        list.length > most ||
-        !list.every(line => typeof line === 'string' && line.trim() !== '' && line.length <= longest && !/[\u0000-\u001f\u007f]/.test(line))
-      ) {
+      if (!Array.isArray(list) || list.length === 0 || list.length > most || !list.every(isLine)) {
         throw new Error(`${where}: 1 to ${most} lines of one line each, up to ${longest} characters`)
       }
       lines[situation as Situation] = list
@@ -265,14 +314,15 @@ export const parsePack = (raw: unknown): Pack => {
     variants[mood] = extra.get(source ?? 'sleeping') ?? []
   }
   const transitions = parseTransitions(file.main.transitions)
-  const actions = parseActions(file.main.actions)
+  const own = parseActions(file.main.actions)
+  const actions = [...own, ...parseActivities(file.main.activities, new Set(own.map(one => one.name)))]
   const teleport = parseTeleport(file.main.teleport)
   sameSize(
     [
       ...drawn.values(),
       ...[...extra.values()].flat(),
       ...Object.values(transitions),
-      ...actions.map(a => a.frames),
+      ...actions.flatMap(a => [a.frames, a.activity?.loop ?? [], a.activity?.end ?? []]),
       ...(teleport === null ? [] : [teleport.vanish, teleport.appear]),
     ].flat(),
     'main',
