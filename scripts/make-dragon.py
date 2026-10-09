@@ -154,6 +154,24 @@ def move_head(g, dx, dy):
     return [''.join(r) for r in cells]
 
 
+# Turned to face you: both eyes, nostrils and horns, its chin on its chest.
+FRONT_HEAD = [
+    '.n.........n.',
+    '.nno.....onn.',
+    '..nohhhhhon..',
+    '.ohhrrrrrrho.',
+    'orssrrrrrssro',
+    'oraearrraearo',
+    'oraearrraearo',
+    '.orrrhhhrrro.',
+    '..orhorohro..',
+    '..oscccccso..',
+    '...ooooooo...',
+]
+FRONT_LEFT = 16
+FRONT_SHUT = [(5, FRONT_LEFT + c, 's') for c in (2, 3, 4, 8, 9, 10)] + [(6, FRONT_LEFT + c, 'o') for c in (2, 3, 4, 8, 9, 10)]
+
+
 def over(g, layer):
     return [''.join(b if l == '.' else l for b, l in zip(gr, lr)) for gr, lr in zip(g, layer)]
 
@@ -175,6 +193,20 @@ def frame(face=(), wing='fold', breath=False, dx=0, dy=0, body=(), fx=(), up=0, 
     g = paint(g, list(face) + (BREATH if breath else []) + list(body))
     g = move_head(g, dx, dy)
     return paint(lift(paint(g, list(fx)), up), list(ground))
+
+
+def facing(face=(), wing='fold', breath=False):
+    """Its head turned to the front, `face` painted over it."""
+    g = [list(r) for r in frame((), wing, breath)]
+    for r in HEAD_ROWS:
+        for c in HEAD_COLS:
+            if (r, c) not in NECK:
+                g[r][c] = '.'
+    for r, row in enumerate(FRONT_HEAD):
+        for c, ch in enumerate(row):
+            if ch != '.':
+                g[r][FRONT_LEFT + c] = ch
+    return paint([''.join(r) for r in g], list(face))
 
 
 def asleep(face=SHUT, breath=False, fx=(), dy=SLEEP_DROP):
@@ -337,7 +369,9 @@ A = {
                  'moods': ['idle'], 'every': [20, 45]},
     'sleepyYawn': {'frames': [frame(HALF + OPEN_MOUTH), frame(SHUT + ROAR), frame(SHUT + ROAR), frame(HALF + SMALL), frame(HALF)],
                    'moods': ['sleepy'], 'every': [15, 35]},
-    'headShake': {'frames': [frame(SHUT, dx=d) for d in (-1, 1, -1, 1)] + [frame(OPEN)], 'moods': ['idle'], 'every': [25, 50]},
+    # it turns to look at you for a while, blinks, and turns back
+    'lookFront': {'frames': [facing()] * 7 + [facing(FRONT_SHUT)] + [facing(wing='lift', breath=True)] * 7 + [frame(OPEN)],
+                  'moods': ['idle'], 'every': [12, 30]},
     'scratch': {'frames': [frame(JOY, body=TAP_HIND), frame(JOY)] * 3 + [frame(OPEN)], 'moods': ['idle'], 'every': [20, 45]},
     # it checks on its hoard
     'treasure': {'frames': [frame(DOWN, fx=COIN)] * 2 + [frame(DOWN, fx=COIN + GLINT)] * 2 + [frame(JOY, fx=COIN)] * 3 + [frame(OPEN)],
