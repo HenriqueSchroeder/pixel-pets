@@ -341,7 +341,6 @@ TELEPORT = {
                frame(OPEN, 'up', up=2), frame(OPEN, 'down', ground=DUST), frame(OPEN, 'up', ground=DUST), frame(OPEN)],
 }
 
-# one frame, so a blink never holds up a loop's smoke or claws for long
 # Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
 IDLE = frame(OPEN, fx=EMBER)
 # Its hoard: a heap of gold before its claws, glinting, one coin flipped up and caught.
@@ -360,7 +359,7 @@ def ring(r, c, ch='l'):
     return [(r, c + 1, ch), (r + 1, c, ch), (r + 1, c + 2, ch), (r + 2, c + 1, ch)]
 
 
-# a smoke ring's way up off its snout: a wisp, a ring widening and rising, fading out
+# a smoke ring's way up off its snout: a wisp, then a ring rising and fading out
 RING_WAY = [[(6, 32, 'g')], ring(4, 32), ring(2, 33), ring(0, 33), [(0, 34, 'g')], [], [], []]
 
 
@@ -375,17 +374,18 @@ ACT = {
                              body=TAP_FRONT if i in (0, 1) else [], fx=hoard(i)) for i in range(16)],
               'end': [frame(JOY, fx=HOARD), frame(OPEN, fx=EMBER + HOARD)],
               'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'counting its hoard', 'pt-BR': 'contando o tesouro'}},
-    # lazy smoke rings off its snout, widening as they rise
+    # lazy smoke rings off its snout, rising one after another
     'smokeRings': {'start': [IDLE, frame(HALF + SMALL)],
                    'loop': [frame(HALF + (SMALL if i % 8 < 2 else []), 'lift' if i >= 8 else 'fold', breath=i >= 8, fx=rings(i))
                             for i in range(16)],
                    'end': [frame(HALF, fx=RING_WAY[2]), IDLE],
                    'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'blowing smoke rings', 'pt-BR': 'soprando anéis de fumaça'}},
-    # it hovers on the spot, wings beating, rising and dipping a row, dust stirring under it
-    'hover': {'start': [IDLE, frame(OPEN, 'up'), frame(OPEN, 'down', up=1)],
-              'loop': [frame(JOY if i >= 12 else OPEN, 'up' if i % 4 < 2 else 'down', up=1 if i % 8 >= 4 else 0,
-                             ground=[(19, c, 'g') for c in (3 + i % 2, 10 - i % 2, 30 + i % 2)]) for i in range(16)],
-              'end': [frame(OPEN, 'down', up=1), frame(OPEN, 'up'), IDLE],
+    # it hovers on the spot: wings beating, claws drawn up off the ground as it rises, dust stirring
+    'hover': {'start': [IDLE, frame(OPEN, dy=1), frame(OPEN, 'up')],
+              'loop': [frame(JOY if i >= 12 else OPEN, 'up' if i % 4 < 2 else 'down',
+                             body=TAP_FRONT + TAP_HIND if i % 8 >= 4 else (),
+                             ground=[(19, c, 'g') for c in (1 + i % 2, 8 + i % 2, 30 + i % 2)]) for i in range(16)],
+              'end': [frame(OPEN, 'down', body=TAP_FRONT + TAP_HIND), frame(OPEN, 'up'), IDLE],
               'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'hovering', 'pt-BR': 'pairando no ar'}},
 }
 # Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
@@ -393,6 +393,7 @@ for name, a in ACT.items():
     for first in (a['start'][0], a['end'][-1]):
         assert all(first[r][c] == IDLE[r][c] for r in range(3, 8) for c in range(19, 25)), name
 
+# one frame, so a blink never holds up a loop's smoke or claws for long
 QUIET = ['idle', 'watching', 'thinking', 'typing', 'writing', 'reading', 'running', 'searching', 'compacting']
 A = {
     'blink': {'frames': [frame(SHUT)], 'moods': QUIET, 'every': [2, 6]},

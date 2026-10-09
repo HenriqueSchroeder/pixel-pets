@@ -12807,6 +12807,28 @@
             "...ooooo..onnnno....onnnoo.........."
           ],
           [
+            "....................................",
+            "..........n.......nn................",
+            ".........orh.......nnn..............",
+            "........omrho.......onnoooo.........",
+            ".......ommrrho.....ohhhhrrroo.......",
+            "......ommmsrrho...orsssshrrrroo.....",
+            ".....ommmmmsrrho..oraaerrrrrrrso....",
+            "....ommmmmmmsrrho.oraaerrrrrrrro....",
+            "...ommmmmmmmmsrroorrrsccccccccoo....",
+            "..ommmmmmmmmmmssorrrccoooonoo.......",
+            "...omoomoomoomrhhrrrcco.............",
+            "....orhhhhhhhrrrrrrscccco...........",
+            "...orhhhrrrrrrrrrrrskkkko...........",
+            "o..orhhrrrrrrrrrrrrscccco...........",
+            "oo.orhrrrrrrrrsrrrrskkkko...........",
+            "ooo.orrrrrrrrsrrrrrsoorro...........",
+            "orooorrrrrrrsrrrrrso.orro...........",
+            ".orrorrrrsssrrrrsso..orro...........",
+            "..orrrsss.oosssoo...orrrso..........",
+            "...ooooo..onnnno....onnnoo.........."
+          ],
+          [
             "...o.....n........nn................",
             "..omo...orh........nnn..............",
             ".ommso.orrho........onnoooo.........",
@@ -12827,28 +12849,6 @@
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
             "...ooooo..onnnno....onnnoo.........."
-          ],
-          [
-            "...................nnn..............",
-            "....................onnoooo.........",
-            "...................ohhhhrrroo.......",
-            "..................orsssshrrrroo.....",
-            "..................oraaerrrrrrrso....",
-            "..............ooo.oraaerrrrrrrro....",
-            "............oohrhorrrsccccccccoo....",
-            "..........oohrrrsorrccoooonoo.......",
-            "........oohrrrssmorrcco.............",
-            "....oooohrrssmmmmorrcco.............",
-            "....oohrssmmmmmmorrscccco...........",
-            "...ohrsmmmmmmmmorrrskkkko...........",
-            "o.osmmmmmmmmmmorrrrscccco...........",
-            "oosmmmmmmmmmorsrrrrskkkko...........",
-            "osmmmmmmmmorrsrrrrrsoorro...........",
-            "omoomoomoorrsrrrrrso.orro...........",
-            ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "...................................."
           ]
         ],
         "loop": [
@@ -12872,7 +12872,7 @@
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...goooo..gnnnno....onnnoo....g....."
+            ".g.ooooog.onnnno....onnnoo....g....."
           ],
           [
             "...o.....n........nn................",
@@ -12894,7 +12894,7 @@
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...ogooo.gonnnno....onnnoo.....g...."
+            "..gooooo.gonnnno....onnnoo.....g...."
           ],
           [
             "..................nn................",
@@ -12916,7 +12916,7 @@
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...goooo..gnnnno....onnnoo....g....."
+            ".g.ooooog.onnnno....onnnoo....g....."
           ],
           [
             "..................nn................",
@@ -12938,9 +12938,10 @@
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...ogooo.gonnnno....onnnoo.....g...."
+            "..gooooo.gonnnno....onnnoo.....g...."
           ],
           [
+            "...o.....n........nn................",
             "..omo...orh........nnn..............",
             ".ommso.orrho........onnoooo.........",
             "ommmmsoorrho.......ohhhhrrroo.......",
@@ -12958,11 +12959,11 @@
             "ooo.orrrrrrrrsrrrrrsoorro...........",
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "...g......g...................g....."
+            "..orrrsss.onnnnoo...onnnso..........",
+            ".g.ooooog.oooooo....oooooo....g....."
           ],
           [
+            "...o.....n........nn................",
             "..omo...orh........nnn..............",
             ".ommso.orrho........onnoooo.........",
             "ommmmsoorrho.......ohhhhrrroo.......",
@@ -12980,11 +12981,11 @@
             "ooo.orrrrrrrrsrrrrrsoorro...........",
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "....g....g.....................g...."
+            "..orrrsss.onnnnoo...onnnso..........",
+            "..gooooo.goooooo....oooooo.....g...."
           ],
           [
+            "..................nn................",
             "...................nnn..............",
             "....................onnoooo.........",
             "...................ohhhhrrroo.......",
@@ -13002,11 +13003,11 @@
             "osmmmmmmmmorrsrrrrrsoorro...........",
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "...g......g...................g....."
+            "..orrrsss.onnnnoo...onnnso..........",
+            ".g.ooooog.oooooo....oooooo....g....."
           ],
           [
+            "..................nn................",
             "...................nnn..............",
             "....................onnoooo.........",
             "...................ohhhhrrroo.......",
@@ -13024,9 +13025,8 @@
             "osmmmmmmmmorrsrrrrrsoorro...........",
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "....g....g.....................g...."
+            "..orrrsss.onnnnoo...onnnso..........",
+            "..gooooo.goooooo....oooooo.....g...."
           ],
           [
             "...o.....n........nn................",
@@ -13048,7 +13048,7 @@
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...goooo..gnnnno....onnnoo....g....."
+            ".g.ooooog.onnnno....onnnoo....g....."
           ],
           [
             "...o.....n........nn................",
@@ -13070,7 +13070,7 @@
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...ogooo.gonnnno....onnnoo.....g...."
+            "..gooooo.gonnnno....onnnoo.....g...."
           ],
           [
             "..................nn................",
@@ -13092,7 +13092,7 @@
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...goooo..gnnnno....onnnoo....g....."
+            ".g.ooooog.onnnno....onnnoo....g....."
           ],
           [
             "..................nn................",
@@ -13114,9 +13114,10 @@
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
             "..orrrsss.oosssoo...orrrso..........",
-            "...ogooo.gonnnno....onnnoo.....g...."
+            "..gooooo.gonnnno....onnnoo.....g...."
           ],
           [
+            "...o.....n........nn................",
             "..omo...orh........nnn..............",
             ".ommso.orrho........onnoooo.........",
             "ommmmsoorrho.......ohhhhrrroo.......",
@@ -13134,11 +13135,11 @@
             "ooo.orrrrrrrrsrrrrrsoorro...........",
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "...g......g...................g....."
+            "..orrrsss.onnnnoo...onnnso..........",
+            ".g.ooooog.oooooo....oooooo....g....."
           ],
           [
+            "...o.....n........nn................",
             "..omo...orh........nnn..............",
             ".ommso.orrho........onnoooo.........",
             "ommmmsoorrho.......ohhhhrrroo.......",
@@ -13156,11 +13157,11 @@
             "ooo.orrrrrrrrsrrrrrsoorro...........",
             "orooorrrrrrrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "....g....g.....................g...."
+            "..orrrsss.onnnnoo...onnnso..........",
+            "..gooooo.goooooo....oooooo.....g...."
           ],
           [
+            "..................nn................",
             "...................nnn..............",
             "....................onnoooo.........",
             "...................ohhhhrrroo.......",
@@ -13178,11 +13179,11 @@
             "osmmmmmmmmorrsrrrrrsoorro...........",
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "...g......g...................g....."
+            "..orrrsss.onnnnoo...onnnso..........",
+            ".g.ooooog.oooooo....oooooo....g....."
           ],
           [
+            "..................nn................",
             "...................nnn..............",
             "....................onnoooo.........",
             "...................ohhhhrrroo.......",
@@ -13200,13 +13201,13 @@
             "osmmmmmmmmorrsrrrrrsoorro...........",
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "....g....g.....................g...."
+            "..orrrsss.onnnnoo...onnnso..........",
+            "..gooooo.goooooo....oooooo.....g...."
           ]
         ],
         "end": [
           [
+            "..................nn................",
             "...................nnn..............",
             "....................onnoooo.........",
             "...................ohhhhrrroo.......",
@@ -13224,9 +13225,8 @@
             "osmmmmmmmmorrsrrrrrsoorro...........",
             "omoomoomoorrsrrrrrso.orro...........",
             ".orrorrrrsssrrrrsso..orro...........",
-            "..orrrsss.oosssoo...orrrso..........",
-            "...ooooo..onnnno....onnnoo..........",
-            "...................................."
+            "..orrrsss.onnnnoo...onnnso..........",
+            "...ooooo..oooooo....oooooo.........."
           ],
           [
             "...o.....n........nn................",
