@@ -176,7 +176,7 @@ gaze = lambda s: (lambda er: up(er, s))
 
 
 def apple(r):
-    """An apple, its stem on top, with its top at row r: falling, then sinking into it."""
+    """An apple, its stem on top, with its top at row r: landing on it, then sinking in."""
     return [(r - 1, 6, 'o'), (r, 5, 'r'), (r, 6, 'r'), (r + 1, 5, 'r'), (r + 1, 6, 'r')]
 
 
@@ -189,10 +189,10 @@ ACT = {
                          f('base', gaze(-1), small, w((0, 0), (0, 1), (1, 0), (1, 1))), f('squish', joy, smile, w((0, 2), (1, 0)))],
                 'end': [f('base', joy, smile), IDLE],
                 'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'blowing bubbles', 'pt-BR': 'fazendo bolhas'}},
-    # an apple drops on it and sinks in, slowly melting away inside
+    # an apple drops onto its squashed top and sinks in, slowly melting away inside
     'apple': {'start': [IDLE, f('base', gaze(0), small)],
-              'loop': [f('base', gaze(0), small, apple(0)), f('base', gaze(0), omouth, apple(1)), f('squish', open_, omouth, apple(2)),
-                       f('base', joy, smile, apple(3)), f('base', joy, smile, [(6, 5, 'r'), (6, 6, 'r'), (7, 5, 'r')]),
+              'loop': [f('squish', gaze(0), small, [(0, 5, 'r'), (0, 6, 'r')]), f('base', gaze(0), omouth, apple(1)), f('squish', open_, omouth, apple(2)),
+                       f('base', joy, smile, apple(3)), f('base', joy, smile, [(5, 5, 'r'), (6, 5, 'r'), (6, 6, 'r')]),
                        f('base', open_, small, [(7, 5, 'r'), (7, 6, 'r')]), f('base', open_, small, [(7, 6, 'r')]), f('squish', open_, small)],
               'end': [f('base', joy, smile), IDLE],
               'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'eating an apple', 'pt-BR': 'comendo uma maçã'}},
@@ -200,8 +200,8 @@ ACT = {
     'dance': {'start': [IDLE, f('squish', open_, small)],
               'loop': [f('tall', look(-1), smile, w((1, 0))), f('squish', open_, grin, w((0, 1))),
                        f('tall', look(1), smile, w((1, 11))), f('squish', open_, grin, w((0, 10))),
-                       f('tall', joy, smile, w((0, 0))), f('squish', joy, grin, w((1, 1))),
-                       f('tall', joy, smile, w((0, 11))), f('squish', joy, grin, w((1, 10)))],
+                       f('tall', joy, smile, w((0, 0))), f('squish', joy, smile, w((1, 1))),
+                       f('tall', joy, smile, w((0, 11))), f('squish', joy, smile, w((1, 10)))],
               'end': [f('squish', open_, small), IDLE],
               'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'dancing', 'pt-BR': 'dançando'}},
 }

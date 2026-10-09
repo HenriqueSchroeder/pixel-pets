@@ -3544,15 +3544,15 @@
         ],
         "loop": [
           [
-            "....orro....",
-            "..oobrrboo..",
-            ".obbbbbbbbo.",
+            ".....rr.....",
+            "....oooo....",
+            "..oobbbboo..",
             ".obwbbbbbbo.",
             "obbbebbebbbo",
             "obbbbbbbbbbo",
             "obbbboobbbbo",
             "obbbbbbbbbbo",
-            ".oooooooooo.",
+            "oooooooooooo",
             "............"
           ],
           [
@@ -3597,9 +3597,9 @@
             ".obbbbbbbbo.",
             ".obwbbbbbbo.",
             "obbobbbbobbo",
-            "obobobbobobo",
+            "oboborbobobo",
             "obbbbrrbbbbo",
-            "obbbbrobbbbo",
+            "obbbboobbbbo",
             ".oooooooooo.",
             "............"
           ],
@@ -3777,8 +3777,8 @@
             ".obwbbbbbbo.",
             "obbobbbbobbo",
             "obobobbobobo",
-            "obbobbbbobbo",
-            "obbboooobbbo",
+            "obbbbbbbbbbo",
+            "obbbboobbbbo",
             "oooooooooooo",
             "............"
           ],
@@ -3801,8 +3801,8 @@
             ".obwbbbbbbo.",
             "obbobbbbobbo",
             "obobobbobobo",
-            "obbobbbbobbo",
-            "obbboooobbbo",
+            "obbbbbbbbbbo",
+            "obbbboobbbbo",
             "oooooooooooo",
             "............"
           ]
