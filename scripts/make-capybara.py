@@ -3,10 +3,10 @@
     python3 scripts/make-capybara.py
 
 pets/capybara.json is generated: change the sprites here and run this, rather than
-editing the JSON by hand. The capybara is drawn side on and in layers, like the
-dragon: its body, its legs (standing, mid-stride or tucked under as it lies down)
-and its head, with the eyes, ear, mouth, a visiting bird, an orange and the like
-painted over them. It plays at 8 fps and draws no mini pets.
+editing the JSON by hand. The capybara faces you, drawn symmetric so it looks the
+same mirrored, with its eyes, ears, mouth, a visiting bird, an orange and the like
+painted over it; only its walk turns it side on. It plays at 8 fps and draws no
+mini pets.
 """
 
 from sprites import SCHEMA, paint, write
@@ -23,87 +23,93 @@ def grid(rows):
     return [r.ljust(W, '.') for r in rows]
 
 
-# Side on, facing right: a barrel of a body, a big square head, a small round ear
-# and short legs. The rows above its head are left for a bird or an orange.
-BASE = grid([
+def symmetric(halves):
+    """Rows from their left halves, each mirrored onto the right."""
+    for h in halves:
+        assert len(h) <= 10, h
+    return grid(['....' + h.ljust(10, '.') + h.ljust(10, '.')[::-1] for h in halves])
+
+
+# Facing you: a big blunt head with small round ears and its eyes set high, a
+# dark nose on its square muzzle, its shoulders either side and two short front
+# legs. It is drawn symmetric, so it looks the same mirrored. The rows above its
+# head are left for a bird or an orange.
+BASE = symmetric([
     '',
     '',
-    '',
-    '...................oo',
-    '..................ohso',
-    '.......oooooooooooo' + 'ss' + 'ooooo',
-    '.....oohhhhhhhhhhhshhhhhbbo',
-    '....ohhbbbbbbbbbbbsbbbbebbbo',
-    '...ohbbbbbbbbbbbbbsbbbbbddeo',
-    '...obbbbbsbbbbbbbbsbbbbbdddo',
-    '..obbbbbbbbbbbbbbbbsbbbbood' + 'o',
-    '..obbbbbbbbsbbbbbbbbsbbbsoo',
-    '..osbbbbbbbbbbbbbbbbbsooo',
-    '...ossbbbbbbbbbbbbbbsso',
-    '....osbbo......osbbo',
-    '....ooooo......ooooo',
+    '.....oo...',
+    '....oshooo',
+    '....ohhhhh',
+    '....ohbbbb',
+    '...oobebbb',
+    '.oohsbbbbb',
+    'ohhbsbbbbb',
+    'ohbbsbbsdd',
+    'obbbsbsded',
+    'obbbsbsddd',
+    'osbbbsbsbo',
+    '.osbbbsooo',
+    '...osbbo',
+    '...ooooo',
 ])
 
-# Its legs: standing, or mid-stride one way or the other (rows 14 and 15).
-LEGS = {
-    'stand': BASE[14:],
-    'reach': grid([''] * 14 + ['.....osbbo....osbbo', '.....ooooo....ooooo'])[14:],
-    'pass': grid([''] * 14 + ['...osbbo........osbbo', '...ooooo........ooooo'])[14:],
-}
 
-# The eye, a single dark bead, and the lid and brow over it.
+def both(pixels):
+    """`pixels` on its left, and mirrored on its right."""
+    return list(pixels) + [(r, W - 1 - c, ch) for r, c, ch in pixels]
+
+
+# Its eyes, a dark bead each, and the lids and brows over them.
 OPEN = []
-SHUT = [(7, 22, 'o'), (7, 23, 'o')]
-HALF = [(6, 22, 's'), (6, 23, 's'), (6, 24, 's')]
-UP = [(7, 23, 'b'), (6, 23, 'e')]
-DOWN = [(7, 23, 'b'), (8, 23, 'e')]
-BACK = [(7, 23, 'b'), (7, 22, 'e')]
-WIDE = [(6, 23, 'e'), (6, 24, 'w')]
-# ^, content
-ZEN = [(7, 22, 'o'), (6, 23, 'o'), (7, 24, 'o'), (7, 23, 'b')]
-# a brow pulled down towards its nose
-GLARE = [(6, 22, 'o'), (6, 23, 'o'), (7, 24, 'o')]
-# a brow raised at the middle, eye low
-SAD = [(6, 23, 'o'), (6, 22, 'o'), (7, 23, 'b'), (8, 23, 'e')]
+SHUT = both([(6, 9, 'o'), (6, 10, 'o')])
+HALF = both([(5, 9, 's'), (5, 10, 's'), (5, 11, 's')])
+UP = both([(6, 10, 'b'), (5, 10, 'e')])
+DOWN = both([(6, 10, 'b'), (7, 10, 'e')])
+# glancing aside
+BACK = [(6, 10, 'b'), (6, 9, 'e'), (6, 17, 'b'), (6, 16, 'e')]
+WIDE = both([(5, 10, 'e'), (5, 11, 'w')])
+# ^ ^, content
+ZEN = both([(6, 9, 'o'), (5, 10, 'o'), (6, 11, 'o'), (6, 10, 'b')])
+# brows pulled down towards its nose
+GLARE = both([(5, 9, 'o'), (5, 10, 'o'), (6, 11, 'o')])
+# brows raised in the middle, eyes low
+SAD = both([(5, 11, 'o'), (5, 10, 'o'), (6, 9, 'o'), (6, 10, 'b'), (7, 10, 'e')])
 
-# laid flat: a bump on its head, the outline under it unbroken
-EAR_BACK = [(3, 19, '.'), (3, 20, '.'), (4, 20, '.'), (4, 21, '.'), (4, 18, 'o'), (4, 19, 'o'), (5, 19, 'o'), (5, 20, 'o')]
-EAR_FLICK = [(3, 19, '.'), (3, 21, 'o'), (4, 18, '.'), (4, 19, 'o'), (4, 21, 'h'), (4, 22, 'o')]
-NOSE = [(8, 26, 'd'), (9, 26, 'e')]
+# laid flat on its head
+EAR_BACK = both([(2, 9, '.'), (2, 10, '.'), (3, 9, 'o'), (3, 10, 'o')])
+# the left one tipped out
+EAR_FLICK = [(2, 10, '.'), (2, 8, 'o'), (3, 7, 'o'), (3, 8, 's'), (3, 9, 'h'), (3, 10, 'o')]
+# nostrils flaring up
+NOSE = both([(10, 12, 'd'), (9, 12, 'e')])
 
-# Mouths under its muzzle: chewing, a yawn that bares its big front teeth.
-CHEW = [(10, 24, 'p'), (11, 24, 'o')]
-YAWN = [(10, 23, 'o'), (10, 24, 'n'), (10, 25, 'n'), (11, 23, 'o'), (11, 24, 'p'), (11, 25, 'p'), (11, 26, 'o'),
-        (12, 24, 'o'), (12, 25, 'o')]
-FROWN = [(10, 23, 'o'), (11, 23, 'o')]
-GRASS = [[(10, 26, 'g'), (11, 26, 'g'), (11, 27, 'g'), (12, 27, 'g')], [(10, 26, 'g'), (11, 26, 'g'), (11, 27, 'g')],
-         [(10, 26, 'g'), (11, 26, 'g')], [(10, 26, 'g')]]
+# Mouths under its nose: chewing, a yawn that bares its big front teeth.
+CHEW = both([(12, 12, 'o'), (12, 13, 'p')])
+YAWN = both([(12, 12, 'o'), (12, 13, 'n'), (13, 12, 'o'), (13, 13, 'p'), (14, 12, 'o'), (14, 13, 'o')])
+FROWN = both([(12, 12, 'o'), (12, 13, 's')])
+# a blade of grass out of the corner of its mouth, getting shorter
+GRASS = [[(12, 15, 'g'), (12, 16, 'g'), (13, 17, 'g'), (13, 18, 'g')], [(12, 15, 'g'), (12, 16, 'g'), (13, 17, 'g')],
+         [(12, 15, 'g'), (12, 16, 'g')], [(12, 15, 'g')]]
 
-# breathing in, its back swells
-BREATH = [(4, c, 'o') for c in range(9, 17)] + [(5, c, 'h') for c in range(9, 17)]
-# the front leg lifted a row off the ground
-PAW = [(15, c, '.') for c in range(15, 20)] + [(14, c, 'o') for c in range(15, 20)]
+# breathing in, its shoulders rise
+BREATH = both([(6, 5, 'o'), (6, 6, 'o'), (7, 4, 'o'), (7, 5, 'h'), (7, 6, 'h')])
+# the left front paw lifted a row off the ground
+PAW = [(15, c, '.') for c in range(7, 12)] + [(14, c, 'o') for c in range(7, 12)]
 
-# its head, ear to chin, without the chest and belly under it
-HEAD = ({(r, c) for r in range(3, 10) for c in range(18, 28)} | {(r, c) for r in (10, 11) for c in range(19, 28)}
-        | {(12, c) for c in range(22, 28)})
+# its head, ears to chin, without the shoulders and belly round it
+HEAD = {(r, c) for r in range(2, 13) for c in range(8, 20)} | {(13, c) for c in range(11, 17)}
 
 
-def move_head(g, dy):
+def move_head(g, dy, head=HEAD):
     """The head lowered `dy` rows."""
     if not dy:
         return g
     cells = [list(r) for r in g]
-    head = [(r, c, g[r][c]) for r, c in HEAD if g[r][c] != '.']
-    for r, c, _ in head:
+    moved = [(r, c, g[r][c]) for r, c in head if g[r][c] != '.']
+    for r, c, _ in moved:
         cells[r][c] = '.'
-    for r, c, ch in head:
+    for r, c, ch in moved:
         if r + dy < H:
             cells[r + dy][c] = ch
-    # the body behind its head shows where the head moved off it
-    for r in range(6, 10):
-        if cells[r][18] == '.':
-            cells[r][18] = 'b'
     return [''.join(r) for r in cells]
 
 
@@ -122,12 +128,11 @@ def at(sprite, r, c):
     return [(r + i, c + j, ch) for i, row in enumerate(sprite) for j, ch in enumerate(row) if ch != '.']
 
 
-def frame(face=(), legs='stand', breath=False, dy=0, body=(), fx=(), lying=False, up=0, sx=0, sky=()):
+def frame(face=(), breath=False, dy=0, body=(), fx=(), lying=False, up=0, sx=0, sky=()):
     """`face` is painted on the head before it lowers `dy` rows; lying, it sinks
     two rows with its legs tucked under; `fx` is painted after, where it is; `up`
     hops the whole frame up and `sx` jolts it sideways; `sky` stays put."""
-    g = BASE[:14] + LEGS[legs]
-    g = paint(g, list(face) + (BREATH if breath else []) + list(body))
+    g = paint(BASE, list(face) + (BREATH if breath else []) + list(body))
     g = move_head(g, dy)
     if lying:
         g = [EMPTY, EMPTY] + g[:14]
@@ -139,6 +144,39 @@ def lie(face=SHUT, breath=False, fx=(), **kw):
     return frame(face, breath=breath, fx=fx, lying=True, **kw)
 
 
+# Walking, it turns side on, facing right: a barrel of a body, a big square head
+# and short legs mid-stride. Only the walk draws it.
+SIDE = grid([
+    '', '', '',
+    '...................oo',
+    '..................ohso',
+    '.......oooooooooooo' + 'ss' + 'ooooo',
+    '.....oohhhhhhhhhhhshhhhhbbo',
+    '....ohhbbbbbbbbbbbsbbbbebbbo',
+    '...ohbbbbbbbbbbbbbsbbbbbddeo',
+    '...obbbbbsbbbbbbbbsbbbbbdddo',
+    '..obbbbbbbbbbbbbbbbsbbbbood' + 'o',
+    '..obbbbbbbbsbbbbbbbbsbbbsoo',
+    '..osbbbbbbbbbbbbbbbbbsooo',
+    '...ossbbbbbbbbbbbbbbsso',
+    '', '',
+])
+# rows 14 and 15: standing, or mid-stride one way or the other
+LEGS = {
+    'stand': ['....osbbo......osbbo', '....ooooo......ooooo'],
+    'reach': ['.....osbbo....osbbo', '.....ooooo....ooooo'],
+    'pass': ['...osbbo........osbbo', '...ooooo........ooooo'],
+}
+SIDE_HEAD = ({(r, c) for r in range(3, 10) for c in range(18, 28)} | {(r, c) for r in (10, 11) for c in range(19, 28)}
+             | {(12, c) for c in range(22, 28)})
+
+
+def side(legs, dy=0):
+    g = move_head(SIDE[:14] + [r.ljust(W, '.') for r in LEGS[legs]], dy, SIDE_HEAD)
+    # the body behind its head shows where the head moved off it
+    return [r[:18] + ('b' if dy and 6 <= i < 10 and r[18] == '.' else r[18]) + r[19:] for i, r in enumerate(g)]
+
+
 BIRD = {
     'sit': ['..yef', 'yyyy.', '.o.o.'],
     'asleep': ['..yyf', 'yyyy.', '.....'],
@@ -146,8 +184,10 @@ BIRD = {
     'down': ['.....', 'yyyef', 'y.y..'],
 }
 ORANGE = ['..g.', '.ff.', 'ffff', '.qq.']
-# on its head, and on its back as it lies asleep
-PERCH, NAP_PERCH = (2, 22), (5, 10)
+# on its head, standing and lying down
+PERCH, NAP_PERCH = (0, 11), (3, 11)
+# the orange sits on its head, or a row above as it bounces
+ON_HEAD = (1, 12)
 
 
 def bird(pose, r, c):
@@ -159,13 +199,13 @@ def drop(r, c):
 
 
 def puff(i):
-    """A huff from its nose, drifting off."""
-    return [[(6, 27, 'w')], [(5, 27, 'w')], [(4, 27, 'w')], []][i % 4]
+    """Steam off the top of its head, either side."""
+    return both([[(1, 8, 'w')], [(0, 7, 'w'), (1, 8, 'w')], [(0, 7, 'w')], []][i % 4])
 
 
-ZZ = [[], [(2, 26, 'w')], [(2, 26, 'w'), (1, 27, 'w')], [(1, 27, 'w')]]
-SPARKLES = [[(1, 3, 'w'), (3, 12, 'y')], [(2, 4, 'y'), (0, 13, 'w')], [(0, 2, 'w'), (2, 14, 'y')], [(3, 3, 'y'), (1, 12, 'w')]]
-SPLASH = [[(4, 2, 't'), (2, 10, 't'), (3, 24, 't'), (13, 0, 't')], [(3, 1, 't'), (1, 11, 't'), (2, 25, 't'), (12, 1, 't')]]
+ZZ = [[], [(2, 21, 'w')], [(2, 21, 'w'), (1, 22, 'w')], [(1, 22, 'w')]]
+SPARKLES = [[(0, 7, 'w'), (1, 20, 'y')], [(1, 8, 'y'), (0, 19, 'w')], [(0, 6, 'w'), (1, 21, 'y')], [(1, 7, 'y'), (0, 20, 'w')]]
+SPLASH = [[(4, 2, 't'), (1, 7, 't'), (3, 24, 't'), (12, 1, 't')], [(3, 1, 't'), (0, 20, 't'), (2, 25, 't'), (11, 26, 't')]]
 
 
 # Blinks live in the loops, one frame in each, so a blink never drops a breath,
@@ -188,19 +228,22 @@ def chewing(look, n=16, grass=True, every=2, blink=BLINK + 1, **kw):
             for i in range(n)]
 
 
+def hop(i):
+    return 1 if i % 4 < 2 else 0
+
+
 STRIDE = ['reach', 'reach', 'stand', 'stand', 'pass', 'pass', 'stand', 'stand']
 
 F = {
     # 8 fps: 16 frames is a two-second loop
-    # the bird on its back rises and falls with its breath
-    'sleeping': [lie(breath=i >= 8, fx=bird('asleep', NAP_PERCH[0] - (i >= 8), NAP_PERCH[1]) + ZZ[i // 4]) for i in range(16)],
+    'sleeping': [lie(breath=i >= 8, fx=bird('asleep', *NAP_PERCH) + ZZ[i // 4]) for i in range(16)],
     'deepSleep': [lie(EAR_BACK + SHUT, breath=i >= 8) for i in range(16)],
     'waking': [frame(WIDE + EAR_FLICK)] * 4 + [frame(SHUT)] * 2 + [frame(OPEN)] * 2,
     'idle': [frame(eyes(OPEN, i) + (NOSE if i % 8 < 2 else []), breath=i >= 8) for i in range(16)],
     'sleepy': [frame(HALF, breath=6 <= i < 12) for i in range(12)] + [frame(SHUT)] * 4,
     'tired': breathing(HALF, EAR_BACK, dy=1),
-    # side on already: it plods, its head bobbing
-    'walking': [frame(OPEN, legs, dy=1 if legs == 'stand' else 0) for legs in STRIDE],
+    # side on as it plods, its head bobbing
+    'walking': [side(legs, dy=1 if legs == 'stand' else 0) for legs in STRIDE],
     # chewing it over, eyes up
     'thinking': chewing(UP),
     'typing': [frame(DOWN, body=PAW)] * 2 + [frame(DOWN)] * 2,
@@ -211,18 +254,18 @@ F = {
     'searching': [frame(DOWN + (NOSE if i % 2 else []), dy=1 + (i // 4) % 2) for i in range(16)],
     'supervising': breathing(OPEN),
     'compacting': chewing(DOWN, 8, every=1, blink=None),
-    'sweating': [frame(eyes(OPEN, i) + FROWN, breath=i % 2 == 0, fx=drop(5 + i // 2, 24)) for i in range(8)],
+    'sweating': [frame(eyes(OPEN, i) + FROWN, breath=i % 2 == 0, fx=drop(4 + i // 2, 20)) for i in range(8)],
     'worried': [frame(eyes(BACK if 6 <= i < 10 else SAD, i, 3) + EAR_BACK + FROWN) for i in range(16)],
     'grumpy': [frame(eyes(GLARE, i, 10) + EAR_BACK + FROWN, fx=puff(i // 2)) for i in range(16)],
     # an orange balanced on its head
-    'proud': [frame(ZEN, breath=i >= 8, fx=at(ORANGE, 1, 22)) for i in range(16)],
+    'proud': [frame(ZEN, breath=i >= 8, fx=at(ORANGE, *ON_HEAD)) for i in range(16)],
     # popcorning: little hops straight up
-    'happy': [frame(ZEN, up=1 if i % 4 < 2 else 0, legs='reach' if i % 4 < 2 else 'stand') for i in range(16)],
+    'happy': [frame(ZEN, up=hop(i)) for i in range(16)],
     # birds flutter round it as an orange bounces on its head
-    'celebrating': [frame(ZEN, up=1 if i % 4 < 2 else 0, fx=at(ORANGE, 1 if i % 4 < 2 else 0, 22),
-                          sky=bird('up' if i % 2 else 'down', 1 + i % 2, 3) + bird('down' if i % 2 else 'up', 2 - i % 2, 12)
+    'celebrating': [frame(ZEN, up=hop(i), fx=at(ORANGE, ON_HEAD[0] - 1 + hop(i), ON_HEAD[1]),
+                          sky=bird('up' if i % 2 else 'down', 1 + i % 2, 0) + bird('down' if i % 2 else 'up', 2 - i % 2, 23)
                           + SPARKLES[i % 4]) for i in range(16)],
-    'sad': [frame(eyes(SAD, i, 2) + EAR_BACK + FROWN, dy=1, fx=drop(9 + (i // 4) % 3, 22)) for i in range(16)],
+    'sad': [frame(eyes(SAD, i, 2) + EAR_BACK + FROWN, dy=1, fx=drop(8 + (i // 4) % 3, 9)) for i in range(16)],
 }
 
 V = {
@@ -250,9 +293,9 @@ T = {
     'deepSleep>waking': [lie(EAR_BACK + SHUT), lie(WIDE), frame(WIDE, up=-1)],
     'sleeping>deepSleep': [lie(EAR_BACK + SHUT)],
     # a crouch, head down, before it springs for joy
-    '*>happy': [frame(OPEN, dy=1), frame(ZEN, dy=1), frame(ZEN, up=1, legs='reach'), frame(ZEN)],
-    '*>celebrating': [frame(OPEN, dy=1), frame(ZEN, dy=1), frame(ZEN, up=1, legs='reach', fx=at(ORANGE, 1, 22)),
-                      frame(ZEN, fx=at(ORANGE, 0, 22))],
+    '*>happy': [frame(OPEN, dy=1), frame(ZEN, dy=1), frame(ZEN, up=1), frame(ZEN)],
+    '*>celebrating': [frame(OPEN, dy=1), frame(ZEN, dy=1), frame(ZEN, up=1, fx=at(ORANGE, *ON_HEAD)),
+                      frame(ZEN, fx=at(ORANGE, *ON_HEAD))],
     # and settling back after a reaction
     'happy>*': [frame(ZEN, dy=1), frame(ZEN), frame(OPEN)],
     'sad>*': [frame(SAD + EAR_BACK, dy=1), frame(DOWN), frame(OPEN)],
@@ -262,11 +305,11 @@ T = {
 }
 
 # A bird flies in, sits on its head a while, and flies off.
-FLIGHT_IN = [('up', 0, 26), ('down', 0, 25), ('up', 1, 24), ('down', 1, 23)]
-FLIGHT_OUT = [('up', 1, 20), ('down', 0, 17), ('up', 0, 14)]
-# An orange drops onto its head and rolls off down its back.
-ORANGE_FALL = [(-3, 22), (-1, 22), (1, 22)]
-ORANGE_ROLL = [(1, 17), (1, 13), (1, 9), (1, 5), (3, 1), (7, -1)]
+FLIGHT_IN = [('up', 0, 23), ('down', 0, 20), ('up', 1, 17), ('down', 0, 14)]
+FLIGHT_OUT = [('up', 0, 8), ('down', 0, 5), ('up', 0, 2)]
+# An orange drops onto its head and rolls off down its shoulder.
+ORANGE_FALL = [(-3, 12), (-1, 12), ON_HEAD]
+ORANGE_ROLL = [(1, 15), (2, 18), (4, 20), (7, 22), (10, 24), (13, 25)]
 
 A = {
     'birdVisit': {'frames': [frame(OPEN, fx=bird(*f)) for f in FLIGHT_IN]
@@ -274,7 +317,7 @@ A = {
                             + [frame(ZEN, fx=bird(*f)) for f in FLIGHT_OUT] + [frame(OPEN)],
                   'moods': ['idle'], 'every': [30, 70]},
     'orange': {'frames': [frame(UP, fx=at(ORANGE, r, c)) for r, c in ORANGE_FALL]
-                         + [frame(WIDE, fx=at(ORANGE, 1, 22))] * 2 + [frame(ZEN, fx=at(ORANGE, 1, 22))] * 4
+                         + [frame(WIDE, fx=at(ORANGE, *ON_HEAD))] * 2 + [frame(ZEN, fx=at(ORANGE, *ON_HEAD))] * 4
                          + [frame(OPEN, fx=at(ORANGE, r, c)) for r, c in ORANGE_ROLL] + [frame(OPEN)],
                'moods': ['idle'], 'every': [40, 90]},
     'chew': {'frames': chewing(OPEN, 8), 'moods': ['idle'], 'every': [10, 25]},
@@ -295,12 +338,12 @@ A = {
     'blinkLow': {'frames': [frame(SHUT, dy=1)], 'moods': ['searching', 'tired'], 'every': [3, 8]},
     'blinkFrown': {'frames': [frame(SHUT + EAR_BACK + FROWN)], 'moods': ['worried', 'grumpy'], 'every': [3, 8]},
     # proud of us: a little hop, the orange still on its head
-    'proudHop': {'frames': [frame(ZEN, dy=1, fx=at(ORANGE, 2, 22)), frame(ZEN, up=1, legs='reach', fx=at(ORANGE, 1, 22)),
-                            frame(ZEN, fx=at(ORANGE, 1, 22))], 'moods': ['proud'], 'every': [6, 14]},
+    'proudHop': {'frames': [frame(ZEN, dy=1, fx=at(ORANGE, ON_HEAD[0] + 1, ON_HEAD[1])), frame(ZEN, up=1, fx=at(ORANGE, *ON_HEAD)),
+                            frame(ZEN, fx=at(ORANGE, *ON_HEAD))], 'moods': ['proud'], 'every': [6, 14]},
     # deep asleep, the laid back ear twitches
     'dreamFlick': {'frames': [lie(SHUT + EAR_FLICK), lie(EAR_BACK + SHUT), lie(SHUT + EAR_FLICK)], 'moods': ['deepSleep'],
                    'every': [8, 25]},
-    # the bird on its back stirs in its sleep
+    # the bird on its head stirs in its sleep
     'dreamBird': {'frames': [lie(fx=bird('up', *NAP_PERCH)), lie(fx=bird('down', *NAP_PERCH)),
                              lie(fx=bird('up', *NAP_PERCH)), lie(fx=bird('asleep', *NAP_PERCH))],
                   'moods': ['sleeping'], 'every': [10, 30]},
