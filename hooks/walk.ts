@@ -152,9 +152,9 @@ export type Held = { start: number; side: Side } | undefined
 
 // While an action plays it keeps the way it faced as the action began, so a whip
 // raised at one side cracks there though an agent comes or goes meanwhile; with
-// no action it faces `side`.
-export const holdFacing = (held: Held, action: { start: number } | undefined, side: Side) => {
-  if (action === undefined) return { held: undefined, side }
+// no action, or on the move, it faces `side`, so it never walks backwards.
+export const holdFacing = (held: Held, action: { start: number } | undefined, side: Side, moving: boolean) => {
+  if (action === undefined || moving) return { held: undefined, side }
   if (held?.start === action.start) return { held, side: held.side }
   return { held: { start: action.start, side }, side }
 }

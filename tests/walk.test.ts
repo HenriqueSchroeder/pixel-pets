@@ -176,16 +176,21 @@ describe('onTheWay', () => {
 
 describe('holdFacing', () => {
   test('through an action it keeps the way it faced as the action began', () => {
-    const began = holdFacing(undefined, { start: 10 }, 1)
+    const began = holdFacing(undefined, { start: 10 }, 1, false)
     expect(began.side).toBe(1)
     // An agent comes on its left mid-action: it does not turn.
-    expect(holdFacing(began.held, { start: 10 }, -1).side).toBe(1)
+    expect(holdFacing(began.held, { start: 10 }, -1, false).side).toBe(1)
   })
 
   test('a new action faces anew, and with none it faces as it would', () => {
-    const began = holdFacing(undefined, { start: 10 }, 1)
-    expect(holdFacing(began.held, { start: 20 }, -1).side).toBe(-1)
-    expect(holdFacing(began.held, undefined, -1)).toEqual({ held: undefined, side: -1 })
+    const began = holdFacing(undefined, { start: 10 }, 1, false)
+    expect(holdFacing(began.held, { start: 20 }, -1, false).side).toBe(-1)
+    expect(holdFacing(began.held, undefined, -1, false)).toEqual({ held: undefined, side: -1 })
+  })
+
+  test('on the move it faces the way it goes, even mid-action', () => {
+    const began = holdFacing(undefined, { start: 10 }, 1, false)
+    expect(holdFacing(began.held, { start: 10 }, -1, true)).toEqual({ held: undefined, side: -1 })
   })
 })
 
