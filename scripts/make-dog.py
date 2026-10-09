@@ -242,7 +242,7 @@ ACT = {
              'end': [scan(-1) + OMOUTH + TAIL_DOWN + BOUNCE, SMILE + FETCHED + TAIL_UP, SMILE + FETCHED + TAIL_DOWN, OPEN + MOUTH + TAIL_UP],
              'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'playing ball', 'pt-BR': 'brincando de bolinha'}},
     # it picks up a bone and gnaws at it, eyes half shut, tail going slow
-    'bone': {'start': [OPEN + MOUTH + TAIL_UP + BONE_DOWN, DOWN + MOUTH + TAIL_UP + BONE_DOWN, breath(DOWN + OMOUTH + BONE_DOWN)],
+    'bone': {'start': [OPEN + MOUTH + TAIL_UP + BONE_DOWN, DOWN + MOUTH + TAIL_UP + BONE_DOWN, breath(DOWN + OMOUTH + TAIL_UP + BONE_DOWN)],
              'loop': [HALF + MOUTH + BONE + TAIL_UP, HALF + OMOUTH + BONE + TAIL_UP, HALF + MOUTH + BONE + TAIL_DOWN,
                       SHUT + OMOUTH + BONE + TAIL_DOWN],
              'end': [OPEN + MOUTH + BONE + TAIL_UP, DOWN + MOUTH + TAIL_UP + BONE_DOWN, OPEN + MOUTH + TAIL_UP + BONE_DOWN],
