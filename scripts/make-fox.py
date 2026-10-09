@@ -237,6 +237,42 @@ A = {
     'dreamTwitch': {'frames': [P(ASLEEP + EAR_FLICK), P(ASLEEP), P(ASLEEP + EAR_FLICK)], 'moods': ['sleeping'], 'every': [8, 25]},
 }
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+IDLE = OPEN + MOUTH + TAIL_UP
+# eyes up and to its right, half shut looking that way, after its brush
+UPR = [(5, 4, 'e'), (5, 8, 'e')]
+HALF_R = [(r, c + 1, l) for r, c, l in HALF]
+# snow kicked up behind it as it digs, at its left
+KICK = [(10, 0, 'w')], [(8, 0, 'w'), (9, 1, 'w')], [(11, 0, 'w'), (9, 0, 'w')]
+ACT = {
+    # snow falling: one flake drifts down between its ears and it leaps to snap it up
+    'snowflakes': {'start': [P(IDLE + w((1, 12))), P(UP + MOUTH + TAIL_UP + w((2, 11)))],
+                   'loop': [P(UP + MOUTH + TAIL_UP + w((0, 5), (0, 12))), P(UP + MOUTH + TAIL_UP + w((1, 4), (1, 11))),
+                            P(UP + MOUTH + TAIL_UP + w((2, 5), (2, 12))), breath(UP + MOUTH + w((2, 5), (3, 11))),
+                            P(UP + OMOUTH + TAIL_DOWN + w((4, 12)), up=True), P(HAPPY + TAIL_UP + w((5, 11))),
+                            P(OPEN + MOUTH + TAIL_UP + w((6, 12))), P(UPR + MOUTH + TAIL_UP + w((7, 11)))],
+                   'end': [P(UPR + MOUTH + TAIL_UP + w((1, 12))), P(IDLE)],
+                   'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'catching snowflakes', 'pt-BR': 'pegando flocos de neve'}},
+    # crouched, paws going, snow flying out behind; it stops now and then to listen
+    'dig': {'start': [P(IDLE), P(DOWN + MOUTH + EAR_FLICK + TAIL_UP)],
+            'loop': [breath(DOWN + MOUTH + paw(2) + KICK[0]), breath(DOWN + MOUTH + KICK[1]),
+                     breath(DOWN + MOUTH + paw(7) + KICK[2]), breath(DOWN + MOUTH + KICK[1]),
+                     breath(DOWN + MOUTH + paw(2) + KICK[0]), breath(DOWN + MOUTH + KICK[2]),
+                     P(DOWN + MOUTH + EAR_FLICK + TAIL_UP), P(DOWN + MOUTH + EAR_FLICK + TAIL_UP)],
+            'end': [P(DOWN + MOUTH + TAIL_UP), P(IDLE)],
+            'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'digging in the snow', 'pt-BR': 'cavando a neve'}},
+    # it turns to its brush and licks it smooth, then admires the shine
+    'groom': {'start': [P(IDLE), P(scan(1) + MOUTH + TAIL_DOWN)],
+              'loop': [P(HALF_R + MOUTH + TONGUE + TAIL_DOWN), P(HALF_R + MOUTH + TAIL_DOWN),
+                       P(SHUT + MOUTH + TONGUE + TAIL_DOWN), P(HALF_R + MOUTH + TAIL_DOWN)],
+              'end': [P(scan(1) + MOUTH + TAIL_DOWN + w((9, 12))), P(SMILE + MOUTH + TAIL_UP + w((7, 12))), P(IDLE)],
+              'seconds': [10, 25], 'every': [60, 150], 'label': {'en': 'grooming its brush', 'pt-BR': 'cuidando do rabo'}},
+}
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name, a in ACT.items():
+    for frame in (a['start'][0], a['end'][-1]):
+        assert all(frame[r][c] == letter for r, c, letter in OPEN + MOUTH), name
+
 MINI_STEP = [(7, 2, '.')], [(7, 5, '.')]
 MINI_HAPPY = [(3, 2, 'o'), (3, 5, 'o')]
 MINI_SAD = [(4, 2, 't')], [(5, 1, 't')]
@@ -248,7 +284,8 @@ pack = {
     'palette': {'o': '#3a1f12', 'b': '#e8742a', 'd': '#2a1a12', 'l': '#fbf3e6', 'e': '#1a1a1a',
                 'p': '#f2788f', 'w': '#ffffff', 't': '#5ab4ff'},
     'fps': 4,
-    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A},
+    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A,
+             'activities': {k: {**a, 'moods': ['idle']} for k, a in ACT.items()}},
     'mini': {'tint': 'b', 'moods': {
         'working': [paint(MINI, MINI_STEP[0])] * 2 + [paint(MINI, MINI_STEP[1])] * 2,
         'happy': [paint(MINI, MINI_HAPPY)] * 2 + [paint(MINI, MINI_HAPPY + MINI_STEP[0] + MINI_STEP[1])] * 2,
