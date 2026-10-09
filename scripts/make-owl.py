@@ -173,7 +173,7 @@ UPL, UPR = [(4, 1, 'e'), (4, 8, 'e')], [(4, 3, 'e'), (4, 10, 'e')]
 BOOK = [(8, c, 'w') for c in (3, 4, 7, 8)] + [(8, 5, 'o'), (8, 6, 'o')] + [(9, c, 't') for c in range(3, 9)]
 TURN = [(7, 6, 'w'), (8, 7, 't')], [(7, 5, 'w'), (8, 4, 't')]
 SHUT_BOOK = [(8, c, 't') for c in range(4, 8)] + [(9, c, 't') for c in range(4, 8)]
-# feathers ruffled the other way, and one loose, drifting down at its side
+# feathers ruffled the other way
 RUFFLE_2 = [(7, 4, 'b'), (7, 8, 'b'), (8, 3, 'b'), (8, 6, 'b')]
 
 
@@ -193,14 +193,15 @@ ACT = {
     # eyes on the stars twinkling over its head, and a shooting star that makes it hoot
     'stars': {'start': [OPEN + STARS[0], UP + STARS[0]],
               'loop': [UPL + STARS[0], UPL + STARS[1], UPR + STARS[0], UPR + STARS[1],
-                       UP + STARS[0] + w((0, 2)), UPL + STARS[1] + w((0, 4), (0, 3)), UP + w((0, 6), (0, 5)) + STARS[0],
-                       UPR + w((0, 9), (0, 8)) + HOOT, UPR + STARS[1] + HOOT, UP + STARS[0]],
+                       UPL + STARS[0] + w((0, 2)), UPL + STARS[1] + w((0, 4), (0, 3)), UP + w((0, 6), (0, 5)) + STARS[0],
+                       UPR + STARS[0] + w((0, 9), (0, 8)) + HOOT, UPR + STARS[1] + HOOT, UP + STARS[0]],
              'end': [UP + STARS[1], OPEN + STARS[0]],
              'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'stargazing', 'pt-BR': 'olhando as estrelas'}},
     # it preens: head this way and that, feathers up, a slow blink of content
     'preen': {'start': [OPEN, look(1)],
               'loop': [look(1) + RUFFLE, HALF + RUFFLE, look(-1) + RUFFLE_2, SHUT + RUFFLE_2, look(1) + RUFFLE, DOZY],
-              'end': [HALF + [(10, 0, 'b')], OPEN + [(11, 1, 'b')]],
+              # a loose feather drifts down at its side, clear of its feet
+              'end': [HALF + [(10, 0, 'b')], OPEN + [(11, 0, 'b')]],
               'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'preening its feathers', 'pt-BR': 'ajeitando as penas'}},
 }
 # Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
