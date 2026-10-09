@@ -18,6 +18,8 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 ![pixel-pets: the kaomoji in the same scene, a little face of text that hums as it strolls](screenshots/kaomoji.gif)
 
+![pixel-pets: the wizard in the same scene, drawn in text, vanishing in a swirl of sparkles and brewing potions](screenshots/wizard.gif)
+
 ## What it shows
 
 | Mood | When | Borrows from |
@@ -113,6 +115,8 @@ Shipped pets:
 - [`fox`](pets/fox.json), which sways its brush, pounces on mice under the snow and turns side on to walk.
 - [`dragon`](pets/dragon.json), a big red dragon that breathes fire, counts its hoard and flies off to land elsewhere. It draws no mini pets.
 - [`capybara`](pets/capybara.json), the calmest of them all: it chews grass, lets a bird sit on its head and balances an orange. It draws no mini pets.
+- [`kaomoji`](pets/kaomoji.json), a little face drawn in text that hums as it strolls and never turns its back on you.
+- [`wizard`](pets/wizard.json), a wizard drawn in text: instead of walking it vanishes in a swirl of sparkles and turns up elsewhere. It brews potions, juggles orbs, plays with its bat and zaps the sky with its staff, startling its agents, who are little apprentices.
 
 ![The cat, slime, dog and owl, idle, thinking, happy and asleep](screenshots/gallery.gif)
 
