@@ -188,6 +188,47 @@ def mini(px, lift=True):
     return paint(rows, [(r + (0 if lift else 1), c, l) for r, c, l in px])
 
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+IDLE = f(OPEN + MOUTH + BLUSH)
+UPL, UPR = [(4, 3, 'e'), (4, 6, 'e')], [(4, 5, 'e'), (4, 8, 'e')]
+DOWNL, DOWNR = [(5, 3, 'e'), (5, 6, 'e')], [(5, 5, 'e'), (5, 8, 'e')]
+# will-o'-wisps circling it, out of its way all round, and where its eyes follow the first
+RING = [(0, 3), (0, 8), (2, 11), (12, 11), (12, 8), (12, 3), (12, 0), (2, 0)]
+FOLLOW = [UPL, UPR, look(1), DOWNR, DOWN, DOWNL, look(-1), UPL]
+
+
+def wisps(i):
+    return [(*RING[i % 8], 't'), (*RING[(i + 4) % 8], 't')]
+
+
+# a chain hanging under it, its links swinging
+CHAIN = [(12, c, 'c') for c in (1, 3, 5, 7, 9)], [(12, c, 'c') for c in (2, 4, 6, 8, 10)]
+ACT = {
+    # it fades to nothing, peeks out one way and the other, and pops back with a boo
+    'hide': {'start': [IDLE, f(look(-1) + MOUTH + BLUSH)],
+             'loop': [f(SHUT + MOUTH + BLUSH, fade=FAINT), wisp(), wisp(), f(look(-1), fade=FAINTER), f(look(-1), fade=FAINTER),
+                      f(look(1), fade=FAINTER), f(look(1), fade=FAINTER), f(WIDE + OMOUTH), f(JOY + GRIN + BLUSH), f(JOY + GRIN + BLUSH, False)],
+             'end': [f(JOY + GRIN + BLUSH), IDLE],
+             'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'playing hide and seek', 'pt-BR': 'brincando de esconde-esconde'}},
+    # two wisps circle it, its eyes after one of them, as it bobs
+    'wisps': {'start': [IDLE, f(OPEN + OMOUTH + BLUSH, effects=wisps(0)[:1])],
+              'loop': [f(FOLLOW[i] + MOUTH + BLUSH, i % 4 < 2, effects=wisps(i)) for i in range(8)],
+              'end': [f(OPEN + OMOUTH + BLUSH, effects=wisps(0)[:1]), IDLE],
+              'seconds': [15, 35], 'every': [60, 150], 'label': {'en': "playing with will-o'-wisps", 'pt-BR': 'brincando com fogos-fátuos'}},
+    # it rattles a chain, looking about with a grin, and lets out a boo
+    'chains': {'start': [IDLE, f(OPEN + MOUTH + BLUSH, effects=CHAIN[0])],
+               'loop': [f(look(-1) + GRIN + BLUSH, effects=CHAIN[i % 2]) for i in range(2)]
+                       + [f(look(1) + GRIN + BLUSH, effects=CHAIN[i % 2]) for i in range(2)]
+                       + [f(WIDE + OMOUTH, effects=CHAIN[i % 2]) for i in range(2)]
+                       + [f(JOY + GRIN + BLUSH, effects=CHAIN[i % 2]) for i in range(2)],
+               'end': [f(OPEN + MOUTH + BLUSH, effects=CHAIN[1]), IDLE],
+               'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'rattling its chains', 'pt-BR': 'arrastando correntes'}},
+}
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name, a in ACT.items():
+    for frame in (a['start'][0], a['end'][-1]):
+        assert all(frame[r][c] == IDLE[r][c] for r, c, _ in OPEN + MOUTH), name
+
 # It never walks: it fades out, sparks, and turns up somewhere else with a boo.
 SPARK_OUT, SPARK_IN = sparks((3, 3), (6, 8), (9, 5)), sparks((2, 8), (5, 2), (8, 6))
 TELEPORT = {
@@ -199,10 +240,11 @@ pack = {
     '$schema': SCHEMA,
     'name': 'ghost', 'author': 'Henrique Schroeder',
     'description': 'A friendly ghost that floats instead of walking, fades as it sleeps and turns up elsewhere with a boo.',
-    'palette': {'o': '#5b5b7a', 'b': '#f4f2ff', 'f': '#b9b5d6', 'h': '#7f7b9e', 'e': '#2b2b3a',
+    'palette': {'c': '#c3c7d1', 'o': '#5b5b7a', 'b': '#f4f2ff', 'f': '#b9b5d6', 'h': '#7f7b9e', 'e': '#2b2b3a',
                 'p': '#f2a0b6', 'w': '#ffffff', 't': '#7cc4f2'},
     'fps': 4,
-    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A, 'teleport': TELEPORT},
+    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A, 'teleport': TELEPORT,
+             'activities': {k: {**a, 'moods': ['idle']} for k, a in ACT.items()}},
     'mini': {'tint': 'b', 'moods': {
         'working': [mini([])] * 2 + [mini([], False)] * 2,
         'happy': [mini([(2, 2, 'o'), (2, 5, 'o')])] * 2 + [mini([(2, 2, 'o'), (2, 5, 'o')], False)] * 2,
