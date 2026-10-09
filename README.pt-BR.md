@@ -16,6 +16,8 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 ![pixel-pets: a capivara na mesma cena, mastigando capim enquanto um passarinho pousa na cabeça dela](screenshots/capybara.gif)
 
+![pixel-pets: o kaomoji na mesma cena, uma carinha de texto que cantarola enquanto passeia](screenshots/kaomoji.gif)
+
 ## O que ele mostra
 
 | Humor | Quando | Herda de |
@@ -46,7 +48,7 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 Um pack só precisa desenhar `sleeping`. Todo humor que faltar usa os quadros do pai desenhado mais próximo: `running` cai em `typing`, depois `thinking`, depois `sleeping`.
 
-O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Quando eles não cabem onde ele está, ele anda para o lado para abrir espaço, e eles chegam quando ele termina. Só anda o pack que desenha `walking`. O que desenha `main.teleport` em vez disso se desloca sumindo e aparecendo em outro lugar, como o slime e o fantasma; um pack sem nenhum dos dois fica parado à esquerda. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele virar para a esquerda.
+O pet anda num palco embaixo da linha do Claude: passeia quando está à toa e, quando subagents começam, fica parado e eles se juntam em volta dele, cada um do lado com mais espaço livre: dos dois lados quando ele está no meio, de um só quando está num canto. Cada um fica do seu lado até sair. Quando eles não cabem onde ele está, ele anda para o lado para abrir espaço, e eles chegam quando ele termina. Só anda o pack que desenha `walking`. O que desenha `main.teleport` em vez disso se desloca sumindo e aparecendo em outro lugar, como o slime e o fantasma; um pack sem nenhum dos dois fica parado à esquerda. Os packs desenham o pet virado para a direita; o pixel-pets espelha para ele virar para a esquerda, a não ser que o pack diga `"mirror": false`, como o kaomoji: aí ele fica de frente para você para qualquer lado que vá.
 
 Ele acompanha como a sessão está indo. Uma tool ou um turno que falha o deixa preocupado, e um turno que dá certo o deixa orgulhoso; um turno que falha encerra a sequência de orgulho. Os dois perdem um ponto a cada cinco minutos, e quando ele está à toa aparece o sentimento mais forte: emburrado, depois preocupado, depois cansado, depois orgulhoso, depois com sono à noite. Preocupação e orgulho valem só para a sessão; o cansaço conta o seu trabalho em todas as sessões, e uma pausa é uma hora sem prompt em nenhuma delas.
 
@@ -124,6 +126,17 @@ Um pack é uma paleta e alguns quadros. Cada quadro são linhas de letras da pal
 - `mini.tint` (padrão `b`) é a letra recolorida para cada subagent.
 - `"mini": false` não desenha mini pets: enquanto os agents trabalham, o pet mostra isso só pelo próprio `supervising`. Útil para um pet largo, que deixa pouco espaço ao lado.
 - Veja todos os humores de um pack, e de quem cada um herda, no seu terminal: `npx tsx scripts/preview-pet.ts <nome ou caminho>`.
+- `"mirror": false` impede o pet de virar quando vai para a esquerda, para desenhos que ficam errados espelhados, como letras ou um logo.
+
+### Desenhe com texto
+
+Com `"style": "ascii"`, um quadro passa a ser linhas de texto: cada caractere ocupa uma célula do terminal, e o espaço é transparente. `ink` é a cor do texto. O exemplo completo está no [README em inglês](README.md#draw-it-in-text).
+
+- Para colorir alguns caracteres, dê o quadro como `{ "art": [...], "color": [...] }`: `color` tem as mesmas linhas e larguras de `art`, cada caractere uma letra da paleta, ou `.` para a tinta. A paleta é opcional quando tudo sai na tinta.
+- Uma linha de texto é uma linha inteira do terminal, então o pet vai até 48 colunas por 16 linhas, e o mini pet até 12 por 6.
+- Use caracteres que ocupam uma célula: emoji, CJK e letras fullwidth o pack recusa. Alguns símbolos, como `•` e `°`, ocupam duas células em terminais do leste asiático.
+- `mini.tint` tem padrão `.`, a tinta, então um mini pet todo na tinta pega a cor do agent inteiro.
+- Ao espelhar, o pixel-pets troca os caracteres que apontam para um lado, `(` por `)`, `/` por `\`, `<` por `>` e afins. Uma carinha que ainda fica errada virada pede `"mirror": false`.
 
 ### Dê vida ao pet
 
