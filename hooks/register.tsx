@@ -744,7 +744,8 @@ export const register: Register = (on, options) => {
     const sideOf = (index: number) => sideIn(drawn, index)
     const isOnTheMove = onStage.moving || blinkFrame !== undefined
     const isStrolling = isOnTheMove && onStage.wants === 'wander'
-    const mood: Mood = pack.walks && onStage.moving ? 'walking' : shown.mood
+    // A teleport is its walk: what falls due meanwhile waits for it to land.
+    const mood: Mood = (pack.walks && onStage.moving) || blinkFrame !== undefined ? 'walking' : shown.mood
     const labelShown = isStrolling ? label('strolling') : shown.label
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
