@@ -643,24 +643,35 @@ test('a teleport draws its vanish and appear frames', async ($, on) => {
   expect(drawings.size).toBeGreaterThan(1)
 })
 
-test('an action that startles them makes the agents jump', async ($, on) => {
+test('an action that startles them makes the agents jump, from the jump\'s first frame each time', async ($, on) => {
   const whipper = JSON.parse(pack('cat'))
-  whipper.main.actions = { whip: { frames: [['oo', 'bb'], ['bb', 'oo']], moods: ['supervising'], every: [1, 1], startles: 0 } }
-  whipper.mini.moods.startled = [['bb', 'bb']]
+  // Three frames every second and three more: each whip starts at another point of a three-frame clock.
+  whipper.main.actions = { whip: { frames: [['oo', 'bb'], ['bb', 'oo'], ['ob', 'bo']], moods: ['supervising'], every: [1, 1], startles: 0 } }
+  whipper.mini.moods.working = [['bb', 'bb']]
+  whipper.mini.moods.startled = [['oo', 'oo'], ['ob', 'ob'], ['bo', 'bo']]
   const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(whipper) })
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('command.register', (_$, e) => ({ value: { command: e.name } }))
   on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.agent.spawn({ ...spawn, background: true })
-  const minis = new Set<unknown>()
-  for (let tick = 0; tick < 12; tick++) {
+  const seen: unknown[] = []
+  for (let tick = 0; tick < 30; tick++) {
     await clock.advance(250)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-    minis.add((await ui.find({ type: 'Raster', key: 'mini-a1' }))?.props.cells)
+    seen.push(JSON.stringify((await ui.find({ type: 'Raster', key: 'mini-a1' }))?.props.cells))
   }
-  // At work, then jumping while the whip plays.
-  expect(minis.size).toBe(2)
+  // At work, then the same three-frame jump each time the whip plays.
+  const working = seen[0]
+  const jumps = seen
+    .map(cells => (cells === working ? '|' : cells))
+    .join(' ')
+    .split('|')
+    .map(run => run.trim())
+    .filter(run => run !== '')
+  expect(jumps.length).toBeGreaterThan(2)
+  expect(new Set(jumps).size).toBe(1)
+  expect(new Set(jumps[0]?.split(' ')).size).toBe(3)
 })
 
 test('a pet that draws no walking stays put', async ($, on) => {

@@ -128,14 +128,16 @@ def render(name, out):
                     continue
                 slot_x = left + columns[i] * CELL_W
                 colors = {**pack['colors'], pack['tint']: AGENT_COLORS[[EXPLORE, PLAN, GENERAL].index(kind)]}
-                # As hooks/register.tsx: the ones at work on the side it faces jump while it startles them.
+                # As hooks/register.tsx: the ones at work on the side it faces jump while it
+                # startles them, their jump played from its first frame as it does.
                 faced = pet['right'] if pet['facing'] == 1 else pet['left']
-                startled = pet['startled'] and mini_mood == 'working' and i in faced
-                minis = mini['startled' if startled else mini_mood]
+                startled_at = pet.get('startled') if mini_mood == 'working' and i in faced else None
+                minis = mini[mini_mood if startled_at is None else 'startled']
+                mini_frame = minis[(tick if startled_at is None else startled_at) % len(minis)]
                 mini_w = len(minis[0][0])
                 # On the pet's left a slot leans right, toward the pet.
                 lean = (lambda width: slot_x + AGENT_SLOT * CELL_W - width) if i in pet['left'] else (lambda width: slot_x)
-                draw_sprite(d, minis[tick % len(minis)], colors, lean(mini_w * CELL_W), stage_y)
+                draw_sprite(d, mini_frame, colors, lean(mini_w * CELL_W), stage_y)
                 text_y = stage_y + mini_h * CELL_W
                 d.text((lean(d.textlength(kind, font=bold)), text_y), kind, font=bold, fill=FG)
                 d.text((lean(d.textlength(mini_label, font=font)), text_y + CELL_H), mini_label, font=font, fill=DIM)

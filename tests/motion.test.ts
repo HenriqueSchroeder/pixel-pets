@@ -101,14 +101,14 @@ describe('step', () => {
     expect(play('sleeping', 3, 4, always(0), nodding).seen).toEqual(['yaw', 'nod'])
   })
 
-  test('an action that startles the agents does so from its frame on, until it ends', () => {
+  test('an action that startles the agents does so from its frame on, until it ends, counting the ticks since', () => {
     const seen: string[] = []
     let motion: Motion | undefined
     for (let tick = 0; tick <= 6; tick++) {
       const moved = step(pack, motion, 'supervising', tick, always(0))
       motion = moved.motion
-      seen.push(`${moved.frame[0]}${moved.startled ? '!' : ''}`)
+      seen.push(`${moved.frame[0]}${moved.startled ?? ''}`)
     }
-    expect(seen).toEqual(['hmm', 'hmm', 'up1', 'up2', 'crk!', 'rec!', 'hmm'])
+    expect(seen).toEqual(['hmm', 'hmm', 'up1', 'up2', 'crk0', 'rec1', 'hmm'])
   })
 })

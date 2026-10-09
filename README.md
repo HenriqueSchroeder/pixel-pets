@@ -160,7 +160,7 @@ A loop alone looks like a machine. Three optional keys under `main` make the pet
 
 - `variants`: more loops for a mood you draw in `moods`. One of them, or the mood's own loop, is picked at random each time the mood starts.
 - `transitions`: frames played once when the mood changes, keyed `from>to`. Either side may be `*`. An exact key wins over `from>*`, which wins over `*>to`.
-- `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm. An action with `startles`, a frame counted from 0, makes the agents' mini pets show `startled` from that frame until it ends: clawd's whip crack.
+- `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm. An action with `startles`, a frame counted from 0, makes the agents' mini pets on the side the pet faces play `startled` from that frame until it ends, always from its first frame: clawd's whip crack.
 - An action is a whole frame, so keep its face the same as the moods it plays in. The cat has one blink per expression for that reason.
 - A mood holds up to 16 frames; at 4 fps that is 4 seconds.
 
