@@ -129,6 +129,15 @@ describe('parsePack', () => {
     expect(() => parsePack(withActivities({ play: { ...ok, seconds: [20, 10] } }))).toThrow(/activities.play.seconds/)
     expect(() => parsePack(withActivities({ play: { ...ok, every: [0, 10] } }))).toThrow(/activities.play.every/)
     expect(() => parsePack(withActivities({ play: { ...ok, moods: ['dancing'] } }))).toThrow(/activities.play.moods/)
+    // Only where it idles: walking would cut it at once, work would hide its words, sleep would fight it.
+    for (const mood of ['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy']) {
+      expect(() => parsePack(withActivities({ play: { ...ok, moods: [mood] } }))).not.toThrow()
+    }
+    for (const mood of ['walking', 'reading', 'supervising', 'sleeping', 'deepSleep', 'happy']) {
+      expect(() => parsePack(withActivities({ play: { ...ok, moods: ['idle', mood] } }))).toThrow(
+        new RegExp(`activities.play.moods: "${mood}" is not a mood it idles in`),
+      )
+    }
     expect(() => parsePack(withActivities({ play: { ...ok, end: [['ooo', 'bbb']] } }))).toThrow(/every frame needs the same size/)
     expect(() => parsePack(withActivities({ play: { ...ok, label: { english: 'hi' } } }))).toThrow(/activities.play.label: "english" is not a language code/)
     expect(() => parsePack(withActivities({ play: { ...ok, label: { en: 'x'.repeat(41) } } }))).toThrow(/activities.play.label.en: one line, up to 40 characters/)
