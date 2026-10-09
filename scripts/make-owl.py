@@ -165,6 +165,50 @@ A = {
     'blinkProud': {'frames': [SHUT + BLUSH] * 2 + [JOY + BLUSH], 'moods': ['proud'], 'every': [3, 8]},
 }
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+# Eyes down to one side and the other, along a line; up to one side and the other.
+READ_L, READ_R = [(5, 1, 'e'), (5, 8, 'e')], [(5, 3, 'e'), (5, 10, 'e')]
+UPL, UPR = [(4, 1, 'e'), (4, 8, 'e')], [(4, 3, 'e'), (4, 10, 'e')]
+# a book held open against its chest, blue covers either side of white pages, or shut
+BOOK = [(8, c, 'w') for c in (3, 4, 7, 8)] + [(8, 5, 'o'), (8, 6, 'o')] + [(9, c, 't') for c in range(3, 9)]
+TURN = [(7, 6, 'w'), (8, 7, 't')], [(7, 5, 'w'), (8, 4, 't')]
+SHUT_BOOK = [(8, c, 't') for c in range(4, 8)] + [(9, c, 't') for c in range(4, 8)]
+# feathers ruffled the other way
+RUFFLE_2 = [(7, 4, 'b'), (7, 8, 'b'), (8, 3, 'b'), (8, 6, 'b')]
+
+
+def star(r, c):
+    return [(r, c, 'y')]
+
+
+# stars over its head, twinkling in turn
+STARS = star(0, 3) + star(1, 7), star(1, 4) + star(0, 8)
+ACT = {
+    # a book against its chest: eyes along a line and back, a page turned now and then
+    'book': {'start': [OPEN + SHUT_BOOK, DOWN + SHUT_BOOK, DOWN + BOOK],
+             'loop': [READ_L + BOOK, DOWN + BOOK, READ_R + BOOK, READ_R + BOOK,
+                      READ_L + BOOK, DOWN + BOOK, READ_R + BOOK, DOWN + BOOK + TURN[0], DOWN + BOOK + TURN[1], DOWN + BOOK],
+             'end': [DOWN + BOOK, HALF + SHUT_BOOK, OPEN + SHUT_BOOK],
+             'seconds': [20, 45], 'every': [60, 150], 'label': {'en': 'reading a book', 'pt-BR': 'lendo um livro'}},
+    # eyes on the stars twinkling over its head, and a shooting star that makes it hoot
+    'stars': {'start': [OPEN + STARS[0], UP + STARS[0]],
+              'loop': [UPL + STARS[0], UPL + STARS[1], UPR + STARS[0], UPR + STARS[1],
+                       UPL + STARS[0] + w((0, 2)), UPL + STARS[1] + w((0, 4), (0, 3)), UP + w((0, 6), (0, 5)) + STARS[0],
+                       UPR + STARS[0] + w((0, 9), (0, 8)) + HOOT, UPR + STARS[1] + HOOT, UP + STARS[0]],
+             'end': [UP + STARS[1], OPEN + STARS[0]],
+             'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'stargazing', 'pt-BR': 'olhando as estrelas'}},
+    # it preens: head this way and that, feathers up, a slow blink of content
+    'preen': {'start': [OPEN, look(1)],
+              'loop': [look(1) + RUFFLE, HALF + RUFFLE, look(-1) + RUFFLE_2, SHUT + RUFFLE_2, look(1) + RUFFLE, DOZY],
+              # a loose feather drifts down at its side, clear of its feet
+              'end': [HALF + [(10, 0, 'b')], OPEN + [(11, 0, 'b')]],
+              'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'preening its feathers', 'pt-BR': 'ajeitando as penas'}},
+}
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name, a in ACT.items():
+    for frame in (draw(a['start'][0]), draw(a['end'][-1])):
+        assert all(frame[r][c] == letter for r, c, letter in OPEN), name
+
 MINI_STEP = [(6, 1, '.')], [(6, 6, '.')]
 MINI_HAPPY = [(2, 1, 'y'), (2, 2, 'o'), (2, 5, 'o'), (2, 6, 'y')]
 MINI_SAD = [(3, 1, 't')], [(4, 1, 't')]
@@ -182,6 +226,9 @@ pack = {
         'transitions': {k: [draw(f) for f in fr] for k, fr in T.items()},
         'actions': {k: {'frames': [draw(f) for f in a['frames']], 'moods': a['moods'], 'every': a['every']}
                     for k, a in A.items()},
+        'activities': {k: {'start': [draw(f) for f in a['start']], 'loop': [draw(f) for f in a['loop']],
+                           'end': [draw(f) for f in a['end']], 'seconds': a['seconds'], 'moods': ['idle'],
+                           'every': a['every'], 'label': a['label']} for k, a in ACT.items()},
     },
     'mini': {'tint': 'b', 'moods': {
         'working': [paint(MINI, MINI_STEP[0])] * 2 + [paint(MINI, MINI_STEP[1])] * 2,
