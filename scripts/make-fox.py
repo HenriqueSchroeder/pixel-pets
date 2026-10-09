@@ -242,22 +242,23 @@ IDLE = OPEN + MOUTH + TAIL_UP
 # eyes up and to its right, half shut looking that way, after its brush
 UPR = [(5, 4, 'e'), (5, 8, 'e')]
 HALF_R = [(r, c + 1, l) for r, c, l in HALF]
-# snow kicked up behind it as it digs, at its left
-KICK = [(10, 0, 'w')], [(8, 0, 'w'), (9, 1, 'w')], [(11, 0, 'w'), (9, 0, 'w')]
+# snow kicked up behind it as it digs, at its left, where the crouch leaves it: painted after it
+KICK = [(11, 0, 'w')], [(9, 0, 'w'), (10, 1, 'w')], [(12, 0, 'w'), (10, 0, 'w')]
 ACT = {
     # snow falling: one flake drifts down between its ears and it leaps to snap it up
     'snowflakes': {'start': [P(IDLE + w((1, 12))), P(UP + MOUTH + TAIL_UP + w((2, 11)))],
                    'loop': [P(UP + MOUTH + TAIL_UP + w((0, 5), (0, 12))), P(UP + MOUTH + TAIL_UP + w((1, 4), (1, 11))),
                             P(UP + MOUTH + TAIL_UP + w((2, 5), (2, 12))), breath(UP + MOUTH + w((2, 5), (3, 11))),
-                            P(UP + OMOUTH + TAIL_DOWN + w((4, 12)), up=True), P(HAPPY + TAIL_UP + w((5, 11))),
+                            P(UP + OMOUTH + TAIL_DOWN + w((5, 12)), up=True), P(HAPPY + TAIL_UP + w((5, 11))),
                             P(OPEN + MOUTH + TAIL_UP + w((6, 12))), P(UPR + MOUTH + TAIL_UP + w((7, 11)))],
                    'end': [P(UPR + MOUTH + TAIL_UP + w((1, 12))), P(IDLE)],
                    'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'catching snowflakes', 'pt-BR': 'pegando flocos de neve'}},
     # crouched, paws going, snow flying out behind; it stops now and then to listen
     'dig': {'start': [P(IDLE), P(DOWN + MOUTH + EAR_FLICK + TAIL_UP)],
-            'loop': [breath(DOWN + MOUTH + paw(2) + KICK[0]), breath(DOWN + MOUTH + KICK[1]),
-                     breath(DOWN + MOUTH + paw(7) + KICK[2]), breath(DOWN + MOUTH + KICK[1]),
-                     breath(DOWN + MOUTH + paw(2) + KICK[0]), breath(DOWN + MOUTH + KICK[2]),
+            # the crouch drops a row: paws and snow go on after it, with the brush
+            'loop': [breath(DOWN + MOUTH, TAIL_UP + paw(2) + KICK[0]), breath(DOWN + MOUTH, TAIL_UP + KICK[1]),
+                     breath(DOWN + MOUTH, TAIL_UP + paw(7) + KICK[2]), breath(DOWN + MOUTH, TAIL_UP + KICK[1]),
+                     breath(DOWN + MOUTH, TAIL_UP + paw(2) + KICK[0]), breath(DOWN + MOUTH, TAIL_UP + KICK[2]),
                      P(DOWN + MOUTH + EAR_FLICK + TAIL_UP), P(DOWN + MOUTH + EAR_FLICK + TAIL_UP)],
             'end': [P(DOWN + MOUTH + TAIL_UP), P(IDLE)],
             'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'digging in the snow', 'pt-BR': 'cavando a neve'}},
@@ -266,7 +267,7 @@ ACT = {
               'loop': [P(HALF_R + MOUTH + TONGUE + TAIL_DOWN), P(HALF_R + MOUTH + TAIL_DOWN),
                        P(SHUT + MOUTH + TONGUE + TAIL_DOWN), P(HALF_R + MOUTH + TAIL_DOWN)],
               'end': [P(scan(1) + MOUTH + TAIL_DOWN + w((9, 12))), P(SMILE + MOUTH + TAIL_UP + w((7, 12))), P(IDLE)],
-              'seconds': [10, 25], 'every': [60, 150], 'label': {'en': 'grooming its brush', 'pt-BR': 'cuidando do rabo'}},
+              'seconds': [10, 25], 'every': [60, 150], 'label': {'en': 'grooming its tail', 'pt-BR': 'lambendo a cauda'}},
 }
 # Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
 for name, a in ACT.items():

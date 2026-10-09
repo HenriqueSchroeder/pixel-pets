@@ -4380,8 +4380,8 @@
             "..d.....d.....",
             ".odo...odo....",
             ".obbooobbo....",
-            ".obbbbbbbo..w.",
-            "obbebbbebbo...",
+            ".obbbbbbbo....",
+            "obbebbbebbo.w.",
             "obbbbbbbbbo...",
             "ollbbbbbllo...",
             ".olllelllo....",
@@ -4531,7 +4531,7 @@
             "ollbbbbbllooo.",
             ".olllellloollo",
             "..olololo.obbo",
-            "wobblllbbobbo.",
+            "woddlllbbobbo.",
             ".o..oooooooo.."
           ],
           [
@@ -4561,8 +4561,8 @@
             "ollbbbbbllooo.",
             ".olllellloollo",
             "w.olololo.obbo",
-            ".obblllbbobbo.",
-            ".oooooo..ooo.."
+            ".obblllddobbo.",
+            "woooooo..ooo.."
           ],
           [
             "..............",
@@ -4591,7 +4591,7 @@
             "ollbbbbbllooo.",
             ".olllellloollo",
             "..olololo.obbo",
-            "wobblllbbobbo.",
+            "woddlllbbobbo.",
             ".o..oooooooo.."
           ],
           [
@@ -4607,7 +4607,7 @@
             ".olllellloollo",
             "w.olololo.obbo",
             ".obblllbbobbo.",
-            ".ooooooooooo.."
+            "wooooooooooo.."
           ],
           [
             "..............",
@@ -4839,8 +4839,8 @@
           150
         ],
         "label": {
-          "en": "grooming its brush",
-          "pt-BR": "cuidando do rabo"
+          "en": "grooming its tail",
+          "pt-BR": "lambendo a cauda"
         },
         "moods": [
           "idle"
