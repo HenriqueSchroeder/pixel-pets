@@ -32,6 +32,12 @@ describe('glyph frames', () => {
   })
 })
 
+describe('pixel frames', () => {
+  test('a letter outside the basic plane is one see-through cell, as the frame is measured', () => {
+    expect(words(encode(['𝄞a'], { a: 1 }))).toEqual([0x20, NONE, NONE, 0x2580, 1, NONE])
+  })
+})
+
 describe('facingFrame', () => {
   test('facing right is the frame as drawn; left mirrors it unless the pack does not', () => {
     const frame = ['ab.']

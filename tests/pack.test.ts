@@ -178,6 +178,7 @@ describe('ascii packs', () => {
     expect(pack.colors['.']).toBe(0xe8e8e8)
     expect(pack.tint).toBe('.')
     expect(pack.mirrors).toBe(true)
+    expect(() => parsePack({ ...face(), mini: { tint: 'q', moods: face().mini.moods } })).toThrow(/mini.tint: .*"\." for the ink/)
   })
 
   test('a color mask paints its cells from the palette', () => {

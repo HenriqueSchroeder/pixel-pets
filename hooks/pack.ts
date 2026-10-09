@@ -367,7 +367,7 @@ const parseMini = (checkFrames: CheckFrames, raw: unknown, colors: Colors, ascii
   sameSize(MINI_MOODS.flatMap(mood => mini[mood]), 'mini')
   // An ascii mini pet drawn all in ink is tinted whole.
   const tint = raw.tint ?? (ascii ? '.' : 'b')
-  if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error('mini.tint: must be a palette letter')
+  if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error(`mini.tint: must be a palette letter${ascii ? ', or "." for the ink' : ''}`)
   return { mini, tint }
 }
 

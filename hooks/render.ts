@@ -25,8 +25,9 @@ export const sizeOf = (frame: Frame) => {
 const pixelWords = (frame: string[], colors: Colors) => {
   const words: number[] = []
   for (let r = 0; r < frame.length; r += 2) {
-    const top = frame[r] ?? ''
-    const bottom = frame[r + 1] ?? ''
+    // By code point, as `widthOf` measures the frame.
+    const top = [...(frame[r] ?? '')]
+    const bottom = [...(frame[r + 1] ?? '')]
     for (let c = 0; c < top.length; c++) {
       const up = colors[top[c] ?? '.']
       const down = colors[bottom[c] ?? '.']
