@@ -67,7 +67,22 @@ def rgb(color):
     return ((color >> 16) & 255, (color >> 8) & 255, color & 255)
 
 
-def draw_sprite(draw, frame, colors, x, y):
+def rows_of(frame):
+    return frame['art'] if isinstance(frame, dict) else frame
+
+
+def height_of(frame):
+    """In pixel rows: an ascii row fills a whole cell, two pixel rows."""
+    return len(rows_of(frame)) * (2 if isinstance(frame, dict) else 1)
+
+
+def draw_sprite(draw, frame, colors, x, y, font):
+    if isinstance(frame, dict):  # ascii: each glyph in its cell, in its mask's color
+        for r, (row, mask) in enumerate(zip(frame['art'], frame['color'])):
+            for c, (glyph, letter) in enumerate(zip(row, mask)):
+                if glyph != ' ':
+                    draw.text((x + c * CELL_W, y + r * CELL_H + 1), glyph, font=font, fill=rgb(colors[letter]))
+        return
     px = CELL_W  # square pixels: CELL_H / 2 == CELL_W
     for r, row in enumerate(frame):
         for c, letter in enumerate(row):
@@ -82,11 +97,11 @@ def render(name, out):
     except OSError:  # no DejaVu (macOS, Windows): Pillow's own font
         font = bold = ImageFont.load_default(size=16)
     fps = pack['fps']
-    pet_w = len(pack['moods']['sleeping'][0][0])
-    main_h = len(pack['moods']['sleeping'][0])
+    pet_w = len(rows_of(pack['moods']['sleeping'][0])[0])
+    main_h = height_of(pack['moods']['sleeping'][0])
     # As hooks/register.tsx: a pack with no mini pets shows no agents on the stage.
     mini = pack['mini']
-    mini_h = len(mini['working'][0]) if mini else 0
+    mini_h = height_of(mini['working'][0]) if mini else 0
     scene = SCENE if mini else [(seconds, mood, label, []) for seconds, mood, label, _ in SCENE]
     stage_h = max(main_h * CELL_W, mini_h * CELL_W + CELL_H * 2)
 
@@ -117,7 +132,7 @@ def render(name, out):
             d.text((left + 7 * CELL_W, CELL_H // 2), f'· {shown}', font=font, fill=DIM)
 
             stage_y = CELL_H * 2
-            draw_sprite(d, pet['frame'], pack['colors'], left + pet['x'] * CELL_W, stage_y)
+            draw_sprite(d, pet['frame'], pack['colors'], left + pet['x'] * CELL_W, stage_y, font)
 
             # As hooks/register.tsx: each side's list runs from nearest the pet to farthest.
             columns = {i: pet['x'] + pet_w + 1 + n * (AGENT_SLOT + 1) for n, i in enumerate(pet['right'])}
@@ -134,10 +149,10 @@ def render(name, out):
                 startled_at = pet.get('startled') if mini_mood == 'working' and i in faced else None
                 minis = mini[mini_mood if startled_at is None else 'startled']
                 mini_frame = minis[(tick if startled_at is None else startled_at) % len(minis)]
-                mini_w = len(minis[0][0])
+                mini_w = len(rows_of(minis[0])[0])
                 # On the pet's left a slot leans right, toward the pet.
                 lean = (lambda width: slot_x + AGENT_SLOT * CELL_W - width) if i in pet['left'] else (lambda width: slot_x)
-                draw_sprite(d, mini_frame, colors, lean(mini_w * CELL_W), stage_y)
+                draw_sprite(d, mini_frame, colors, lean(mini_w * CELL_W), stage_y, font)
                 text_y = stage_y + mini_h * CELL_W
                 d.text((lean(d.textlength(kind, font=bold)), text_y), kind, font=bold, fill=FG)
                 d.text((lean(d.textlength(mini_label, font=font)), text_y + CELL_H), mini_label, font=font, fill=DIM)
