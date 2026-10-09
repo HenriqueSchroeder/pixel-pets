@@ -248,7 +248,6 @@ const parsePersonality = (raw: unknown): Traits => {
   return traits
 }
 
-
 // Lines are shown as they are: plain one-line text, short enough for the band.
 const parseSpeech = (raw: unknown) => {
   const out: Record<string, Partial<Record<Situation, string[]>>> = {}
