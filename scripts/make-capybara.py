@@ -358,44 +358,53 @@ def water(top, ripple=0):
             + [(top, c + ripple, 'w') for c in (2, 9, 17, 24)])
 
 
-def floating(i):
-    """An orange bobbing on the water at its side."""
-    return at(ORANGE, 8 + (i // 4) % 2, 0)
+def floating(i, top=12):
+    """An orange bobbing at its side, its foot under the water from row `top`."""
+    return at(ORANGE, top - 4 + (i // 4) % 2, 0)
 
 
-# A second bird, on its left shoulder.
+def steam(i):
+    """Wisps of steam rising off the water at its right, one after the other."""
+    k = (i // 2) % 3
+    return [(11 - k, 25, 'w'), (11 - (k + 1) % 3, 26, 'w')]
+
+
+# A second bird, on its left shoulder: it rides up as the shoulder rises with a breath.
 SHOULDER = (4, 3)
 SHOULDER_IN = [('up', 2, 0), ('down', 3, 1), ('up', 3, 2)]
-# A slice of watermelon at its chin, bitten down a little at a time, then the rind.
+# A slice of watermelon at its chin, bitten down a little at a time; the rind goes
+# down and a fresh slice comes up.
 MELON = ['rrrrrr', 'rerrer', 'gggggg']
 BITES = [MELON, ['.rrrr.', 'rerrer', 'gggggg'], ['......', '.errr.', 'gggggg'], ['......', '......', 'gggggg']]
 
 
 def melon(i):
-    return at(BITES[i * 4 // 16], 13, 11)
+    return at(BITES[i * 4 // 14], 13, 11)
 
 
 ACT = {
-    # into a hot spring: the water rises, an orange bobs by, steam curls off its head;
+    # into a hot spring: the water rises, an orange bobs by, steam rises off the water;
     # out again, it shakes itself dry
     'onsen': {'start': [frame(OPEN), frame(OPEN, fx=water(15)), frame(DOWN, fx=water(14, 1)), frame(HALF, fx=water(13)),
-                        frame(ZEN, fx=water(12, 1) + floating(0))],
-              'loop': [frame(ZEN, breath=i >= 8, fx=water(12, (i // 4) % 2) + floating(i) + puff(i // 2)) for i in range(16)],
-              'end': [frame(HALF, fx=water(12)), frame(OPEN, fx=water(13, 1)), frame(OPEN, fx=water(14)), frame(OPEN, fx=water(15, 1))]
+                        frame(ZEN, fx=floating(0) + water(12, 1))],
+              'loop': [frame(ZEN, breath=i >= 8, fx=floating(i) + water(12, (i // 4) % 2) + steam(i)) for i in range(16)],
+              'end': [frame(HALF, fx=floating(0, 12) + water(12)), frame(OPEN, fx=floating(0, 13) + water(13, 1)),
+                      frame(OPEN, fx=floating(0, 14) + water(14)), frame(OPEN, fx=floating(0, 15) + water(15, 1))]
                      + [frame(SHUT, sx=1 if i % 2 else -1, fx=SPLASH[i % 2]) for i in range(4)] + [frame(OPEN)],
               'seconds': [20, 45], 'every': [60, 150], 'label': {'en': 'soaking in a hot spring', 'pt-BR': 'de molho na água quente'}},
     # two birds drop by: one on its head, one on its shoulder, fluttering now and then
     'birds': {'start': [frame(OPEN, fx=bird(*f) + bird(*g)) for f, g in zip(FLIGHT_IN[:3], SHOULDER_IN)]
                        + [frame(UP, fx=bird(*FLIGHT_IN[3]) + bird('sit', *SHOULDER))],
               'loop': [frame(ZEN if i < 12 else eyes(OPEN, i, 14), breath=i >= 8,
-                             fx=bird('up' if i in (2, 3) else 'sit', *PERCH) + bird('up' if i in (9, 10) else 'sit', *SHOULDER))
+                             fx=bird('up' if i in (2, 3) else 'sit', *PERCH) + bird('up' if i in (9, 10) else 'sit', SHOULDER[0] - (i >= 8), SHOULDER[1]))
                        for i in range(16)],
               'end': [frame(ZEN, fx=bird(*f) + bird('up', 3 - k, 2 - 2 * k)) for k, f in enumerate(FLIGHT_OUT[:2])]
                      + [frame(OPEN, fx=bird(*FLIGHT_OUT[2])), frame(OPEN)],
               'seconds': [20, 45], 'every': [60, 150], 'label': {'en': 'hosting some birds', 'pt-BR': 'recebendo passarinhos'}},
     # a slice of watermelon, eaten bite by bite, eyes shut with joy
     'watermelon': {'start': [frame(OPEN, fx=at(MELON, 14, 11)), frame(DOWN, fx=at(MELON, 13, 11))],
-                   'loop': [frame((ZEN if i % 8 < 6 else HALF) + (CHEW if i % 2 else []), fx=melon(i)) for i in range(16)],
+                   'loop': [frame((ZEN if i % 8 < 6 else HALF) + (CHEW if (i // 2) % 2 else []), fx=melon(i)) for i in range(14)]
+                           + [frame(DOWN, fx=at(BITES[3], 14, 11)), frame(OPEN, fx=at(MELON, 14, 11))],
                    'end': [frame(ZEN, fx=at(BITES[3], 13, 11)), frame(OPEN)],
                    'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'eating watermelon', 'pt-BR': 'comendo melancia'}},
 }
