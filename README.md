@@ -21,7 +21,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | Mood | When | Borrows from |
 | --- | --- | --- |
 | `sleeping` | no turn is running | (required) |
-| `deepSleep` | nothing has happened for 10 minutes | sleeping |
+| `deepSleep` | nothing has happened for 10 minutes; from then on spells of 8 to 15 minutes, with a light sleep of 3 to 6 between them | sleeping |
 | `idle` | awake with nothing to do, for a while after Claude finishes (see `awakeMinutes`) | thinking |
 | `sleepy` | idle at night, from 22h to 6h | idle |
 | `tired` | idle after 3 hours of work with no break of an hour | sleepy |
@@ -50,7 +50,7 @@ The pet walks a stage under Claude's line: it strolls while idle, and when subag
 
 It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. Worry and pride last for the session only; tiredness counts your work in every session, as a break is an hour with no prompt in any of them.
 
-It has wants of its own too, for the session. Energy: sleep fills it and work drains it, and a pet low on energy dozes off sooner and rests longer between strolls. Boredom: it builds while nothing happens, and a bored pet gets up from a nap on its own for a while, though never out of a deep sleep. Longing: it builds while you are away, and a pet that misses you strolls near the prompt and greets your first key after half an hour away ("missed you!"), unless a turn is running.
+It has wants of its own too, for the session. Energy: sleep fills it and work drains it, and a pet low on energy dozes off sooner and rests longer between strolls. Boredom: it builds while nothing happens, and a bored pet gets up from a nap on its own for half a minute to a minute and a half, though never out of a deep sleep: it waits for that sleep to turn light, even hours in. Longing: it builds while you are away, and a pet that misses you strolls near the prompt and greets your first key after half an hour away ("missed you!"), unless a turn is running.
 
 The time of day is your local time. At night it is sleepy and dozes off in half of `awakeMinutes`. It remembers you across sessions. The day's first sight of you opens with one welcome: an anniversary (a week, a month, 100 days, each year together), "missed you!" after two days or more away, or good morning. `/pet` also says how long you have been together. Late at night it says so once, whichever session sees you first. A `claude -p` run does not count as seeing you.
 
@@ -143,7 +143,7 @@ A pack is a palette and some frames. Each frame is rows of palette letters, and 
 
 ### Make it feel alive
 
-A loop alone looks like a machine. Three optional keys under `main` make the pet unpredictable:
+A loop alone looks like a machine. Four optional keys under `main` make the pet unpredictable:
 
 ```json
 "variants": {
@@ -155,12 +155,20 @@ A loop alone looks like a machine. Three optional keys under `main` make the pet
 },
 "actions": {
   "blink": { "frames": [["...eyes shut..."]], "moods": ["thinking", "reading"], "every": [2, 6] }
+},
+"activities": {
+  "yarn": {
+    "start": [["...a ball rolls in..."]], "loop": [["...push..."], ["...roll..."]], "end": [["...bat it away..."]],
+    "seconds": [15, 40], "moods": ["idle"], "every": [60, 150],
+    "label": { "en": "playing with yarn", "pt-BR": "brincando com o novelo" }
+  }
 }
 ```
 
 - `variants`: more loops for a mood you draw in `moods`. One of them, or the mood's own loop, is picked at random each time the mood starts.
 - `transitions`: frames played once when the mood changes, keyed `from>to`. Either side may be `*`. An exact key wins over `from>*`, which wins over `*>to`.
 - `actions`: frames played once at a random moment while the pet is in one of `moods`, `every` [min, max] seconds after the last time. Blinks, ear twitches and yawns live here, so the loops can stay calm. An action with `startles`, a frame counted from 0, makes the agents' mini pets on the side the pet faces play `startled` from that frame until it ends, always from its first frame: clawd's whip crack.
+- `activities`: longer plays, timed like an action. `start` plays once, `loop` repeats in whole loops for `seconds` [min, max], then `end` plays once; `start` and `end` are optional. While it plays, `label` (by language code, one line of up to 40 characters) takes the place of the status words, and the pet neither naps nor strolls off. Any other mood cuts it short, its `end` unplayed. Up from a nap, the pet soon starts one. The cat chases a butterfly, plays with yarn and makes biscuits. Up to 8; an activity cannot share a name with an action.
 - An action is a whole frame, so keep its face the same as the moods it plays in. The cat has one blink per expression for that reason.
 - A mood holds up to 16 frames; at 4 fps that is 4 seconds.
 
