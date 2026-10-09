@@ -13,7 +13,7 @@ import { step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
-import { encode, mirror, sizeOf } from './render'
+import { encode, facingFrame, sizeOf } from './render'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
 import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage, sideIn } from './walk'
@@ -362,7 +362,7 @@ export const register: Register = (on, options) => {
       }
       const moved = step(pack, motion, scene.mood, frame, Math.random)
       motion = moved.motion
-      const cells = encode(scene.facing === 1 ? moved.frame : mirror(moved.frame), pack.colors)
+      const cells = encode(facingFrame(moved.frame, scene.facing, pack.mirrors), pack.colors)
       if (cells === scene.cells) return
       still = { ...scene, cells }
       // Refused when the band is no longer drawn as it was: redraw it in full.
@@ -681,7 +681,7 @@ export const register: Register = (on, options) => {
 
     const miniSize = sizeOf(pack.mini?.working[0] ?? [])
     const slot = Math.max(miniSize.columns, AGENT_SLOT)
-    const petColumns = pack.moods.sleeping[0]?.[0]?.length ?? 0
+    const petColumns = sizeOf(pack.moods.sleeping[0] ?? []).columns
     // As many agents as fit beside the pet; the rest are a "+N" that needs room too.
     // A pack with no mini pets shows its agents only by its own mood.
     const room = e.props.bodyColumns - petColumns - 2
@@ -748,7 +748,7 @@ export const register: Register = (on, options) => {
     heldFacing = held.held
     const facing = held.side
     const shape = blinkFrame ?? moved.frame
-    const body = facing === 1 ? shape : mirror(shape)
+    const body = facingFrame(shape, facing, pack.mirrors)
     const cells = encode(body, pack.colors)
     // Nothing but the pet's own frame will move until something is written or
     // time passes: no turn, agents, stroll or blink, reaction or line it says.

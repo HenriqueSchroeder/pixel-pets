@@ -161,3 +161,67 @@ describe('parsePack', () => {
     expect(refused([0.5])).toThrow(/personality/)
   })
 })
+
+const face = () => ({
+  name: 'face',
+  style: 'ascii',
+  ink: '#e8e8e8',
+  palette: { p: '#ff8fa3' },
+  main: { moods: { sleeping: [['(-.-)']] } },
+  mini: { moods: { working: [['(o)']] } },
+})
+
+describe('ascii packs', () => {
+  test('a frame of text is drawn in ink, the mini pet tinted whole', () => {
+    const pack = parsePack(face())
+    expect(pack.moods.sleeping).toEqual([{ art: ['(-.-)'], color: ['.....'] }])
+    expect(pack.colors['.']).toBe(0xe8e8e8)
+    expect(pack.tint).toBe('.')
+    expect(pack.mirrors).toBe(true)
+  })
+
+  test('a color mask paints its cells from the palette', () => {
+    const masked = (color: string[]) => parsePack({ ...face(), main: { moods: { sleeping: [{ art: ['(-.-)'], color }] } } })
+    expect(masked(['.p.p.']).moods.sleeping).toEqual([{ art: ['(-.-)'], color: ['.p.p.'] }])
+    expect(() => masked(['.q...'])).toThrow(/color: "q" is not in the palette/)
+    expect(() => masked(['..'])).toThrow(/same rows and widths/)
+    expect(() => masked(['.....', '.....'])).toThrow(/same rows and widths/)
+  })
+
+  test('ink is for ascii packs, which may leave the palette out', () => {
+    expect(() => parsePack({ ...face(), ink: undefined })).toThrow(/ink: required/)
+    expect(() => parsePack({ ...face(), ink: 'white' })).toThrow(/ink: required/)
+    expect(() => parsePack({ ...tiny(), ink: '#ffffff' })).toThrow(/ink: only for an ascii pack/)
+    expect(parsePack({ ...face(), palette: undefined }).colors).toEqual({ '.': 0xe8e8e8 })
+    expect(() => parsePack({ ...tiny(), palette: undefined })).toThrow(/palette: required/)
+    expect(parsePack(tiny()).colors['.']).toBeUndefined()
+  })
+
+  test('every frame follows the style', () => {
+    expect(() => parsePack({ ...tiny(), main: { moods: { sleeping: [{ art: ['oo'] }] } } })).toThrow(/a frame is a list of strings/)
+    expect(() => parsePack({ ...face(), main: { moods: { sleeping: [{ color: ['.'] }] } } })).toThrow(/a list of strings, or \{ art, color \}/)
+    expect(() => parsePack({ ...face(), style: 'vector' })).toThrow(/style: "pixel" or "ascii"/)
+  })
+
+  test('only characters a terminal draws one cell wide', () => {
+    const drawn = (row: string) => parsePack({ ...face(), main: { moods: { sleeping: [[row]] } } })
+    for (const wide of ['🐱', '✌️', '中', 'ｗ', 'é', 'a\tb']) expect(() => drawn(wide)).toThrow(/one cell wide/)
+    expect(drawn('♥•°ᴗ𝄞').moods.sleeping[0]).toEqual({ art: ['♥•°ᴗ𝄞'], color: ['.....'] })
+  })
+
+  test('sizes count cells: 48x16 for the pet, 12x6 for its minis', () => {
+    const tall = (rows: number) => ({ ...face(), main: { moods: { sleeping: [Array(rows).fill('o')] } } })
+    expect(parsePack(tall(16)).moods.sleeping[0]).toBeDefined()
+    expect(() => parsePack(tall(17))).toThrow(/at most 48x16 cells/)
+    expect(() => parsePack({ ...face(), mini: { moods: { working: [Array(7).fill('o')] } } })).toThrow(/at most 12x6 cells/)
+    expect(parsePack({ ...tiny(), main: { moods: { sleeping: [Array(32).fill('oo')] } } }).moods.sleeping[0]).toHaveLength(32)
+    expect(() => parsePack({ ...face(), main: { moods: { sleeping: [['(-.-)'], ['(-.-)z']] } } })).toThrow(/same size/)
+  })
+
+  test('mirror: false keeps any pack from flipping', () => {
+    expect(parsePack({ ...tiny(), mirror: false }).mirrors).toBe(false)
+    expect(parsePack({ ...face(), mirror: false }).mirrors).toBe(false)
+    expect(parsePack(tiny()).mirrors).toBe(true)
+    expect(() => parsePack({ ...tiny(), mirror: 'no' })).toThrow(/mirror: true or false/)
+  })
+})
