@@ -18,6 +18,8 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 ![pixel-pets: o kaomoji na mesma cena, uma carinha de texto que cantarola enquanto passeia](screenshots/kaomoji.gif)
 
+![pixel-pets: o wizard na mesma cena, desenhado em texto, sumindo num redemoinho de faíscas e preparando poções](screenshots/wizard.gif)
+
 ## O que ele mostra
 
 | Humor | Quando | Herda de |
@@ -113,6 +115,8 @@ Pets que vêm junto:
 - [`fox`](pets/fox.json), que balança o rabo, pula de cabeça nos ratos sob a neve e fica de lado para andar.
 - [`dragon`](pets/dragon.json), um dragão vermelho grande que solta fogo, conta o seu tesouro e voa para pousar em outro lugar. Não desenha mini pets.
 - [`capybara`](pets/capybara.json), a mais calma de todas: mastiga capim, deixa um passarinho pousar na cabeça e equilibra uma laranja. Não desenha mini pets.
+- [`kaomoji`](pets/kaomoji.json), uma carinha de texto que cantarola enquanto passeia e nunca te dá as costas.
+- [`wizard`](pets/wizard.json), um mago desenhado em texto: em vez de andar, some num redemoinho de faíscas e aparece em outro lugar. Prepara poções, faz malabares com orbes, brinca com o morcego e solta raios do cajado, assustando os agents, que são pequenos aprendizes.
 
 ![O cat, o slime, o dog e a owl, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
 
