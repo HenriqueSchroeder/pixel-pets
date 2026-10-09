@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { step } from '../hooks/motion'
 import type { Motion } from '../hooks/motion'
 import { MINI_MOODS, MOODS, PARENT, parsePack } from '../hooks/pack'
-import { mirror } from '../hooks/render'
+import { facingFrame, isGlyphs } from '../hooks/render'
 import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage } from '../hooks/walk'
 import type { Held, Plan, Stage } from '../hooks/walk'
 import type { Frame, Mood } from '../types'
@@ -62,7 +62,7 @@ const play = () => {
     heldFacing = held.held
     const facing = held.side
     const shape = blinkFrame ?? moved.frame
-    const frame = facing === 1 ? shape : mirror(shape)
+    const frame = facingFrame(shape, facing, pack.mirrors)
     const at = { frame, x: onStage.standX, left: drawn.left, right: drawn.right, moving: isOnTheMove }
     return { ...at, facing, startled: moved.startled }
   })
@@ -71,7 +71,14 @@ const play = () => {
 const rgb = (color: number) => `${(color >> 16) & 255};${(color >> 8) & 255};${color & 255}`
 
 // The same trick as the plugin: '▀' paints the top pixel, its background the bottom one.
+// An ascii frame is its glyphs, each in its mask's color.
 const lines = (frame: Frame, colors: Record<string, number>) => {
+  if (isGlyphs(frame)) {
+    return frame.art.map((row, r) => {
+      const mask = [...(frame.color[r] ?? '')]
+      return [...row].map((glyph, c) => (glyph === ' ' ? ' ' : `\x1b[38;2;${rgb(colors[mask[c] ?? '.'] ?? 0)}m${glyph}\x1b[0m`)).join('')
+    })
+  }
   const out: string[] = []
   for (let r = 0; r < frame.length; r += 2) {
     let line = ''
