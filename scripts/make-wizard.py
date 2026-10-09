@@ -341,11 +341,12 @@ ACTIONS = {
     'blink': {'frames': [wizard(eye='-', fx=glint(0))], 'moods': ['idle'], 'every': [3, 7]},
     'blinkDown': {'frames': [wizard(eye='-')], 'moods': ['watching'], 'every': [3, 8]},
     'blinkUp': {'frames': [wizard(eye='-', lift=1)], 'moods': ['supervising'], 'every': [3, 8]},
-    'zap': {'frames': ZAP, 'moods': ['idle', 'proud'], 'every': [40, 90], 'startles': 2},
-    'hatHop': {'frames': [wizard(hat_up=1), wizard(hat_up=2, fx=[(1, 9, '·', 'k')]), wizard(hat_up=1), IDLE], 'moods': ['idle', 'happy'], 'every': [15, 40]},
+    'zap': {'frames': ZAP, 'moods': ['idle'], 'every': [40, 90], 'startles': 2},
+    'hatHop': {'frames': [wizard(hat_up=1), wizard(hat_up=2, fx=[(1, 9, '·', 'k')]), wizard(hat_up=1), IDLE], 'moods': ['idle'], 'every': [15, 40]},
+    'hatHopHappy': {'frames': [wizard(eye='^', hat_up=1), wizard(eye='^', hat_up=2, fx=[(1, 9, '♥', 'p')]), wizard(eye='^', hat_up=1), wizard(eye='^')], 'moods': ['happy'], 'every': [8, 20]},
     'beardStroke': {'frames': [wizard(eye='◔', mouth='──', left='front'), wizard(eye='◔', mouth='──', left='front', fx=[(12, 10, '●', 'f')]), wizard(eye='◔', mouth='──', left='front')], 'moods': ['thinking'], 'every': [6, 15]},
     'snort': {'frames': [wizard(eye='-', mouth='──', hat='droop', glow='C', fx=[(NOSE[0], NOSE[1] + 3, '*', 'c'), (3, 20, 'Z', 'z')]), wizard(eye='-', mouth='o ', hat='droop', glow='C', fx=[(2, 22, 'Z', 'z')])], 'moods': ['sleeping', 'deepSleep'], 'every': [12, 30]},
-    'sneeze': {'frames': [wizard(eye='◡', mouth='o ', fx=[(4, 20, 'a-', 'k')]), wizard(eye='◡', mouth='o ', fx=[(4, 20, 'a-a-', 'k')]), wizard(eye='-', mouth='▽ ', hat_up=2, fx=swirl(1)), wizard(hat_up=1, fx=swirl(2)), IDLE], 'moods': ['idle'], 'every': [90, 200]},
+    'sneeze': {'frames': [wizard(eye='◡', mouth='o ', fx=[(4, 20, '°', 'k')]), wizard(eye='◡', mouth='o ', fx=[(4, 20, '° °', 'k')]), wizard(eye='-', mouth='▽ ', hat_up=2, fx=swirl(1)), wizard(hat_up=1, fx=swirl(2)), IDLE], 'moods': ['idle'], 'every': [90, 200]},
 }
 
 CAULDRON = ['  ╭───────╮', '  │≈≈≈≈≈≈≈│', '  ╰─┬───┬─╯', '   ^^^^^^^']
@@ -376,7 +377,7 @@ ACTIVITIES = {
     'potion': {
         'start': [IDLE, wizard(eye='◕', fx=cauldron(0))],
         'loop': [wizard(eye='◕', lift=t % 2, glow='v', fx=cauldron(t, 'v' if t < 4 else 'p') + ([(9, 30, '✧', 'k')] if t % 3 == 0 else [])) for t in range(6)],
-        'end': [wizard(eye='^', fx=cauldron(0, 'p') + [(9, 29, ' .--. ', 's'), (8, 30, '(poof)', 's')]), IDLE],
+        'end': [wizard(eye='^', fx=cauldron(0, 'p') + [(8, 30, ' .--. ', 's'), (9, 29, '(≈✺≈≈)', 's')]), IDLE],
         'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'brewing a potion', 'pt-BR': 'preparando uma poção'},
     },
     'juggle': {
