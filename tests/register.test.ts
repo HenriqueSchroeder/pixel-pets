@@ -1294,4 +1294,3 @@ test('a slow tool is no long think', async ($, on) => {
   await clock.advance(20_000)
   await running
 })
-
