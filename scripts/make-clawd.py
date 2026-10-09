@@ -170,6 +170,15 @@ def balls(i):
     return [(*ARC[(i + 3 * n) % 9], color) for n, color in enumerate('ytp')]
 
 
+def landing():
+    """After the loop, no more throws: the two balls still up come down the arc to its right hand."""
+    frames = []
+    for k in range(6):
+        up = [(*ARC[at], color) for at, color in ((3 + k, 't'), (6 + k, 'p')) if at <= 8]
+        frames.append(f(UP, RIGHT_UP if 8 in (3 + k, 6 + k) else [], up))
+    return frames
+
+
 def juggle(i):
     hands = [LEFT_UP] if i % 9 in (0, 3, 6) else [RIGHT_UP] if i % 9 in (2, 5, 8) else []
     return f(UP, *hands, balls(i))
@@ -177,13 +186,15 @@ def juggle(i):
 
 # An easel at its right, a canvas filling with dabs of paint, the brush in its raised hand
 # tipped with the next one's colour.
-EASEL = [(2, c, 'k') for c in range(17, 22)] + [(r, c, 'k') for r in range(3, 7) for c in (17, 21)] + [(r, c, 'k') for r in (7, 8) for c in (17, 21)]
+EASEL = [(2, c, 'k') for c in range(17, 22)] + [(r, c, 'k') for r in range(3, 7) for c in (17, 21)] + [(r, c, 'k') for r in (7, 8, 9) for c in (17, 21)]
 CANVAS = [(r, c, 'w') for r in range(3, 7) for c in range(18, 21)]
 DABS = [(3, 18, 'y'), (4, 19, 't'), (5, 18, 'p'), (3, 20, 't'), (6, 19, 'y'), (4, 18, 'p'), (5, 20, 'y'), (6, 18, 't')]
 
 
 def painting(n, brush=True):
-    return EASEL + CANVAS + DABS[:n] + ([(3, 16, DABS[n % len(DABS)][2])] if brush else [])
+    # the brush goes up with its arm on odd dabs, and rests by its lowered hand between
+    tip = (3, 16) if n % 2 else (5, 16)
+    return EASEL + CANVAS + DABS[:n] + ([(*tip, DABS[n % len(DABS)][2])] if brush else [])
 
 
 # A mug of coffee in its left hand, steam curling off it; lifted to sip.
@@ -192,9 +203,9 @@ SIP = [(r - 2, c, l) for r, c, l in MUG]
 STEAM = [w((2, -2)), w((1, -1)), w((0, -2))]
 ACT = {
     # three balls in the air, thrown up from one hand and caught in the other
-    'juggle': {'start': [IDLE, f(UP, LEFT_UP, balls(0)[:1])],
+    'juggle': {'start': [IDLE, f(UP, LEFT_UP, balls(0)[:1]), f(UP, balls(0)[:2])],
                'loop': [juggle(i) for i in range(9)],
-               'end': [f(UP, RIGHT_UP, [(4, 16, 'y')]), f(JOY, [(5, 16, 'y')]), IDLE],
+               'end': landing() + [f(JOY, [(5, 16, 't')]), IDLE],
                'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'juggling', 'pt-BR': 'fazendo malabarismo'}},
     # dabs of paint on a canvas at its side, one by one, then a step back to admire it
     'paint': {'start': [IDLE, f(look(1), painting(0, brush=False))],
