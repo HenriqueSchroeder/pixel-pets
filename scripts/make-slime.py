@@ -170,6 +170,46 @@ A = {
     'dreamJiggle': {'frames': [f('flat', shut, small), f('squish', shut, small), f('flat', shut, small)], 'moods': ['deepSleep'], 'every': [15, 40]},
 }
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+IDLE = f('base', open_, small)
+gaze = lambda s: (lambda er: up(er, s))
+
+
+def apple(r):
+    """An apple, its stem on top, with its top at row r: falling, then sinking into it."""
+    return [(r - 1, 6, 'o'), (r, 5, 'r'), (r, 6, 'r'), (r + 1, 5, 'r'), (r + 1, 6, 'r')]
+
+
+ACT = {
+    # it blows bubbles out to one side and the other, watching each one rise and pop
+    'bubbles': {'start': [IDLE, f('base', open_, omouth)],
+                'loop': [f('base', open_, omouth, w((3, 11))), f('base', look(1), omouth, w((2, 11))),
+                         f('base', gaze(1), small, w((0, 10), (0, 11), (1, 10), (1, 11))), f('squish', joy, smile, w((0, 9), (1, 11))),
+                         f('base', open_, omouth, w((3, 0))), f('base', look(-1), omouth, w((2, 0))),
+                         f('base', gaze(-1), small, w((0, 0), (0, 1), (1, 0), (1, 1))), f('squish', joy, smile, w((0, 2), (1, 0)))],
+                'end': [f('base', joy, smile), IDLE],
+                'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'blowing bubbles', 'pt-BR': 'fazendo bolhas'}},
+    # an apple drops on it and sinks in, slowly melting away inside
+    'apple': {'start': [IDLE, f('base', gaze(0), small)],
+              'loop': [f('base', gaze(0), small, apple(0)), f('base', gaze(0), omouth, apple(1)), f('squish', open_, omouth, apple(2)),
+                       f('base', joy, smile, apple(3)), f('base', joy, smile, [(6, 5, 'r'), (6, 6, 'r'), (7, 5, 'r')]),
+                       f('base', open_, small, [(7, 5, 'r'), (7, 6, 'r')]), f('base', open_, small, [(7, 6, 'r')]), f('squish', open_, small)],
+              'end': [f('base', joy, smile), IDLE],
+              'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'eating an apple', 'pt-BR': 'comendo uma maçã'}},
+    # it bops to a tune only it can hear, stretching up and squashing down
+    'dance': {'start': [IDLE, f('squish', open_, small)],
+              'loop': [f('tall', look(-1), smile, w((1, 0))), f('squish', open_, grin, w((0, 1))),
+                       f('tall', look(1), smile, w((1, 11))), f('squish', open_, grin, w((0, 10))),
+                       f('tall', joy, smile, w((0, 0))), f('squish', joy, grin, w((1, 1))),
+                       f('tall', joy, smile, w((0, 11))), f('squish', joy, grin, w((1, 10)))],
+              'end': [f('squish', open_, small), IDLE],
+              'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'dancing', 'pt-BR': 'dançando'}},
+}
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+FACE = [(r, c) for r, c, _ in open_(ER['base']) + mouth(ER['base'] + 2)]
+for name, a in ACT.items():
+    for frame in (a['start'][0], a['end'][-1]):
+        assert all(frame[r][c] == IDLE[r][c] for r, c in FACE), name
 MINI = ['..oooo..', '.obbbbo.', 'obbbbbbo', 'obbbbbbo', '.oooooo.', '........']
 MINI_SQ = ['........', '..oooo..', 'obbbbbbo', 'obbbbbbo', 'oooooooo', '........']
 
@@ -182,7 +222,7 @@ pack = {
     '$schema': SCHEMA,
     'name': 'slime', 'author': 'Henrique Schroeder',
     'description': 'A green slime that bounces in place, melts into a puddle when it sleeps deep, and never walks: it sinks away and wells up elsewhere.',
-    'palette': {'o': '#14381c', 'b': '#5fd068', 'w': '#d9ffd9', 'e': '#0b1f0f', 't': '#5ab4ff'},
+    'palette': {'o': '#14381c', 'b': '#5fd068', 'w': '#d9ffd9', 'e': '#0b1f0f', 't': '#5ab4ff', 'r': '#e8484f'},
     'fps': 4,
     'main': {
         'moods': F,
@@ -190,6 +230,7 @@ pack = {
         'transitions': T,
         'actions': A,
         'teleport': TELEPORT,
+        'activities': {k: {**a, 'moods': ['idle']} for k, a in ACT.items()},
     },
     'mini': {'tint': 'b', 'moods': {
         'working': [mini(MINI, me(2))] * 2 + [mini(MINI_SQ, me(2))] * 2,
