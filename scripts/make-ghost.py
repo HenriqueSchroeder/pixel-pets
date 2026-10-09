@@ -193,7 +193,7 @@ IDLE = f(OPEN + MOUTH + BLUSH)
 UPL, UPR = [(4, 3, 'e'), (4, 6, 'e')], [(4, 5, 'e'), (4, 8, 'e')]
 DOWNL, DOWNR = [(5, 3, 'e'), (5, 6, 'e')], [(5, 5, 'e'), (5, 8, 'e')]
 # will-o'-wisps circling it, out of its way all round, and where its eyes follow the first
-RING = [(0, 3), (0, 8), (2, 11), (11, 11), (12, 8), (12, 3), (11, 0), (2, 0)]
+RING = [(0, 3), (0, 8), (2, 11), (12, 11), (12, 8), (12, 3), (12, 0), (2, 0)]
 FOLLOW = [UPL, UPR, look(1), DOWNR, DOWN, DOWNL, look(-1), UPL]
 
 
