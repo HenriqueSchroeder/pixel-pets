@@ -160,6 +160,59 @@ T = {
 # celebrating winds down to sleep the way happy does
 T['celebrating>sleeping'] = T['happy>sleeping']
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+IDLE = f(OPEN)
+# Three balls juggled in an arc over its head, left hand to right, passed back below.
+ARC = [(4, -1), (2, -1), (0, 1), (0, 5), (0, 8), (0, 11), (0, 14), (2, 16), (4, 16)]
+
+
+def balls(i):
+    return [(*ARC[(i + 3 * n) % 9], color) for n, color in enumerate('ytp')]
+
+
+def juggle(i):
+    hands = [LEFT_UP] if i % 9 in (0, 3, 6) else [RIGHT_UP] if i % 9 in (2, 5, 8) else []
+    return f(UP, *hands, balls(i))
+
+
+# An easel at its right, a canvas filling with dabs of paint, the brush in its raised hand
+# tipped with the next one's colour.
+EASEL = [(2, c, 'k') for c in range(17, 22)] + [(r, c, 'k') for r in range(3, 7) for c in (17, 21)] + [(r, c, 'k') for r in (7, 8) for c in (17, 21)]
+CANVAS = [(r, c, 'w') for r in range(3, 7) for c in range(18, 21)]
+DABS = [(3, 18, 'y'), (4, 19, 't'), (5, 18, 'p'), (3, 20, 't'), (6, 19, 'y'), (4, 18, 'p'), (5, 20, 'y'), (6, 18, 't')]
+
+
+def painting(n, brush=True):
+    return EASEL + CANVAS + DABS[:n] + ([(3, 16, DABS[n % len(DABS)][2])] if brush else [])
+
+
+# A mug of coffee in its left hand, steam curling off it; lifted to sip.
+MUG = [(4, -2, 'w'), (4, -1, 'w'), (5, -2, 'w'), (5, -1, 'w'), (5, -3, 'w'), (3, -2, 'k'), (3, -1, 'k')]
+SIP = [(r - 2, c, l) for r, c, l in MUG]
+STEAM = [w((2, -2)), w((1, -1)), w((0, -2))]
+ACT = {
+    # three balls in the air, thrown up from one hand and caught in the other
+    'juggle': {'start': [IDLE, f(UP, LEFT_UP, balls(0)[:1])],
+               'loop': [juggle(i) for i in range(9)],
+               'end': [f(UP, RIGHT_UP, [(4, 16, 'y')]), f(JOY, [(5, 16, 'y')]), IDLE],
+               'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'juggling', 'pt-BR': 'fazendo malabarismo'}},
+    # dabs of paint on a canvas at its side, one by one, then a step back to admire it
+    'paint': {'start': [IDLE, f(look(1), painting(0, brush=False))],
+              'loop': [f(look(1), RIGHT_UP if n % 2 else [], painting(n)) for n in range(9)] + [f(JOY, BLUSH, painting(8, brush=False))] * 2,
+              'end': [f(JOY, BLUSH, painting(8, brush=False)), f(OPEN, painting(8, brush=False))],
+              'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'painting a picture', 'pt-BR': 'pintando um quadro'}},
+    # a mug of coffee: steam rising off it, lifted for a sip now and then, eyes shut with content
+    'coffee': {'start': [f(OPEN, MUG), f(look(-1), MUG, STEAM[0])],
+               'loop': [f(OPEN, MUG, STEAM[0]), f(OPEN, MUG, STEAM[1]), f(look(-1), MUG, STEAM[2]), f(look(-1), MUG, STEAM[0]),
+                        f(SHUT, BLUSH, LEFT_UP, SIP), f(SHUT, BLUSH, LEFT_UP, SIP), f(HALF, BLUSH, MUG, STEAM[1]), f(OPEN, MUG, STEAM[2])],
+               'end': [f(JOY, MUG), IDLE],
+               'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'having a coffee', 'pt-BR': 'tomando um café'}},
+}
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name, a in ACT.items():
+    for frame in (a['start'][0], a['end'][-1]):
+        assert all(frame[r][c + PAD] == IDLE[r][c + PAD] for r, c, _ in OPEN), name
+
 A = {
     'blink': {'frames': [f(SHUT)], 'moods': ['idle', 'supervising', 'searching', 'reading', 'compacting', 'watching', 'running', 'thinking'], 'every': [2, 6]},
     'blinkTwice': {'frames': [f(SHUT), f(OPEN), f(SHUT)], 'moods': ['idle'], 'every': [9, 20]},
@@ -218,7 +271,8 @@ pack = {
     'palette': {'b': '#d77757', 'd': '#9c4f38', 'h': '#6e3a2a', 'e': '#1a1a1a',
                 'p': '#f2a0b6', 'w': '#ffffff', 't': '#7cc4f2', 'y': '#ffd166', 'k': '#5a3a22'},
     'fps': 4,
-    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A},
+    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A,
+             'activities': {k: {**a, 'moods': ['idle']} for k, a in ACT.items()}},
     'mini': {'tint': 'b', 'moods': {
         'working': [paint(MINI, MINI_STEP[0])] * 2 + [paint(MINI, MINI_STEP[1])] * 2,
         'happy': [paint(MINI, MINI_CHEER)] * 2 + [paint(MINI, MINI_CHEER + MINI_STEP[0])] * 2,
