@@ -349,10 +349,66 @@ A = {
                   'moods': ['sleeping'], 'every': [10, 30]},
 }
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+
+
+def water(top, ripple=0):
+    """Warm water from row `top` down, light glinting on its surface."""
+    return ([(r, c, 't') for r in range(top, H) for c in range(W)]
+            + [(top, c + ripple, 'w') for c in (2, 9, 17, 24)])
+
+
+def floating(i):
+    """An orange bobbing on the water at its side."""
+    return at(ORANGE, 8 + (i // 4) % 2, 0)
+
+
+# A second bird, on its left shoulder.
+SHOULDER = (4, 3)
+SHOULDER_IN = [('up', 2, 0), ('down', 3, 1), ('up', 3, 2)]
+# A slice of watermelon at its chin, bitten down a little at a time, then the rind.
+MELON = ['rrrrrr', 'rerrer', 'gggggg']
+BITES = [MELON, ['.rrrr.', 'rerrer', 'gggggg'], ['......', '.errr.', 'gggggg'], ['......', '......', 'gggggg']]
+
+
+def melon(i):
+    return at(BITES[i * 4 // 16], 13, 11)
+
+
+ACT = {
+    # into a hot spring: the water rises, an orange bobs by, steam curls off its head;
+    # out again, it shakes itself dry
+    'onsen': {'start': [frame(OPEN), frame(OPEN, fx=water(15)), frame(DOWN, fx=water(14, 1)), frame(HALF, fx=water(13)),
+                        frame(ZEN, fx=water(12, 1) + floating(0))],
+              'loop': [frame(ZEN, breath=i >= 8, fx=water(12, (i // 4) % 2) + floating(i) + puff(i // 2)) for i in range(16)],
+              'end': [frame(HALF, fx=water(12)), frame(OPEN, fx=water(13, 1)), frame(OPEN, fx=water(14)), frame(OPEN, fx=water(15, 1))]
+                     + [frame(SHUT, sx=1 if i % 2 else -1, fx=SPLASH[i % 2]) for i in range(4)] + [frame(OPEN)],
+              'seconds': [20, 45], 'every': [60, 150], 'label': {'en': 'soaking in a hot spring', 'pt-BR': 'de molho na água quente'}},
+    # two birds drop by: one on its head, one on its shoulder, fluttering now and then
+    'birds': {'start': [frame(OPEN, fx=bird(*f) + bird(*g)) for f, g in zip(FLIGHT_IN[:3], SHOULDER_IN)]
+                       + [frame(UP, fx=bird(*FLIGHT_IN[3]) + bird('sit', *SHOULDER))],
+              'loop': [frame(ZEN if i < 12 else eyes(OPEN, i, 14), breath=i >= 8,
+                             fx=bird('up' if i in (2, 3) else 'sit', *PERCH) + bird('up' if i in (9, 10) else 'sit', *SHOULDER))
+                       for i in range(16)],
+              'end': [frame(ZEN, fx=bird(*f) + bird('up', 3 - k, 2 - 2 * k)) for k, f in enumerate(FLIGHT_OUT[:2])]
+                     + [frame(OPEN, fx=bird(*FLIGHT_OUT[2])), frame(OPEN)],
+              'seconds': [20, 45], 'every': [60, 150], 'label': {'en': 'hosting some birds', 'pt-BR': 'recebendo passarinhos'}},
+    # a slice of watermelon, eaten bite by bite, eyes shut with joy
+    'watermelon': {'start': [frame(OPEN, fx=at(MELON, 14, 11)), frame(DOWN, fx=at(MELON, 13, 11))],
+                   'loop': [frame((ZEN if i % 8 < 6 else HALF) + (CHEW if i % 2 else []), fx=melon(i)) for i in range(16)],
+                   'end': [frame(ZEN, fx=at(BITES[3], 13, 11)), frame(OPEN)],
+                   'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'eating watermelon', 'pt-BR': 'comendo melancia'}},
+}
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name, a in ACT.items():
+    for first in (a['start'][0], a['end'][-1]):
+        assert all(first[r][c] == frame(OPEN)[r][c] for r in range(5, 8) for c in range(W)), name
+
 PALETTE = {
     'o': '#2b1a10', 'b': '#9c6b3f', 'h': '#c08a55', 's': '#6e4526', 'd': '#4a2e1b',
     'e': '#111111', 'n': '#f3ead2', 'f': '#ff9a1f', 'q': '#d9731a', 'g': '#5cae4a',
     'y': '#ffd23f', 't': '#7cc8f2', 'w': '#ffffff', 'p': '#e58c8c',
+    'r': '#e8484f',
 }
 
 pack = {
@@ -361,7 +417,8 @@ pack = {
     'description': 'A calm capybara that chews grass, lets birds sit on its head and balances an orange.',
     'palette': PALETTE,
     'fps': 8,
-    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A},
+    'main': {'moods': F, 'variants': V, 'transitions': T, 'actions': A,
+             'activities': {k: {**a, 'moods': ['idle']} for k, a in ACT.items()}},
     'mini': False,
     # the calmest of them all, and the fondest
     'personality': {'energetic': 0.2, 'curious': 0.4, 'affectionate': 0.9},
