@@ -285,6 +285,8 @@ export const register: Register = (on, options) => {
   const language = typeof options.language === 'string' ? options.language : 'auto'
   // false: the band is the stage alone, without Claude's line above it.
   const showsLine = options.labelLine !== false
+  // false: each agent is its mini pet alone, without its name and words under it.
+  const showsAgentLabels = options.agentLabels !== false
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
   // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
@@ -682,7 +684,7 @@ export const register: Register = (on, options) => {
     }
 
     const miniSize = sizeOf(pack.mini?.working[0] ?? [])
-    const slot = Math.max(miniSize.columns, AGENT_SLOT)
+    const slot = showsAgentLabels ? Math.max(miniSize.columns, AGENT_SLOT) : miniSize.columns
     const petColumns = sizeOf(pack.moods.sleeping[0] ?? []).columns
     // As many agents as fit beside the pet; the rest are a "+N" that needs room too.
     // A pack with no mini pets shows its agents only by its own mood.
@@ -736,7 +738,8 @@ export const register: Register = (on, options) => {
     const labelShown = isStrolling ? label('strolling') : shown.label
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
-    const isQuoting = saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
+    // With no line there is nowhere to say it.
+    const isQuoting = showsLine && saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
     const said = isQuoting ? `“${saying?.text}”` : words(labelShown)
 
     const moved = step(pack, motion, mood, frame, Math.random)
@@ -785,8 +788,8 @@ export const register: Register = (on, options) => {
           marginRight={side === 1 ? 0 : 1}
         >
           <Raster key={`mini-${one.id}`} {...miniSize} cells={encode(mini, { ...pack.colors, [pack.tint]: one.color })} />
-          <Text bold>{short(one.type, slot)}</Text>
-          <Text dimColor>{short(agentWords(one), slot)}</Text>
+          {showsAgentLabels && <Text bold>{short(one.type, slot)}</Text>}
+          {showsAgentLabels && <Text dimColor>{short(agentWords(one), slot)}</Text>}
         </Box>
       )
     }
