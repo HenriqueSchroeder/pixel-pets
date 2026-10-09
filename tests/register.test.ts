@@ -553,6 +553,13 @@ test('how long it stays awake comes from the config', { options: { awakeMinutes:
   expect(await ui.find({ text: '· sleeping' })).toBeDefined()
 })
 
+test("with labelLine off the band is the stage alone, without Claude's line", { options: { labelLine: false } }, async ($, on) => {
+  setup(on)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /^· / })).toBeUndefined()
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
+})
+
 test("agents' pets stand to the right with their labels in full", async ($, on) => {
   setup(on)
   on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))

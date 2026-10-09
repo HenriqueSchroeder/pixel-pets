@@ -93,6 +93,7 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 | `customPet` | | Your own pack when `pet` is `custom`: a file in `~/.claude/pets/`, without `.json` |
 | `language` | `auto` | `auto` follows Claude Code's `language` setting, then `$LANG`. Or pick `en`, `pt-BR` |
 | `awakeMinutes` | `1` | How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep (half as long at night). `0` sends it straight to sleep |
+| `labelLine` | `true` | Shows Claude's line above the pet: what it is doing, how long the turn has run and what the pet says. `false` leaves the pet and its agents alone, one row shorter |
 
 ## Use another pet
 

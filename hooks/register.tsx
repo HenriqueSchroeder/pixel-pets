@@ -283,6 +283,8 @@ export const register: Register = (on, options) => {
   let timer: Timer | undefined
   let restartClock = () => {}
   const language = typeof options.language === 'string' ? options.language : 'auto'
+  // false: the band is the stage alone, without Claude's line above it.
+  const showsLine = options.labelLine !== false
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
   // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
@@ -696,7 +698,7 @@ export const register: Register = (on, options) => {
     // Every frame is one size, so the sleeping one tells whether the stage fits, tall and wide.
     // A line of text has no stage, and must not move the pet on the one that has.
     const mainSize = sizeOf(pack.moods.sleeping[0] ?? [])
-    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + 1 || e.props.bodyColumns < mainSize.columns) {
+    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + (showsLine ? 1 : 0) || e.props.bodyColumns < mainSize.columns) {
       const { Text } = $.ui.resolve(e)
       const others = list.map(one => ` · ${one.type}: ${agentWords(one)}`).join('')
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>
@@ -792,9 +794,11 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column">
-        <Text>
-          <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
-        </Text>
+        {showsLine && (
+          <Text>
+            <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
+          </Text>
+        )}
         <Box flexDirection="row" marginLeft={standX - leftColumns}>
           {showsMore && drawn.more === -1 && (
             <Box width={OVERFLOW_COLUMNS}>
