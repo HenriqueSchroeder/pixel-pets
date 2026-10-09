@@ -158,19 +158,48 @@ A={
  'strut':{'frames':[SMILE+GRIN+hop(2),SMILE+GRIN,SMILE+GRIN+hop(9),SMILE+GRIN],'moods':['proud'],'every':[6,14]},
  'blinkProud':{'frames':[SHUT+GRIN],'moods':['proud'],'every':[3,8]},
 }
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+# Eyes up or down to one side, following something about it.
+UPL,UPR=[(4,2,'e'),(4,7,'e')],[(4,4,'e'),(4,9,'e')]
+DOWNL,DOWNR=[(5,2,'e'),(5,7,'e')],[(5,4,'e'),(5,9,'e')]
+# a butterfly between the ears: wings open on the top row, shut a row lower
+fly=lambda c:[(0,c,'y'),(0,c+1,'y')]
+flit=lambda c:[(1,c,'y')]
+# a ball of yarn rolling between its paws, the gap in it turning as it goes
+ball=lambda c,turn:[(10,c+turn,'p'),(11,c,'p'),(11,c+1,'p')]
+ACT={
+ # it watches a butterfly about its head, swats at it and misses
+ 'butterfly':{'start':[OPEN+MOUTH+[(0,11,'y')],UPR+MOUTH+fly(8)],
+   'loop':[UPR+MOUTH+flit(8),UP+MOUTH+fly(6),UP+MOUTH+flit(5),UPL+MOUTH+fly(3),UPL+MOUTH+flit(3),UPL+MOUTH+fly(2),
+     look(-1)+OMOUTH+hop(2)+flit(3),SHUT+GRIN+hop(2)+hop(9)+fly(5),look(1)+OMOUTH+fly(7)],
+   'end':[UPR+MOUTH+flit(8),look(1)+MOUTH+[(0,11,'y')],OPEN+MOUTH],
+   'seconds':[15,30],'every':[60,150],'label':{'en':'chasing a butterfly','pt-BR':'caçando borboleta'}},
+ # it bats a ball of yarn from paw to paw
+ 'yarn':{'start':[DOWNR+MOUTH+ball(10,0),DOWNR+MOUTH+ball(7,1),DOWN+MOUTH+ball(5,0),DOWNL+MOUTH+ball(4,1)],
+   'loop':[DOWNL+GRIN+hop(2)+ball(3,0),DOWNL+MOUTH+ball(4,1),DOWN+MOUTH+ball(5,0),DOWNR+MOUTH+ball(6,1),DOWNR+MOUTH+ball(7,0),
+     DOWNR+GRIN+hop(9)+ball(7,1),DOWNR+MOUTH+ball(6,0),DOWN+MOUTH+ball(5,1),DOWNL+MOUTH+ball(4,0),DOWNL+MOUTH+ball(3,1)],
+   'end':[DOWNL+GRIN+hop(2)+ball(3,0),look(-1)+MOUTH+ball(0,0),look(-1)+MOUTH+[(11,0,'p')],OPEN+MOUTH],
+   'seconds':[15,40],'every':[60,150],'label':{'en':'playing with yarn','pt-BR':'brincando com o novelo'}},
+ # eyes half shut, it kneads with its front paws, sinking into each push
+ 'knead':{'start':[DOWN+MOUTH,HALF+MOUTH],
+   'loop':[HALF+MOUTH+hop(9),breath(HALF+MOUTH+hop(9)),HALF+MOUTH+hop(2),breath(HALF+MOUTH+hop(2))],
+   'end':[HALF+MOUTH,OPEN+MOUTH],
+   'seconds':[10,25],'every':[45,120],'label':{'en':'making biscuits','pt-BR':'amassando pãozinho'}},
+}
 MINI_HAPPY=[(3,2,'o'),(3,5,'o'),(5,3,'o'),(5,4,'o')]
 MINI_SAD=[(5,3,'o'),(5,4,'o')]
 MINI_STEP=[(7,1,'.'),(6,1,'o')], [(7,6,'.'),(6,6,'o')]
 pack={
  '$schema':SCHEMA,
  'name':'cat','author':'Henrique Schroeder','description':'An orange cat, the default pet.',
- 'palette':{'o':'#2b1d14','b':'#f0a35e','e':'#1a1a1a','p':'#f27c8f','w':'#ffffff','t':'#5ab4ff'},
+ 'palette':{'o':'#2b1d14','b':'#f0a35e','e':'#1a1a1a','p':'#f27c8f','w':'#ffffff','t':'#5ab4ff','y':'#ffd84a'},
  'fps':4,
  'main':{
    'moods':{m:[draw(f) for f in fr] for m,fr in F.items()},
    'variants':{m:[[draw(f) for f in loop] for loop in loops] for m,loops in V.items()},
    'transitions':{k:[draw(f) for f in fr] for k,fr in T.items()},
    'actions':{k:{'frames':[draw(f) for f in a['frames']],'moods':a['moods'],'every':a['every']} for k,a in A.items()},
+   'activities':{k:{'start':[draw(f) for f in a['start']],'loop':[draw(f) for f in a['loop']],'end':[draw(f) for f in a['end']],'seconds':a['seconds'],'moods':['idle'],'every':a['every'],'label':a['label']} for k,a in ACT.items()},
  },
  'mini':{'tint':'b','moods':{
    'working':[paint(MINI,MINI_STEP[0])]*2+[paint(MINI,MINI_STEP[1])]*2,
