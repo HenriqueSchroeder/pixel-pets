@@ -209,6 +209,54 @@ A = {
               'moods': ['proud'], 'every': [6, 14]},
 }
 
+# Activities: longer plays in idle, a loop held for `seconds` between a start and an end.
+# Eyes up and to its left, after something by its side.
+UPL = [(3, 3, 'e'), (3, 6, 'e')]
+
+
+def ball(r):
+    """A tennis ball at its left, two pixels square, its top on row r."""
+    return [(r, 0, 'y'), (r, 1, 'y'), (r + 1, 0, 'y'), (r + 1, 1, 'y')]
+
+
+# squashed flat on the ground, and held in its mouth
+BOUNCE = [(11, 0, 'y'), (11, 1, 'y')]
+FETCHED = [(7, 5, 'y'), (7, 6, 'y'), (8, 5, 'y'), (8, 6, 'y')]
+# a bone across its chin, knobs at either end, or lying on the ground
+BONE = [(9, c, 'w') for c in range(3, 9)] + [(8, 2, 'w'), (10, 2, 'w'), (8, 9, 'w'), (10, 9, 'w')]
+BONE_DOWN = [(11, c, 'w') for c in range(3, 9)]
+
+
+def sniffs(c):
+    """A puff of breath on the ground under its nose."""
+    return [(11, c, 'w')]
+
+
+ACT = {
+    # a ball bounces at its side; it watches, wagging, bats it and catches it at last
+    'ball': {'start': [OPEN + MOUTH + TAIL_UP + ball(0), UPL + MOUTH + TAIL_DOWN + ball(3), look(-1) + MOUTH + TAIL_UP + ball(6)],
+             'loop': [scan(-1) + MOUTH + TONGUE + TAIL_DOWN + BOUNCE, look(-1) + MOUTH + TONGUE + TAIL_UP + ball(9),
+                      UPL + MOUTH + TONGUE + TAIL_DOWN + ball(7), UPL + OMOUTH + TAIL_UP + ball(7),
+                      look(-1) + MOUTH + TONGUE + TAIL_DOWN + ball(9), scan(-1) + MOUTH + TONGUE + TAIL_UP + BOUNCE,
+                      scan(-1) + GRIN + hop(2) + TAIL_DOWN + ball(9), look(-1) + GRIN + TAIL_UP + ball(7)],
+             'end': [scan(-1) + OMOUTH + TAIL_DOWN + BOUNCE, SMILE + FETCHED + TAIL_UP, SMILE + FETCHED + TAIL_DOWN, OPEN + MOUTH + TAIL_UP],
+             'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'playing ball', 'pt-BR': 'brincando de bolinha'}},
+    # it picks up a bone and gnaws at it, eyes half shut, tail going slow
+    'bone': {'start': [OPEN + MOUTH + TAIL_UP + BONE_DOWN, DOWN + MOUTH + TAIL_UP + BONE_DOWN, breath(DOWN + OMOUTH + TAIL_UP + BONE_DOWN)],
+             'loop': [HALF + MOUTH + BONE + TAIL_UP, HALF + OMOUTH + BONE + TAIL_UP, HALF + MOUTH + BONE + TAIL_DOWN,
+                      SHUT + OMOUTH + BONE + TAIL_DOWN],
+             'end': [OPEN + MOUTH + BONE + TAIL_UP, DOWN + MOUTH + TAIL_UP + BONE_DOWN, OPEN + MOUTH + TAIL_UP + BONE_DOWN],
+             'seconds': [15, 40], 'every': [60, 150], 'label': {'en': 'chewing a bone', 'pt-BR': 'roendo um osso'}},
+    # nose to the ground, sniffing this way and that, an ear up now and then
+    'sniff': {'start': [OPEN + MOUTH + TAIL_UP, breath(DOWN + MOUTH + TAIL_UP)],
+              'loop': [breath(DOWN + MOUTH + TAIL_UP + sniffs(4)), breath(DOWN + MOUTH + TAIL_DOWN),
+                       breath(scan(1) + MOUTH + TAIL_UP + sniffs(7)), breath(scan(1) + MOUTH + TAIL_DOWN),
+                       breath(scan(0) + MOUTH + TAIL_UP + sniffs(5) + sniffs(6)), breath(scan(0) + MOUTH + TAIL_DOWN),
+                       OPEN + MOUTH + EAR_UP + TAIL_UP, OPEN + MOUTH + EAR_UP + TAIL_UP],
+              'end': [DOWN + MOUTH + TAIL_UP, OPEN + MOUTH + TAIL_UP],
+              'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'sniffing around', 'pt-BR': 'farejando'}},
+}
+
 MINI_STEP = [(6, 2, '.')], [(6, 5, '.')]
 MINI_HAPPY = [(2, 2, 'o'), (2, 5, 'o')]
 MINI_SAD = [(3, 2, 't')], [(3, 1, 't')]
@@ -218,7 +266,7 @@ pack = {
     'name': 'dog', 'author': 'Henrique Schroeder',
     'description': 'A floppy-eared dog that wags its tail and pants when happy.',
     'palette': {'o': '#3b2416', 'b': '#c98a4b', 'd': '#7a4a2a', 'l': '#f2dcb8', 'e': '#1a1a1a',
-                'p': '#f2788f', 'w': '#ffffff', 't': '#5ab4ff'},
+                'p': '#f2788f', 'w': '#ffffff', 't': '#5ab4ff', 'y': '#d4e157'},
     'fps': 4,
     'main': {
         'moods': {m: [draw(f) for f in fr] for m, fr in F.items()},
@@ -226,6 +274,9 @@ pack = {
         'transitions': {k: [draw(f) for f in fr] for k, fr in T.items()},
         'actions': {k: {'frames': [draw(f) for f in a['frames']], 'moods': a['moods'], 'every': a['every']}
                     for k, a in A.items()},
+        'activities': {k: {'start': [draw(f) for f in a['start']], 'loop': [draw(f) for f in a['loop']],
+                           'end': [draw(f) for f in a['end']], 'seconds': a['seconds'], 'moods': ['idle'],
+                           'every': a['every'], 'label': a['label']} for k, a in ACT.items()},
     },
     'mini': {'tint': 'b', 'moods': {
         'working': [paint(MINI, MINI_STEP[0])] * 2 + [paint(MINI, MINI_STEP[1])] * 2,
@@ -240,4 +291,8 @@ pack = {
                   'manyAgents': ['uma matilha de agents!'], 'lateNight': ['*boceja* passeio amanhã?'], 'bored': ['*suspira* bolinha?', '*se joga* que tédio…'], 'dreaming': ['au… au… esquilo…', 'zzz… *patas mexem*']},
     },
 }
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name, a in pack['main']['activities'].items():
+    for frame in (a['start'][0], a['end'][-1]):
+        assert all(frame[r][c] == letter for r, c, letter in OPEN + MOUTH), name
 write(pack)
