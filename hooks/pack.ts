@@ -255,7 +255,7 @@ const parseActivities = (checkFrames: CheckFrames, raw: unknown, taken: Readonly
     }
     const moods = checkMoods(activity.moods, where)
     const restless = moods.find(mood => !PASTIMES.has(mood))
-    if (restless !== undefined) throw new Error(`${where}.moods: "${restless}" is not a mood it idles in`)
+    if (restless !== undefined) throw new Error(`${where}.moods: "${restless}" is not a mood it idles in (${new Intl.ListFormat('en', { type: 'disjunction' }).format([...PASTIMES])})`)
     return {
       name,
       frames: optional(activity.start, 'start'),

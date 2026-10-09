@@ -135,7 +135,7 @@ describe('parsePack', () => {
     }
     for (const mood of ['walking', 'reading', 'supervising', 'sleeping', 'deepSleep', 'happy']) {
       expect(() => parsePack(withActivities({ play: { ...ok, moods: ['idle', mood] } }))).toThrow(
-        new RegExp(`activities.play.moods: "${mood}" is not a mood it idles in`),
+        new RegExp(`activities.play.moods: "${mood}" is not a mood it idles in \\(idle, proud, sleepy, tired, worried, or grumpy\\)`),
       )
     }
     expect(() => parsePack(withActivities({ play: { ...ok, end: [['ooo', 'bbb']] } }))).toThrow(/every frame needs the same size/)
