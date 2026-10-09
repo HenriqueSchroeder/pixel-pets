@@ -175,17 +175,20 @@ ACT={
    'end':[UPR+MOUTH+flit(8),look(1)+MOUTH+[(0,11,'y')],OPEN+MOUTH],
    'seconds':[15,30],'every':[60,150],'label':{'en':'chasing a butterfly','pt-BR':'caçando borboleta'}},
  # it bats a ball of yarn from paw to paw
- 'yarn':{'start':[DOWNR+MOUTH+ball(10,0),DOWNR+MOUTH+ball(7,1),DOWN+MOUTH+ball(5,0),DOWNL+MOUTH+ball(4,1)],
+ 'yarn':{'start':[OPEN+MOUTH+ball(10,0),DOWNR+MOUTH+ball(10,0),DOWNR+MOUTH+ball(7,1),DOWN+MOUTH+ball(5,0),DOWNL+MOUTH+ball(4,1)],
    'loop':[DOWNL+GRIN+hop(2)+ball(3,0),DOWNL+MOUTH+ball(4,1),DOWN+MOUTH+ball(5,0),DOWNR+MOUTH+ball(6,1),DOWNR+MOUTH+ball(7,0),
      DOWNR+GRIN+hop(9)+ball(7,1),DOWNR+MOUTH+ball(6,0),DOWN+MOUTH+ball(5,1),DOWNL+MOUTH+ball(4,0),DOWNL+MOUTH+ball(3,1)],
    'end':[DOWNL+GRIN+hop(2)+ball(3,0),look(-1)+MOUTH+ball(0,0),look(-1)+MOUTH+[(11,0,'p')],OPEN+MOUTH],
    'seconds':[15,40],'every':[60,150],'label':{'en':'playing with yarn','pt-BR':'brincando com o novelo'}},
  # eyes half shut, it kneads with its front paws, sinking into each push
- 'knead':{'start':[DOWN+MOUTH,HALF+MOUTH],
+ 'knead':{'start':[OPEN+MOUTH,HALF+MOUTH],
    'loop':[HALF+MOUTH+hop(9),breath(HALF+MOUTH+hop(9)),HALF+MOUTH+hop(2),breath(HALF+MOUTH+hop(2))],
    'end':[HALF+MOUTH,OPEN+MOUTH],
    'seconds':[10,25],'every':[45,120],'label':{'en':'making biscuits','pt-BR':'amassando pãozinho'}},
 }
+# Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
+for name,a in ACT.items():
+    assert set(OPEN+MOUTH) <= set(a['start'][0]) and set(OPEN+MOUTH) <= set(a['end'][-1]), name
 MINI_HAPPY=[(3,2,'o'),(3,5,'o'),(5,3,'o'),(5,4,'o')]
 MINI_SAD=[(5,3,'o'),(5,4,'o')]
 MINI_STEP=[(7,1,'.'),(6,1,'o')], [(7,6,'.'),(6,6,'o')]
