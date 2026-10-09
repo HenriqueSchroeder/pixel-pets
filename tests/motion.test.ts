@@ -59,6 +59,12 @@ const play = (mood: Mood, from: number, to: number, random: Random, motion?: Mot
 }
 
 describe('step', () => {
+  test("another pack's motion starts over, rather than play that pack's frames", () => {
+    const other = parsePack({ name: 'other', palette: { a: '#000000' }, fps: 1, main: { moods: { sleeping: [f('oth')] } }, mini: false })
+    const asleep = play('sleeping', 0, 0, always(0)).motion
+    expect(play('sleeping', 1, 1, always(0), asleep, other).seen).toEqual(['oth'])
+  })
+
   test('a loop starts from its first frame when its mood starts', () => {
     expect(play('sleeping', 7, 10, always(0)).seen).toEqual(['zzz', 'zZz', 'zzz', 'zZz'])
   })

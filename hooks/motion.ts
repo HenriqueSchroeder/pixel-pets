@@ -4,6 +4,8 @@ import type { Action, Pack } from './pack'
 // What the main pet is playing. Kept between draws so a loop runs from its own
 // start and a one-off finishes before the loop picks up again.
 export type Motion = {
+  // The pack its frames are from: another pet's motion starts over.
+  pack: Pack
   mood: Mood
   loop: Frame[]
   // The tick the mood started on, before its transition.
@@ -70,6 +72,7 @@ const start = (pack: Pack, previous: Motion | undefined, mood: Mood, tick: numbe
     if (picked !== undefined) next[picked.name] = tick + (transition?.length ?? 0)
   }
   return {
+    pack,
     mood,
     loop,
     began: tick,
@@ -91,7 +94,8 @@ const holds = (pack: Pack, motion: Motion, mood: Mood, tick: number) => {
 // The frame to draw on `tick`, and how many ticks ago it began to startle the
 // agents, if it does. Safe to call more than once per tick: the same tick gives
 // the same frame.
-export const step = (pack: Pack, previous: Motion | undefined, mood: Mood, tick: number, random: Random) => {
+export const step = (pack: Pack, given: Motion | undefined, mood: Mood, tick: number, random: Random) => {
+  const previous = given?.pack === pack ? given : undefined
   let motion =
     previous !== undefined && (previous.mood === mood || holds(pack, previous, mood, tick))
       ? previous
