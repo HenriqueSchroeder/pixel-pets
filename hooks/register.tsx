@@ -13,7 +13,7 @@ import { activityIn, step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
-import { encode, mirror, sizeOf } from './render'
+import { encode, facingFrame, sizeOf } from './render'
 import { isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
@@ -283,6 +283,10 @@ export const register: Register = (on, options) => {
   let timer: Timer | undefined
   let restartClock = () => {}
   const language = typeof options.language === 'string' ? options.language : 'auto'
+  // false: the band is the stage alone, without Claude's line above it.
+  const showsLine = options.labelLine !== false
+  // false: each agent is its mini pet alone, without its name and words under it.
+  const showsAgentLabels = options.agentLabels !== false
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
   // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
@@ -368,7 +372,7 @@ export const register: Register = (on, options) => {
       }
       const moved = step(pack, motion, scene.mood, frame, Math.random)
       motion = moved.motion
-      const cells = encode(scene.facing === 1 ? moved.frame : mirror(moved.frame), pack.colors)
+      const cells = encode(facingFrame(moved.frame, scene.facing, pack.mirrors), pack.colors)
       if (cells === scene.cells) return
       still = { ...scene, cells }
       // Refused when the band is no longer drawn as it was: redraw it in full.
@@ -688,8 +692,8 @@ export const register: Register = (on, options) => {
     }
 
     const miniSize = sizeOf(pack.mini?.working[0] ?? [])
-    const slot = Math.max(miniSize.columns, AGENT_SLOT)
-    const petColumns = pack.moods.sleeping[0]?.[0]?.length ?? 0
+    const slot = showsAgentLabels ? Math.max(miniSize.columns, AGENT_SLOT) : miniSize.columns
+    const petColumns = sizeOf(pack.moods.sleeping[0] ?? []).columns
     // As many agents as fit beside the pet; the rest are a "+N" that needs room too.
     // A pack with no mini pets shows its agents only by its own mood.
     const room = e.props.bodyColumns - petColumns - 2
@@ -704,7 +708,7 @@ export const register: Register = (on, options) => {
     // Every frame is one size, so the sleeping one tells whether the stage fits, tall and wide.
     // A line of text has no stage, and must not move the pet on the one that has.
     const mainSize = sizeOf(pack.moods.sleeping[0] ?? [])
-    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + 1 || e.props.bodyColumns < mainSize.columns) {
+    if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + (showsLine ? 1 : 0) || e.props.bodyColumns < mainSize.columns) {
       const { Text } = $.ui.resolve(e)
       const others = list.map(one => ` · ${one.type}: ${agentWords(one)}`).join('')
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>
@@ -744,7 +748,8 @@ export const register: Register = (on, options) => {
     const labelShown = isStrolling ? label('strolling') : shown.label
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
-    const isQuoting = saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
+    // With no line there is nowhere to say it.
+    const isQuoting = showsLine && saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
 
     const moved = step(pack, motion, mood, frame, Math.random)
     motion = moved.motion
@@ -760,7 +765,7 @@ export const register: Register = (on, options) => {
     heldFacing = held.held
     const facing = held.side
     const shape = blinkFrame ?? moved.frame
-    const body = facing === 1 ? shape : mirror(shape)
+    const body = facingFrame(shape, facing, pack.mirrors)
     const cells = encode(body, pack.colors)
     // Nothing but the pet's own frame will move until something is written or
     // time passes: no turn, agents, stroll or blink, reaction or line it says.
@@ -795,8 +800,8 @@ export const register: Register = (on, options) => {
           marginRight={side === 1 ? 0 : 1}
         >
           <Raster key={`mini-${one.id}`} {...miniSize} cells={encode(mini, { ...pack.colors, [pack.tint]: one.color })} />
-          <Text bold>{short(one.type, slot)}</Text>
-          <Text dimColor>{short(agentWords(one), slot)}</Text>
+          {showsAgentLabels && <Text bold>{short(one.type, slot)}</Text>}
+          {showsAgentLabels && <Text dimColor>{short(agentWords(one), slot)}</Text>}
         </Box>
       )
     }
@@ -804,9 +809,11 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column">
-        <Text>
-          <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
-        </Text>
+        {showsLine && (
+          <Text>
+            <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
+          </Text>
+        )}
         <Box flexDirection="row" marginLeft={standX - leftColumns}>
           {showsMore && drawn.more === -1 && (
             <Box width={OVERFLOW_COLUMNS}>

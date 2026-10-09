@@ -2,11 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/HenriqueSchroeder/pixel-pets/main/schema/pet.schema.json",
   "title": "pixel-pets pet pack",
-  "description": "A pet for the pixel-pets Claude Code plugin. Sprites are rows of palette letters; '.' is see-through. The plugin checks the same rules at load time (hooks/pack.ts).",
+  "description": "A pet for the pixel-pets Claude Code plugin. A pixel pack's sprites are rows of palette letters, '.' see-through; an ascii pack's are rows of text, a space see-through. The plugin checks the same rules at load time (hooks/pack.ts).",
   "type": "object",
   "required": [
     "name",
-    "palette",
     "main",
     "mini"
   ],
@@ -25,8 +24,26 @@
     "description": {
       "type": "string"
     },
+    "style": {
+      "description": "pixel (the default): frames of palette letters, two pixel rows to a terminal cell. ascii: frames of text, one character to a cell.",
+      "enum": [
+        "pixel",
+        "ascii"
+      ],
+      "default": "pixel"
+    },
+    "ink": {
+      "description": "An ascii pack's color for every cell its masks leave '.' or that has no mask. Required for ascii, not allowed for pixel.",
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "mirror": {
+      "description": "false: the pet never flips and faces you whichever way it goes, for art that looks wrong mirrored. An ascii pack's mirror swaps glyphs that point one way, such as ( and ), / and \\.",
+      "type": "boolean",
+      "default": true
+    },
     "palette": {
-      "description": "One-character letters to #rrggbb colors. '.' is reserved for see-through.",
+      "description": "One-character letters to #rrggbb colors. '.' is reserved: see-through for pixel, the ink for ascii. Required for pixel.",
       "type": "object",
       "maxProperties": 16,
       "propertyNames": {
@@ -55,7 +72,7 @@
       ],
       "properties": {
         "moods": {
-          "description": "Frames per mood. Only sleeping is required; a missing mood borrows its nearest drawn parent's frames (see README). Every frame of the main pet has the same size, at most 48x32.",
+          "description": "Frames per mood. Only sleeping is required; a missing mood borrows its nearest drawn parent's frames (see README). Every frame of the main pet has the same size, at most 48x32 pixels, or 48x16 characters for ascii.",
           "type": "object",
           "required": [
             "sleeping"
@@ -458,7 +475,7 @@
       }
     },
     "mini": {
-      "description": "The small pet drawn for each subagent, at most 12x12; false for none, and the agents show only as the main pet's supervising.",
+      "description": "The small pet drawn for each subagent, at most 12x12 pixels, or 12x6 characters for ascii; false for none, and the agents show only as the main pet's supervising.",
       "oneOf": [
         {
           "const": false
@@ -470,11 +487,10 @@
           ],
           "properties": {
             "tint": {
-              "description": "The palette letter recolored per subagent.",
+              "description": "The palette letter recolored per subagent; for ascii, '.' (the default there) recolors the ink.",
               "type": "string",
               "minLength": 1,
-              "maxLength": 1,
-              "default": "b"
+              "maxLength": 1
             },
             "moods": {
               "description": "Only working is required; happy and sad (shown for a moment when the agent ends) and startled (while an action of the main pet that `startles` them plays) fall back to it.",
@@ -639,25 +655,122 @@
       "minItems": 1,
       "maxItems": 16,
       "items": {
-        "type": "array",
-        "minItems": 1,
-        "maxItems": 32,
-        "items": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 48
-        }
+        "oneOf": [
+          {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 48
+            }
+          },
+          {
+            "description": "An ascii frame with colors: `color` has the same rows and widths as `art`, each character a palette letter or '.' for the ink.",
+            "type": "object",
+            "required": [
+              "art"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "art": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 48
+                }
+              },
+              "color": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 48
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "miniFrame": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 12,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 12
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12
+          }
+        },
+        {
+          "description": "An ascii frame with colors: `color` has the same rows and widths as `art`, each character a palette letter or '.' for the ink.",
+          "type": "object",
+          "required": [
+            "art"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "art": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 6,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 12
+              }
+            },
+            "color": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 6,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 12
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "style": {
+            "const": "ascii"
+          }
+        },
+        "required": [
+          "style"
+        ]
+      },
+      "then": {
+        "required": [
+          "ink"
+        ]
+      },
+      "else": {
+        "required": [
+          "palette"
+        ],
+        "not": {
+          "required": [
+            "ink"
+          ]
+        }
       }
     }
-  }
+  ]
 }

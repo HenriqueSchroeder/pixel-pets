@@ -703,6 +703,13 @@ test('how long it stays awake comes from the config', { options: { awakeMinutes:
   expect(await ui.find({ text: '· sleeping' })).toBeDefined()
 })
 
+test("with labelLine off the band is the stage alone, without Claude's line", { options: { labelLine: false } }, async ($, on) => {
+  setup(on)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect(await ui.find({ text: /^· / })).toBeUndefined()
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
+})
+
 test("agents' pets stand to the right with their labels in full", async ($, on) => {
   setup(on)
   on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
@@ -712,6 +719,18 @@ test("agents' pets stand to the right with their labels in full", async ($, on) 
 
   const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
   expect(await ui.find({ text: 'searching (Grep)' })).toBeDefined()
+})
+
+test('with agentLabels off an agent is its mini pet alone', { options: { agentLabels: false } }, async ($, on) => {
+  setup(on)
+  on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.agent.spawn(spawn)
+  await $.tool.call({ tool: 'Grep', pattern: 'pet', agentId: 'a1' } as never)
+
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(2)
+  expect(await ui.find({ text: 'searching (Grep)' })).toBeUndefined()
 })
 
 test('a pack with no mini pets shows none for its agents, and no "+N"', async ($, on) => {

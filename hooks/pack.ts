@@ -1,6 +1,6 @@
 import type { Frame, MiniMood, Mood, PackFile, Situation, Traits } from '../types'
 import { USUAL } from './drives'
-import { hexColor } from './render'
+import { hexColor, rowsOf, widthOf } from './render'
 import { SITUATIONS } from './speech'
 import type { Colors } from './render'
 
@@ -72,6 +72,8 @@ export type Pack = {
   // null when the pack draws no mini pets: its agents show only as its own `supervising`.
   mini: Record<MiniMood, Frame[]> | null
   tint: string
+  // false: the pet never flips, facing you whichever way it goes.
+  mirrors: boolean
   // Only a pack that draws `walking` leaves its spot by walking; one that draws
   // `teleport` and no `walking` gets about by vanishing and appearing.
   walks: boolean
@@ -83,26 +85,62 @@ export type Pack = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const checkFrames = (frames: unknown, where: string, limit: { columns: number; pixelRows: number }): Frame[] => {
-  if (!Array.isArray(frames) || frames.length === 0) throw new Error(`${where}: needs at least one frame`)
-  if (frames.length > LIMITS.framesPerMood) throw new Error(`${where}: at most ${LIMITS.framesPerMood} frames`)
-  return frames.map((frame, i) => {
-    if (!Array.isArray(frame) || frame.length === 0 || !frame.every(row => typeof row === 'string')) {
-      throw new Error(`${where}[${i}]: a frame is a list of strings`)
-    }
-    const rows = frame as string[]
-    const width = rows[0]?.length ?? 0
-    if (width === 0 || rows.some(row => row.length !== width)) throw new Error(`${where}[${i}]: every row needs the same length`)
-    if (width > limit.columns || rows.length > limit.pixelRows) {
-      throw new Error(`${where}[${i}]: at most ${limit.columns}x${limit.pixelRows} pixels`)
-    }
-    return rows
-  })
+type Limit = { columns: number; pixelRows: number }
+type CheckFrames = (frames: unknown, where: string, limit: Limit) => Frame[]
+
+const isRows = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.every(row => typeof row === 'string')
+
+// What a terminal does not draw one cell wide: wide (CJK, Hangul, fullwidth, emoji),
+// zero-width and control characters.
+const NOT_ONE_CELL =
+  /[\p{Cc}\p{Cf}\p{M}\p{Emoji_Presentation}\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6\u{20000}-\u{3fffd}]/u
+
+// An ascii frame is its art, or its art and a mask of palette letters ('.' the ink).
+const toGlyphs = (frame: unknown, where: string, colors: Colors): Frame => {
+  const given = Array.isArray(frame) ? { art: frame } : isRecord(frame) ? frame : {}
+  if (!isRows(given.art)) throw new Error(`${where}: a frame is a list of strings, or { art, color }`)
+  const art = given.art
+  const wide = NOT_ONE_CELL.exec(art.join(''))
+  if (wide !== null) throw new Error(`${where}: ${JSON.stringify(wide[0])} does not draw one cell wide`)
+  const { color } = given
+  if (color === undefined) return { art, color: art.map(row => '.'.repeat(widthOf(row))) }
+  if (!isRows(color) || color.length !== art.length || color.some((row, r) => widthOf(row) !== widthOf(art[r]))) {
+    throw new Error(`${where}.color: same rows and widths as art`)
+  }
+  const stray = [...color.join('')].find(letter => colors[letter] === undefined)
+  if (stray !== undefined) throw new Error(`${where}.color: "${stray}" is not in the palette, use "." for ink`)
+  return { art, color }
 }
+
+const framesChecker =
+  (ascii: boolean, colors: Colors): CheckFrames =>
+  (frames, where, limit) => {
+    if (!Array.isArray(frames) || frames.length === 0) throw new Error(`${where}: needs at least one frame`)
+    if (frames.length > LIMITS.framesPerMood) throw new Error(`${where}: at most ${LIMITS.framesPerMood} frames`)
+    return frames.map((raw, i) => {
+      const at = `${where}[${i}]`
+      if (!ascii && !isRows(raw)) throw new Error(`${at}: a frame is a list of strings`)
+      const frame = ascii ? toGlyphs(raw, at, colors) : (raw as string[])
+      const rows = rowsOf(frame)
+      const width = widthOf(rows[0])
+      if (width === 0 || rows.some(row => widthOf(row) !== width)) throw new Error(`${at}: every row needs the same length`)
+      // An ascii row is a whole cell, two pixel rows: the same room on the terminal.
+      const height = ascii ? limit.pixelRows / 2 : limit.pixelRows
+      if (width > limit.columns || rows.length > height) {
+        throw new Error(`${at}: at most ${limit.columns}x${height} ${ascii ? 'cells' : 'pixels'}`)
+      }
+      return frame
+    })
+  }
 
 const sameSize = (frames: Frame[], where: string) => {
   const [first] = frames
-  if (frames.some(f => f.length !== first?.length || f[0]?.length !== first?.[0]?.length)) {
+  const size = (frame: Frame | undefined) => {
+    const rows = frame === undefined ? [] : rowsOf(frame)
+    return `${widthOf(rows[0])}x${rows.length}`
+  }
+  if (frames.some(f => size(f) !== size(first))) {
     throw new Error(`${where}: every frame needs the same size`)
   }
 }
@@ -110,7 +148,7 @@ const sameSize = (frames: Frame[], where: string) => {
 const isMood = (value: unknown): value is Mood => typeof value === 'string' && MOODS.includes(value as Mood)
 
 // Variants hang off a mood the pack draws: one on a borrowed mood would never show.
-const parseVariants = (raw: unknown, drawn: Map<Mood, Frame[]>) => {
+const parseVariants = (checkFrames: CheckFrames, raw: unknown, drawn: Map<Mood, Frame[]>) => {
   const out = new Map<Mood, Frame[][]>()
   if (raw === undefined) return out
   if (!isRecord(raw)) throw new Error('main.variants: an object of mood to loops')
@@ -127,7 +165,7 @@ const parseVariants = (raw: unknown, drawn: Map<Mood, Frame[]>) => {
 
 const TRANSITION = /^(\*|[a-zA-Z]+)>(\*|[a-zA-Z]+)$/
 
-const parseTransitions = (raw: unknown) => {
+const parseTransitions = (checkFrames: CheckFrames, raw: unknown) => {
   const out: Record<string, Frame[]> = {}
   if (raw === undefined) return out
   if (!isRecord(raw)) throw new Error('main.transitions: an object of "from>to" to frames')
@@ -169,7 +207,7 @@ const checkRange = (range: unknown, where: string, { min, max }: { min: number; 
   return [range[0], range[1]]
 }
 
-const parseActions = (raw: unknown): Action[] => {
+const parseActions = (checkFrames: CheckFrames, raw: unknown): Action[] => {
   if (raw === undefined) return []
   if (!isRecord(raw)) throw new Error('main.actions: an object of name to action')
   const entries = Object.entries(raw)
@@ -190,7 +228,7 @@ const parseActions = (raw: unknown): Action[] => {
   })
 }
 
-const parseActivities = (raw: unknown, taken: ReadonlySet<string>): Action[] => {
+const parseActivities = (checkFrames: CheckFrames, raw: unknown, taken: ReadonlySet<string>): Action[] => {
   if (raw === undefined) return []
   if (!isRecord(raw)) throw new Error('main.activities: an object of name to activity')
   const entries = Object.entries(raw)
@@ -226,7 +264,7 @@ const parseActivities = (raw: unknown, taken: ReadonlySet<string>): Action[] => 
   })
 }
 
-const parseTeleport = (raw: unknown) => {
+const parseTeleport = (checkFrames: CheckFrames, raw: unknown) => {
   if (raw === undefined) return null
   if (!isRecord(raw)) throw new Error('main.teleport: an object with vanish and appear frames')
   return {
@@ -278,8 +316,12 @@ export const parsePack = (raw: unknown): Pack => {
 
   if (typeof file.name !== 'string' || file.name === '') throw new Error('name: required')
 
-  if (!isRecord(file.palette)) throw new Error('palette: required')
-  const entries = Object.entries(file.palette)
+  const style = file.style ?? 'pixel'
+  if (style !== 'pixel' && style !== 'ascii') throw new Error('style: "pixel" or "ascii"')
+  const ascii = style === 'ascii'
+
+  if (!isRecord(file.palette) && !(ascii && file.palette === undefined)) throw new Error('palette: required')
+  const entries = Object.entries(file.palette ?? {})
   if (entries.length > LIMITS.paletteSize) throw new Error(`palette: at most ${LIMITS.paletteSize} colors`)
   const colors: Colors = {}
   for (const [letter, hex] of entries) {
@@ -287,6 +329,16 @@ export const parsePack = (raw: unknown): Pack => {
     if (typeof hex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(hex)) throw new Error(`palette.${letter}: use #rrggbb`)
     colors[letter] = hexColor(hex)
   }
+  // The ink takes '.', which a pixel pack keeps see-through.
+  if (ascii) {
+    if (typeof file.ink !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(file.ink)) throw new Error('ink: required for an ascii pack, use #rrggbb')
+    colors['.'] = hexColor(file.ink)
+  } else if (file.ink !== undefined) {
+    throw new Error('ink: only for an ascii pack')
+  }
+  const mirrors = file.mirror ?? true
+  if (typeof mirrors !== 'boolean') throw new Error('mirror: true or false')
+  const checkFrames = framesChecker(ascii, colors)
 
   const fps = file.fps ?? 4
   if (typeof fps !== 'number' || fps < LIMITS.fps.min || fps > LIMITS.fps.max) {
@@ -303,7 +355,7 @@ export const parsePack = (raw: unknown): Pack => {
   for (const mood of MOODS) {
     if (given[mood] !== undefined) drawn.set(mood, checkFrames(given[mood], `main.moods.${mood}`, LIMITS.main))
   }
-  const extra = parseVariants(file.main.variants, drawn)
+  const extra = parseVariants(checkFrames, file.main.variants, drawn)
   const moods = {} as Record<Mood, Frame[]>
   const variants = {} as Record<Mood, Frame[][]>
   for (const mood of MOODS) {
@@ -312,10 +364,10 @@ export const parsePack = (raw: unknown): Pack => {
     moods[mood] = drawn.get(source ?? 'sleeping') ?? []
     variants[mood] = extra.get(source ?? 'sleeping') ?? []
   }
-  const transitions = parseTransitions(file.main.transitions)
-  const own = parseActions(file.main.actions)
-  const actions = [...own, ...parseActivities(file.main.activities, new Set(own.map(one => one.name)))]
-  const teleport = parseTeleport(file.main.teleport)
+  const transitions = parseTransitions(checkFrames, file.main.transitions)
+  const own = parseActions(checkFrames, file.main.actions)
+  const actions = [...own, ...parseActivities(checkFrames, file.main.activities, new Set(own.map(one => one.name)))]
+  const teleport = parseTeleport(checkFrames, file.main.teleport)
   sameSize(
     [
       ...drawn.values(),
@@ -327,7 +379,7 @@ export const parsePack = (raw: unknown): Pack => {
     'main',
   )
 
-  const { mini, tint } = file.mini === false ? { mini: null, tint: 'b' } : parseMini(file.mini, colors)
+  const { mini, tint } = file.mini === false ? { mini: null, tint: 'b' } : parseMini(checkFrames, file.mini, colors, ascii)
 
   const speech = parseSpeech(file.speech)
   const personality = parsePersonality(file.personality)
@@ -342,6 +394,7 @@ export const parsePack = (raw: unknown): Pack => {
     actions,
     mini,
     tint,
+    mirrors,
     walks: drawn.has('walking'),
     teleport,
     speech,
@@ -349,7 +402,7 @@ export const parsePack = (raw: unknown): Pack => {
   }
 }
 
-const parseMini = (raw: unknown, colors: Colors) => {
+const parseMini = (checkFrames: CheckFrames, raw: unknown, colors: Colors, ascii: boolean) => {
   if (!isRecord(raw) || !isRecord(raw.moods)) throw new Error('mini.moods: required, or mini: false for no mini pets')
   const miniGiven = raw.moods as Record<string, unknown>
   if (miniGiven.working === undefined) throw new Error('mini.moods.working: required, happy, sad and startled fall back to it')
@@ -361,8 +414,9 @@ const parseMini = (raw: unknown, colors: Colors) => {
     mini[mood] = miniGiven[mood] === undefined ? working : checkFrames(miniGiven[mood], `mini.moods.${mood}`, LIMITS.mini)
   }
   sameSize(MINI_MOODS.flatMap(mood => mini[mood]), 'mini')
-  const tint = raw.tint ?? 'b'
-  if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error('mini.tint: must be a palette letter')
+  // An ascii mini pet drawn all in ink is tinted whole.
+  const tint = raw.tint ?? (ascii ? '.' : 'b')
+  if (typeof tint !== 'string' || colors[tint] === undefined) throw new Error(`mini.tint: must be a palette letter${ascii ? ', or "." for the ink' : ''}`)
   return { mini, tint }
 }
 

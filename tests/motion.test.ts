@@ -4,6 +4,7 @@ import { activityIn, step } from '../hooks/motion'
 import type { Motion, Random } from '../hooks/motion'
 import { parsePack } from '../hooks/pack'
 import type { Pack } from '../hooks/pack'
+import { rowsOf } from '../hooks/render'
 import type { Mood } from '../types'
 
 // One-row frames named by their only row, so a frame reads as a word.
@@ -52,7 +53,7 @@ const play = (mood: Mood, from: number, to: number, random: Random, motion?: Mot
   for (let tick = from; tick <= to; tick++) {
     const moved = step(on, current, mood, tick, random)
     current = moved.motion
-    seen.push(moved.frame[0] ?? '')
+    seen.push(rowsOf(moved.frame)[0] ?? '')
   }
   return { seen, motion: current }
 }
@@ -121,7 +122,7 @@ describe('step', () => {
     for (let tick = 0; tick <= 6; tick++) {
       const moved = step(pack, motion, 'supervising', tick, always(0))
       motion = moved.motion
-      seen.push(`${moved.frame[0]}${moved.startled ?? ''}`)
+      seen.push(`${rowsOf(moved.frame)[0]}${moved.startled ?? ''}`)
     }
     expect(seen).toEqual(['hmm', 'hmm', 'up1', 'up2', 'crk0', 'rec1', 'hmm'])
   })

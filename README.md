@@ -16,6 +16,8 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 ![pixel-pets: the capybara in the same scene, chewing grass as a bird lands on its head](screenshots/capybara.gif)
 
+![pixel-pets: the kaomoji in the same scene, a little face of text that hums as it strolls](screenshots/kaomoji.gif)
+
 ## What it shows
 
 | Mood | When | Borrows from |
@@ -46,7 +48,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 A pack only has to draw `sleeping`. Any mood it leaves out borrows the frames of its nearest drawn parent, so `running` falls back to `typing`, then `thinking`, then `sleeping`.
 
-The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. When they do not fit where it stands, it walks aside to make room and they join as it gets there. Only a pack that draws `walking` walks. One that draws `main.teleport` instead gets about by vanishing and turning up elsewhere, as the slime and the ghost do; a pack with neither stays put at the left. Packs draw their pet facing right; pixel-pets mirrors it to face left.
+The pet walks a stage under Claude's line: it strolls while idle, and when subagents start it stays put and they gather around it, each on the side with more free room: on both sides when it stands in the middle, on one when it is in a corner. Each keeps its side until it leaves. When they do not fit where it stands, it walks aside to make room and they join as it gets there. Only a pack that draws `walking` walks. One that draws `main.teleport` instead gets about by vanishing and turning up elsewhere, as the slime and the ghost do; a pack with neither stays put at the left. Packs draw their pet facing right; pixel-pets mirrors it to face left, unless the pack says `"mirror": false`, as the kaomoji does: then it faces you whichever way it goes.
 
 It keeps track of how the session goes. A failed tool or turn worries it and a turn that goes well makes it proud; a failed turn ends a streak of pride. Both fade a point every five minutes, and when it is idle the strongest feeling shows: grumpy, then worried, then tired, then proud, then sleepy at night. Worry and pride last for the session only; tiredness counts your work in every session, as a break is an hour with no prompt in any of them.
 
@@ -91,6 +93,8 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 | `customPet` | | Your own pack when `pet` is `custom`: a file in `~/.claude/pets/`, without `.json` |
 | `language` | `auto` | `auto` follows Claude Code's `language` setting, then `$LANG`. Or pick `en`, `pt-BR` |
 | `awakeMinutes` | `1` | How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep (half as long at night). `0` sends it straight to sleep |
+| `labelLine` | `true` | Shows Claude's line above the pet: what it is doing, how long the turn has run and what the pet says. `false` leaves the pet and its agents alone, one row shorter |
+| `agentLabels` | `true` | Shows each subagent's type and what it is doing under its mini pet. `false` leaves the mini pets alone, standing closer, told apart only by their color |
 
 ## Use another pet
 
@@ -140,6 +144,33 @@ A pack is a palette and some frames. Each frame is rows of palette letters, and 
 - `mini.tint` (default `b`) is the letter recolored for each subagent.
 - `"mini": false` draws no mini pets: while agents work, the pet shows them only by its own `supervising`. Handy for a wide pet that leaves little room beside it.
 - See every mood of a pack, and what it borrows, in your terminal: `npx tsx scripts/preview-pet.ts <name or path>`.
+- `"mirror": false` keeps the pet from flipping when it heads left, for art that looks wrong mirrored, such as letters or a logo.
+
+### Draw it in text
+
+Say `"style": "ascii"` and a frame is rows of text instead: each character takes one terminal cell, and a space is see-through. `ink` is the color of the text:
+
+```json
+{
+  "name": "face",
+  "style": "ascii",
+  "ink": "#f0ece2",
+  "palette": { "y": "#ffd23f" },
+  "main": {
+    "moods": {
+      "sleeping": [["      z", "  (-ᴗ-)"], ["     zZ", "  (-ᴗ-)"]],
+      "proud": [{ "art": ["      ✧", "  (≖ᴗ≖)"], "color": ["......y", "......."] }]
+    }
+  },
+  "mini": { "moods": { "working": [["(•_•)"]] } }
+}
+```
+
+- To color some characters, give the frame as `{ "art": [...], "color": [...] }`: `color` has the same rows and widths as `art`, each character a palette letter, or `.` for the ink. The palette is optional when everything is in ink.
+- A text row is a whole terminal row, so the pet goes up to 48 columns by 16 rows, and the mini pet up to 12 by 6.
+- Use characters that take one cell: no emoji, CJK or fullwidth letters, which the pack refuses. Some symbols, such as `•` and `°`, take two cells in East Asian terminals.
+- `mini.tint` defaults to `.`, the ink, so a mini pet drawn all in ink takes its agent's color whole.
+- When it mirrors, pixel-pets swaps the characters that point one way, `(` for `)`, `/` for `\`, `<` for `>` and the like. A face that still looks wrong flipped wants `"mirror": false`.
 
 ### Make it feel alive
 

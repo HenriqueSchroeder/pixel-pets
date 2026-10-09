@@ -30,8 +30,16 @@ export type MiniMood = 'working' | 'happy' | 'sad' | 'startled'
 // When the pet says something of its own, now and then.
 export type Situation = 'longThink' | 'manyReads' | 'manyAgents' | 'lateNight' | 'bored' | 'dreaming'
 
-// A sprite frame: rows of palette letters, '.' see-through.
-export type Frame = string[]
+// A sprite frame: rows of palette letters, '.' see-through, or text for an ascii pack.
+export type Frame = string[] | Glyphs
+
+// An ascii frame: `art` drawn as it is, a space see-through; `color` the same size,
+// each cell a palette letter or '.' for the pack's ink.
+export type Glyphs = { art: string[]; color: string[] }
+
+// How a pack file draws a frame: a pixel pack's rows of palette letters; an ascii
+// pack's rows of art, or the art with its color mask.
+export type FrameFile = string[] | { art: string[]; color?: string[] }
 
 // How a pet is made, each in [0, 1] with 0.5 the usual: how slowly it tires, how
 // soon it gets bored, how much it misses the person.
@@ -42,26 +50,33 @@ export type PackFile = {
   name: string
   author?: string
   description?: string
-  palette: Record<string, string>
+  // pixel (the default): frames of palette letters; ascii: frames of text.
+  style?: 'pixel' | 'ascii'
+  // An ascii pack's color for whatever its masks leave out.
+  ink?: string
+  // false: it never flips, facing you whichever way it goes.
+  mirror?: boolean
+  // Required for a pixel pack.
+  palette?: Record<string, string>
   fps?: number
   main: {
-    moods: Partial<Record<Mood, Frame[]>>
+    moods: Partial<Record<Mood, FrameFile[]>>
     // Extra loops for a mood; one is picked at random each time the mood starts.
-    variants?: Partial<Record<Mood, Frame[][]>>
+    variants?: Partial<Record<Mood, FrameFile[][]>>
     // Played once on a mood change, keyed "from>to"; either side may be "*".
-    transitions?: Record<string, Frame[]>
+    transitions?: Record<string, FrameFile[]>
     // Played once at random while in one of `moods`, every `every` seconds [min, max].
     // From its frame `startles` on, the agents' mini pets play `startled` from its first frame.
-    actions?: Record<string, { frames: Frame[]; moods: Mood[]; every: [number, number]; startles?: number }>
+    actions?: Record<string, { frames: FrameFile[]; moods: Mood[]; every: [number, number]; startles?: number }>
     // Longer scenes played now and then while in one of `moods`, every `every` seconds:
     // `start` once, `loop` for `seconds` [min, max], `end` once. `label` is what Claude's
     // line says meanwhile, by language code.
     activities?: Record<
       string,
       {
-        start?: Frame[]
-        loop: Frame[]
-        end?: Frame[]
+        start?: FrameFile[]
+        loop: FrameFile[]
+        end?: FrameFile[]
         seconds: [number, number]
         moods: Mood[]
         every: [number, number]
@@ -70,10 +85,10 @@ export type PackFile = {
     >
     // A pet that does not walk can teleport instead: `vanish` plays where it was,
     // `appear` where it lands.
-    teleport?: { vanish: Frame[]; appear: Frame[] }
+    teleport?: { vanish: FrameFile[]; appear: FrameFile[] }
   }
   // false: no mini pets, the agents show only as the pet's own `supervising`
-  mini: false | { tint?: string; moods: Partial<Record<MiniMood, Frame[]>> }
+  mini: false | { tint?: string; moods: Partial<Record<MiniMood, FrameFile[]>> }
   // How it is made; a trait left out is the usual 0.5.
   personality?: Partial<Traits>
   // The pet's own lines, by language code ("en", "pt-BR"); a language or situation
