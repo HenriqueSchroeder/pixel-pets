@@ -58,7 +58,7 @@ const play = () => {
     const finishing = agents.slice(0, drawnCount).findLastIndex(id => leaving.includes(id))
     const facesNow = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
     const once = moved.motion.once
-    const held = holdFacing(heldFacing, once?.isAction ? once : undefined, facesNow)
+    const held = holdFacing(heldFacing, once?.isAction ? once : undefined, facesNow, isOnTheMove)
     heldFacing = held.held
     const facing = held.side
     const shape = blinkFrame ?? moved.frame

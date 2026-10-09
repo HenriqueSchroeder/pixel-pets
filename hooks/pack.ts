@@ -303,7 +303,7 @@ export const parsePack = (raw: unknown): Pack => {
 const parseMini = (raw: unknown, colors: Colors) => {
   if (!isRecord(raw) || !isRecord(raw.moods)) throw new Error('mini.moods: required, or mini: false for no mini pets')
   const miniGiven = raw.moods as Record<string, unknown>
-  if (miniGiven.working === undefined) throw new Error('mini.moods.working: required, happy and sad fall back to it')
+  if (miniGiven.working === undefined) throw new Error('mini.moods.working: required, happy, sad and startled fall back to it')
   const miniUnknown = Object.keys(miniGiven).filter(key => !MINI_MOODS.includes(key as MiniMood))
   if (miniUnknown.length > 0) throw new Error(`mini.moods: unknown mood ${miniUnknown.join(', ')}`)
   const working = checkFrames(miniGiven.working, 'mini.moods.working', LIMITS.mini)
