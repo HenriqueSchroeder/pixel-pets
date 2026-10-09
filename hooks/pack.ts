@@ -228,6 +228,10 @@ const parseActions = (checkFrames: CheckFrames, raw: unknown): Action[] => {
   })
 }
 
+// Where an activity can play: idle, or what stands in for it. Walking would cut it at
+// once, a work mood would hide its words, and sleep would fight it.
+const PASTIMES: ReadonlySet<Mood> = new Set(['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy'])
+
 const parseActivities = (checkFrames: CheckFrames, raw: unknown, taken: ReadonlySet<string>): Action[] => {
   if (raw === undefined) return []
   if (!isRecord(raw)) throw new Error('main.activities: an object of name to activity')
@@ -249,10 +253,13 @@ const parseActivities = (checkFrames: CheckFrames, raw: unknown, taken: Readonly
         label[code] = words
       }
     }
+    const moods = checkMoods(activity.moods, where)
+    const restless = moods.find(mood => !PASTIMES.has(mood))
+    if (restless !== undefined) throw new Error(`${where}.moods: "${restless}" is not a mood it idles in (${new Intl.ListFormat('en', { type: 'disjunction' }).format([...PASTIMES])})`)
     return {
       name,
       frames: optional(activity.start, 'start'),
-      moods: checkMoods(activity.moods, where),
+      moods,
       every: checkRange(activity.every, `${where}.every`, LIMITS.everySeconds),
       activity: {
         loop: checkFrames(activity.loop, `${where}.loop`, LIMITS.main),

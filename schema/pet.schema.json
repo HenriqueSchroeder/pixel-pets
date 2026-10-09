@@ -442,7 +442,12 @@
                 "maxItems": 2,
                 "items": { "type": "number", "minimum": 5, "maximum": 300 }
               },
-              "moods": { "$ref": "#/properties/main/properties/actions/additionalProperties/properties/moods" },
+              "moods": {
+                "description": "Where it plays: idle, or a mood that stands in for idle.",
+                "type": "array",
+                "minItems": 1,
+                "items": { "enum": ["idle", "proud", "sleepy", "tired", "worried", "grumpy"] }
+              },
               "every": { "$ref": "#/properties/main/properties/actions/additionalProperties/properties/every" },
               "label": {
                 "type": "object",

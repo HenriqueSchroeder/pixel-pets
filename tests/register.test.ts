@@ -483,6 +483,39 @@ test('an activity holds off its nap until it is done', async ($, on) => {
   expect(await label()).toBe('· sleeping')
 })
 
+test('an activity waits for a teleport to land, as for a stroll to stop', async ($, on) => {
+  // Four seconds to vanish and appear, and yarn due a second after the last: it falls due mid-teleport.
+  const blink = Array.from({ length: 8 }, () => ['tt', 'tt'])
+  const playful = {
+    ...JSON.parse(pack('cat')),
+    main: {
+      moods: { sleeping: [['oo', 'bb']], typing: [['bb', 'oo']] },
+      teleport: { vanish: blink, appear: blink },
+      activities: { yarn: { loop: [['bo', 'ob']], seconds: [5, 5], moods: ['idle'], every: [1, 1], label: { en: 'playing with yarn' } } },
+    },
+  }
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(playful) })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.turn.complete(finished)
+  const seen = { 'playing with yarn': new Set<string>(), 'strolling around': new Set<string>() }
+  // A second apart catches every teleport, four seconds long.
+  for (let second = 0; second < 60; second++) {
+    await clock.advance(1000)
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    const said = (await ui.find({ text: /^· / }))?.text?.slice(2)
+    if (said === 'playing with yarn' || said === 'strolling around') {
+      seen[said].add(JSON.stringify((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells))
+    }
+  }
+  expect(seen['playing with yarn'].size).toBeGreaterThan(0)
+  expect(seen['strolling around'].size).toBeGreaterThan(0)
+  // What it draws at yarn is never a teleport frame.
+  expect([...seen['playing with yarn']].filter(cells => seen['strolling around'].has(cells))).toEqual([])
+})
+
 test('after hours of work it runs low on energy and dozes off sooner', async ($, on) => {
   const { clock } = setup(on)
   on('turn.start', (_$, e) => ({ turnId: e.turnId }))
@@ -770,8 +803,9 @@ const idleLabels = async ($: Parameters<TestBody>[0], on: On, petFile: string) =
   await $.turn.complete(finished)
   await clock.advance(3000)
   const seen = new Set<string | undefined>()
-  for (let second = 0; second < 30; second++) {
-    await clock.advance(1000)
+  // Every other frame: a teleport of two frames is over in half a second, between two seconds.
+  for (let half = 0; half < 60; half++) {
+    await clock.advance(500)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
     seen.add((await ui.find({ text: /^· / }))?.text)
   }
@@ -802,9 +836,9 @@ test('a teleport draws its vanish and appear frames', async ($, on) => {
   await $.turn.complete(finished)
   await clock.advance(3000)
   const drawings = new Set<unknown>()
-  // A second apart is enough: the draw it lands on shows the first vanish frame.
-  for (let second = 0; second < 30; second++) {
-    await clock.advance(1000)
+  // Every other frame: a teleport of two frames is over in half a second, between two seconds.
+  for (let half = 0; half < 60; half++) {
+    await clock.advance(500)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
     drawings.add((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells)
   }

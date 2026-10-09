@@ -129,6 +129,15 @@ describe('parsePack', () => {
     expect(() => parsePack(withActivities({ play: { ...ok, seconds: [20, 10] } }))).toThrow(/activities.play.seconds/)
     expect(() => parsePack(withActivities({ play: { ...ok, every: [0, 10] } }))).toThrow(/activities.play.every/)
     expect(() => parsePack(withActivities({ play: { ...ok, moods: ['dancing'] } }))).toThrow(/activities.play.moods/)
+    // Only where it idles: walking would cut it at once, work would hide its words, sleep would fight it.
+    for (const mood of ['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy']) {
+      expect(() => parsePack(withActivities({ play: { ...ok, moods: [mood] } }))).not.toThrow()
+    }
+    for (const mood of ['walking', 'reading', 'supervising', 'sleeping', 'deepSleep', 'happy']) {
+      expect(() => parsePack(withActivities({ play: { ...ok, moods: ['idle', mood] } }))).toThrow(
+        new RegExp(`activities.play.moods: "${mood}" is not a mood it idles in \\(idle, proud, sleepy, tired, worried, or grumpy\\)`),
+      )
+    }
     expect(() => parsePack(withActivities({ play: { ...ok, end: [['ooo', 'bbb']] } }))).toThrow(/every frame needs the same size/)
     expect(() => parsePack(withActivities({ play: { ...ok, label: { english: 'hi' } } }))).toThrow(/activities.play.label: "english" is not a language code/)
     expect(() => parsePack(withActivities({ play: { ...ok, label: { en: 'x'.repeat(41) } } }))).toThrow(/activities.play.label.en: one line, up to 40 characters/)
@@ -253,6 +262,17 @@ describe('ascii packs', () => {
     expect(parsePack({ ...face(), palette: undefined }).colors).toEqual({ '.': 0xe8e8e8 })
     expect(() => parsePack({ ...tiny(), palette: undefined })).toThrow(/palette: required/)
     expect(parsePack(tiny()).colors['.']).toBeUndefined()
+  })
+
+  test('an activity is drawn in text like any other frame', () => {
+    const activities = { play: { start: [['(o.o)']], loop: [['(o.O)'], { art: ['(O.o)'], color: ['.p.p.'] }], seconds: [5, 5], moods: ['idle'], every: [30, 30] } }
+    const pack = parsePack({ ...face(), main: { moods: { sleeping: [['(-.-)']] }, activities } })
+    const play = pack.actions.find(one => one.name === 'play')
+    expect(play?.frames).toEqual([{ art: ['(o.o)'], color: ['.....'] }])
+    expect(play?.activity?.loop).toEqual([{ art: ['(o.O)'], color: ['.....'] }, { art: ['(O.o)'], color: ['.p.p.'] }])
+    expect(() => parsePack({ ...face(), main: { moods: { sleeping: [['(-.-)']] }, activities: { play: { ...activities.play, loop: [['oo']] } } } })).toThrow(
+      /same size/,
+    )
   })
 
   test('every frame follows the style', () => {
