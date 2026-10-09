@@ -264,6 +264,17 @@ describe('ascii packs', () => {
     expect(parsePack(tiny()).colors['.']).toBeUndefined()
   })
 
+  test('an activity is drawn in text like any other frame', () => {
+    const activities = { play: { start: [['(o.o)']], loop: [['(o.O)'], { art: ['(O.o)'], color: ['.p.p.'] }], seconds: [5, 5], moods: ['idle'], every: [30, 30] } }
+    const pack = parsePack({ ...face(), main: { moods: { sleeping: [['(-.-)']] }, activities } })
+    const play = pack.actions.find(one => one.name === 'play')
+    expect(play?.frames).toEqual([{ art: ['(o.o)'], color: ['.....'] }])
+    expect(play?.activity?.loop).toEqual([{ art: ['(o.O)'], color: ['.....'] }, { art: ['(O.o)'], color: ['.p.p.'] }])
+    expect(() => parsePack({ ...face(), main: { moods: { sleeping: [['(-.-)']] }, activities: { play: { ...activities.play, loop: [['oo']] } } } })).toThrow(
+      /same size/,
+    )
+  })
+
   test('every frame follows the style', () => {
     expect(() => parsePack({ ...tiny(), main: { moods: { sleeping: [{ art: ['oo'] }] } } })).toThrow(/a frame is a list of strings/)
     expect(() => parsePack({ ...face(), main: { moods: { sleeping: [{ color: ['.'] }] } } })).toThrow(/a list of strings, or \{ art, color \}/)
