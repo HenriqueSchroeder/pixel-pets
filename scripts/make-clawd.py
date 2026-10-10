@@ -207,11 +207,11 @@ ACT = {
                'loop': [juggle(i) for i in range(9)],
                'end': landing() + [f(JOY, [(5, 16, 't')]), IDLE],
                'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'juggling', 'pt-BR': 'fazendo malabarismo'}},
-    # dabs of paint on a canvas at its side, one by one, a step back to admire it, and
-    # the finished one lifted off the easel for a fresh canvas
-    'paint': {'start': [IDLE, f(look(1), painting(0, brush=False))],
-              'loop': [f(look(1), RIGHT_UP if n % 2 else [], painting(n)) for n in range(9)] + [f(JOY, BLUSH, painting(8, brush=False))] * 2
-                      + [f(look(1), RIGHT_UP, EASEL)],
+    # a fresh canvas up on the easel at its side, dabs of paint one by one, then a step
+    # back to admire it
+    'paint': {'start': [IDLE, f(look(1), EASEL)],
+              'loop': [f(look(1), RIGHT_UP, EASEL)] + [f(look(1), RIGHT_UP if n % 2 else [], painting(n)) for n in range(9)]
+                      + [f(JOY, BLUSH, painting(8, brush=False))] * 2,
               'end': [f(JOY, BLUSH, painting(8, brush=False)), f(OPEN, painting(8, brush=False))],
               'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'painting a picture', 'pt-BR': 'pintando um quadro'}},
     # a mug of coffee: steam rising off it, lifted for a sip now and then, eyes shut with content

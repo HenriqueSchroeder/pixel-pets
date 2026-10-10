@@ -3638,16 +3638,28 @@
             "............................",
             "............................",
             "........bbbbbbbbbbbb...kkkkk",
-            "........bbbebbbbbbeb...kwwwk",
-            "........bbbebbbbbbeb...kwwwk",
-            "......bbbbbbbbbbbbbbbb.kwwwk",
-            "........bbbbbbbbbbbb...kwwwk",
+            "........bbbebbbbbbeb...k...k",
+            "........bbbebbbbbbeb...k...k",
+            "......bbbbbbbbbbbbbbbb.k...k",
+            "........bbbbbbbbbbbb...k...k",
             "........bbbbbbbbbbbb...k...k",
             ".........b.b....b.b....k...k",
             ".........b.b....b.b....k...k"
           ]
         ],
         "loop": [
+          [
+            "............................",
+            "............................",
+            "........bbbbbbbbbbbb...kkkkk",
+            "........bbbebbbbbbeb.b.k...k",
+            "........bbbebbbbbbebb..k...k",
+            "......bbbbbbbbbbbbbb...k...k",
+            "........bbbbbbbbbbbb...k...k",
+            "........bbbbbbbbbbbb...k...k",
+            ".........b.b....b.b....k...k",
+            ".........b.b....b.b....k...k"
+          ],
           [
             "............................",
             "............................",
@@ -3776,18 +3788,6 @@
             "........bebebbbbebeb...kptwk",
             "......bbbpbbbbbbbbpbbb.kpwyk",
             "........bbbbbbbbbbbb...ktywk",
-            "........bbbbbbbbbbbb...k...k",
-            ".........b.b....b.b....k...k",
-            ".........b.b....b.b....k...k"
-          ],
-          [
-            "............................",
-            "............................",
-            "........bbbbbbbbbbbb...kkkkk",
-            "........bbbebbbbbbeb.b.k...k",
-            "........bbbebbbbbbebb..k...k",
-            "......bbbbbbbbbbbbbb...k...k",
-            "........bbbbbbbbbbbb...k...k",
             "........bbbbbbbbbbbb...k...k",
             ".........b.b....b.b....k...k",
             ".........b.b....b.b....k...k"
