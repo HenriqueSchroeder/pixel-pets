@@ -738,12 +738,32 @@ test('how long it stays awake comes from the config', { options: { awakeMinutes:
 
 test('a long awake time keeps it out of a deep sleep until it has dozed off', { options: { awakeMinutes: 30 } }, async ($, on) => {
   const { clock } = setup(on)
+  on('prompt.submit', (_$, e) => ({ text: e.text }))
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  const label = async () => {
+    const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+    return (await ui.find({ text: /^· / }))?.text
+  }
+
+  // 11 minutes in is a deep spell, but it is still meant to be up
+  await clock.advance(DEEP_SLEEP_MS + 60_000)
+  const up = await label()
+  expect(up).toBeDefined()
+  expect(up).not.toBe('· fast asleep')
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await label()).not.toBe('· waking up')
+})
+
+test('dozing off in a deep spell, it naps lightly before it sleeps deep', { options: { awakeMinutes: 30 } }, async ($, on) => {
+  const { clock } = setup(on)
   on('turn.complete', () => ({ text: '' }))
   await $.turn.complete(finished)
 
-  await clock.advance(DEEP_SLEEP_MS + 60_000)
+  // half a minute after it dozes off, the spells have it deep already
+  await clock.advance(30.5 * 60_000)
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect((await ui.find({ text: /^· / }))?.text).not.toBe('· fast asleep')
+  expect((await ui.find({ text: /^· / }))?.text).toBe('· sleeping')
 })
 
 test("with labelLine off the band is the stage alone, without Claude's line", { options: { labelLine: false } }, async ($, on) => {

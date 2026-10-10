@@ -14,7 +14,7 @@ import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
 import { encode, facingFrame, sizeOf } from './render'
-import { isDeep } from './sleep'
+import { FIRST_NAP_MS, isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
 import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage, sideIn } from './walk'
@@ -337,12 +337,13 @@ export const register: Register = (on, options) => {
   // Busy with an activity, it is up whatever the time: sleep would cut it short.
   const isPlaying = () => activityIn(motion, frame) !== undefined
   // It dozes off sooner at night, and when it runs low on energy; not drawn yet, it is rested.
-  const howLongAwake = (now: number) => (isNight(hourOf(now)) ? awakeMs / 2 : awakeMs) * (drives === undefined ? 1 : alertness(drives))
-  // Dozed off and in a deep spell of the pause that began at `idleSince`, and not up on
-  // its own nor glad to see them.
+  const howLongAwake = (now: number) =>
+    (isNight(hourOf(now)) ? awakeMs / 2 : awakeMs) * (drives === undefined ? 1 : alertness(drift(drives, now, lastState, traits)))
+  // Dozed off a while back and in a deep spell of the pause that began at `idleSince`, and
+  // not up on its own nor glad to see them.
   const isFastAsleep = (idleSince: number | null, now: number) =>
     idleSince !== null &&
-    now - idleSince > howLongAwake(now) &&
+    now - idleSince > howLongAwake(now) + FIRST_NAP_MS &&
     now >= stirredUntil &&
     !isPlaying() &&
     isDeep(idleSince, now - idleSince) &&
