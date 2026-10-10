@@ -4,6 +4,8 @@ const MINUTE = 60_000
 
 // The first this long of an idle stretch is a light sleep at most.
 export const DEEP_SLEEP_MS = 10 * MINUTE
+// Dozed off, it naps lightly at least this long before a deep spell has it.
+export const FIRST_NAP_MS = 3 * MINUTE
 // After it, deep and light spells take turns, deep first, each this many minutes.
 const DEEP_MINUTES: [number, number] = [8, 15]
 const LIGHT_MINUTES: [number, number] = [3, 6]
