@@ -197,9 +197,9 @@ def painting(n, brush=True):
     return EASEL + CANVAS + DABS[:n] + ([(*tip, DABS[n % len(DABS)][2])] if brush else [])
 
 
-# A mug of coffee in its left hand, steam curling off it; lifted to sip.
+# A mug of coffee in its left hand, steam curling off it; lifted against its face to sip.
 MUG = [(4, -2, 'w'), (4, -1, 'w'), (5, -2, 'w'), (5, -1, 'w'), (5, -3, 'w'), (3, -2, 'k'), (3, -1, 'k')]
-SIP = [(r - 2, c, l) for r, c, l in MUG]
+SIP = [(r - 2, c + 2, l) for r, c, l in MUG]
 STEAM = [w((2, -2)), w((1, -1)), w((0, -2))]
 ACT = {
     # three balls in the air, thrown up from one hand and caught in the other
@@ -207,9 +207,11 @@ ACT = {
                'loop': [juggle(i) for i in range(9)],
                'end': landing() + [f(JOY, [(5, 16, 't')]), IDLE],
                'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'juggling', 'pt-BR': 'fazendo malabarismo'}},
-    # dabs of paint on a canvas at its side, one by one, then a step back to admire it
+    # dabs of paint on a canvas at its side, one by one, a step back to admire it, and
+    # the finished one lifted off the easel for a fresh canvas
     'paint': {'start': [IDLE, f(look(1), painting(0, brush=False))],
-              'loop': [f(look(1), RIGHT_UP if n % 2 else [], painting(n)) for n in range(9)] + [f(JOY, BLUSH, painting(8, brush=False))] * 2,
+              'loop': [f(look(1), RIGHT_UP if n % 2 else [], painting(n)) for n in range(9)] + [f(JOY, BLUSH, painting(8, brush=False))] * 2
+                      + [f(look(1), RIGHT_UP, EASEL)],
               'end': [f(JOY, BLUSH, painting(8, brush=False)), f(OPEN, painting(8, brush=False))],
               'seconds': [15, 35], 'every': [60, 150], 'label': {'en': 'painting a picture', 'pt-BR': 'pintando um quadro'}},
     # a mug of coffee: steam rising off it, lifted for a sip now and then, eyes shut with content
