@@ -372,27 +372,27 @@ export const register: Register = (on, options) => {
       const pack = playing
       frame += 1
       if (isOff || pack === undefined) return
-      const drawn = scene
-      const every = pack.fps * (drawn?.isAsleep === true ? REDRAW_ASLEEP_S : REDRAW_AWAKE_S)
+      const last = scene
+      const every = pack.fps * (last?.isAsleep === true ? REDRAW_ASLEEP_S : REDRAW_AWAKE_S)
       // With no stage of its own drawn (a survey, or a line of text), there is nothing to play.
-      if (drawn === null) {
+      if (last === null) {
         if (frame % every === 0) $.ui.invalidate('ui.render')
         return
       }
-      if (frame % every === 0 || frame >= drawn.redrawAt) {
+      if (frame % every === 0 || frame >= last.redrawAt) {
         $.ui.invalidate('ui.render')
         return
       }
-      const shot = drawn.play()
-      if (shot.layout !== drawn.shot.layout) {
+      const shot = last.play()
+      if (shot.layout !== last.shot.layout) {
         $.ui.invalidate('ui.render')
         return
       }
-      const changed = Object.entries(shot.rasters).filter(([key, cells]) => drawn.shot.rasters[key] !== cells)
-      drawn.shot = shot
+      const changed = Object.entries(shot.rasters).filter(([key, cells]) => last.shot.rasters[key] !== cells)
+      last.shot = shot
       if (changed.length === 0) return
-      // Refused when the band is no longer drawn as it was: redraw it in full.
-      void Promise.all(changed.map(([key, cells]) => $.ui.blit({ requestId: drawn.requestId, key, cells })))
+      // Refused when the band is no longer last as it was: redraw it in full.
+      void Promise.all(changed.map(([key, cells]) => $.ui.blit({ requestId: last.requestId, key, cells })))
         .then(done => done.some(one => one.deny !== undefined))
         .catch(() => true)
         .then(refused => {
