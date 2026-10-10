@@ -443,10 +443,10 @@
                 "items": { "type": "number", "minimum": 5, "maximum": 300 }
               },
               "moods": {
-                "description": "Where it plays: idle, or a mood that stands in for idle.",
+                "description": "Where it plays: idle, or a mood that stands in for idle. In a work mood it never plays on its own timer: it is what the pet drifts off to after a while at the same work, for a few seconds at most, and Claude's line keeps saying what Claude does.",
                 "type": "array",
                 "minItems": 1,
-                "items": { "enum": ["idle", "proud", "sleepy", "tired", "worried", "grumpy"] }
+                "items": { "enum": ["idle", "proud", "sleepy", "tired", "worried", "grumpy", "thinking", "typing", "running", "writing", "reading", "searching", "supervising"] }
               },
               "every": { "$ref": "#/properties/main/properties/actions/additionalProperties/properties/every" },
               "label": {

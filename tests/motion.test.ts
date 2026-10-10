@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { activityIn, step } from '../hooks/motion'
+import type { Urge } from '../hooks/drives'
 import type { Motion, Random } from '../hooks/motion'
 import { parsePack } from '../hooks/pack'
 import type { Pack } from '../hooks/pack'
@@ -212,5 +213,94 @@ describe('one thing at a time', () => {
     // Back from a stroll on tick 10, everything long overdue by the timers it kept.
     const back = resting === undefined ? resting : { ...resting, next: { paw: 5, ear: 5, play: 5 } }
     expect(play('idle', 10, 11, always(0), back, busy).seen).toEqual(['lp1', 'lp1'])
+  })
+})
+
+// A pet at work, at 1 fps so a tick is a second: it drifts off 20 ticks into one work mood.
+const worker = (main: Record<string, unknown> = {}) =>
+  parsePack({
+    name: 'worker',
+    palette: { a: '#000000' },
+    fps: 1,
+    main: {
+      moods: { sleeping: [f('zzz')], running: [f('run')], reading: [f('red')], idle: [f('idl')], watching: [f('wa1'), f('wa2')] },
+      actions: {
+        // Plays at work too, so it is no change of scene.
+        blink: { frames: [f('_._')], moods: ['running', 'idle'], every: [600, 600] },
+        yawn: { frames: [f('yw1'), f('yw2')], moods: ['tired'], every: [600, 600] },
+      },
+      activities: {
+        groom: { start: [f('gr0')], loop: [f('gr1')], end: [f('gr9')], seconds: [60, 60], moods: ['idle'], every: [600, 600] },
+      },
+      ...main,
+    },
+    mini: false,
+  })
+
+const atWork = (on: Pack, mood: Mood, from: number, to: number, urge?: Urge, motion?: Motion) => {
+  const seen: string[] = []
+  let current = motion
+  for (let tick = from; tick <= to; tick++) {
+    const moved = step(on, current, mood, tick, always(0), urge)
+    current = moved.motion
+    seen.push(rowsOf(moved.frame)[0] ?? '')
+  }
+  return { seen, motion: current }
+}
+
+describe('drifting off at work', () => {
+  test('nothing for its first 20 seconds in one work mood, nor ever without an urge', () => {
+    expect(atWork(worker(), 'running', 0, 19, 'bored').seen.every(name => name === 'run')).toBe(true)
+    expect(atWork(worker(), 'running', 0, 60).seen.every(name => name === 'run')).toBe(true)
+  })
+
+  test('bored, it plays an idle activity for 8 seconds at most, start and end included, then goes back to work for a while', () => {
+    const { seen } = atWork(worker(), 'running', 0, 43, 'bored')
+    expect(seen.slice(20, 29)).toEqual(['gr0', ...Array(6).fill('gr1'), 'gr9', 'run'])
+    // The next is 15 seconds from the end, the usual curiosity changing nothing.
+    expect(seen.slice(28, 43).every(name => name === 'run')).toBe(true)
+    expect(seen[43]).toBe('gr0')
+  })
+
+  test('tired, it does what it does when tired', () => {
+    expect(atWork(worker(), 'running', 0, 22, 'tired').seen.slice(20)).toEqual(['yw1', 'yw2', 'run'])
+  })
+
+  test('missing the person, it looks for them a couple of seconds', () => {
+    expect(atWork(worker(), 'running', 0, 22, 'longing').seen.slice(20)).toEqual(['wa1', 'wa2', 'run'])
+  })
+
+  test('with nothing tired to do, or no look of its own for the person, it finds something to do', () => {
+    expect(atWork(worker({ actions: {} }), 'running', 0, 20, 'tired').seen[20]).toBe('gr0')
+    const borrowsWatching = worker({ moods: { sleeping: [f('zzz')], running: [f('run')], reading: [f('red')], idle: [f('idl')] } })
+    expect(atWork(borrowsWatching, 'running', 0, 20, 'longing').seen[20]).toBe('gr0')
+  })
+
+  test('what plays at work anyway, a blink, is no distraction', () => {
+    const onlyBlinks = worker({ activities: {}, actions: { blink: { frames: [f('_._')], moods: ['running', 'idle'], every: [600, 600] } } })
+    expect(atWork(onlyBlinks, 'running', 0, 60, 'bored').seen.every(name => name === 'run')).toBe(true)
+  })
+
+  test("what its pack draws for that work mood goes first, and only once it has settled", () => {
+    const own = worker({
+      activities: {
+        groom: { start: [f('gr0')], loop: [f('gr1')], end: [f('gr9')], seconds: [60, 60], moods: ['idle'], every: [600, 600] },
+        tail: { loop: [f('tl1')], seconds: [5, 5], moods: ['running'], every: [1, 1] },
+      },
+    })
+    const { seen } = atWork(own, 'running', 0, 25, 'tired')
+    expect(seen.slice(0, 20).every(name => name === 'run')).toBe(true)
+    expect(seen.slice(20, 26)).toEqual([...Array(5).fill('tl1'), 'run'])
+  })
+
+  test('another work mood starts the wait over', () => {
+    const running = atWork(worker(), 'running', 0, 15, 'bored').motion
+    const { seen } = atWork(worker(), 'reading', 16, 36, 'bored', running)
+    expect(seen.slice(0, 20).every(name => name === 'red')).toBe(true)
+    expect(seen[20]).toBe('gr0')
+  })
+
+  test('out of work it never drifts off: idle keeps its own timers', () => {
+    expect(atWork(worker(), 'idle', 0, 60, 'bored').seen.slice(0, 60).includes('gr0')).toBe(false)
   })
 })

@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer, ToolCallInput } from 'claude-code'
 
 import type { Activity, AgentPet, Feelings, Label, MiniMood, Mood, Reaction, Situation, Traits } from '../types'
-import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, USUAL } from './drives'
+import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, urgeOf, USUAL } from './drives'
 import type { Drives, State } from './drives'
 import { calm, cheer, feel, idleMood, isNight, nightOf } from './feelings'
 import { pickLocale, say } from './i18n'
@@ -746,6 +746,7 @@ export const register: Register = (on, options) => {
     // A pet that draws no walking but a teleport gets about by vanishing and appearing.
     const teleport = pack.walks ? null : pack.teleport
     const pace = paceOf(drives)
+    const urge = urgeOf(drives)
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
     // With no line there is nowhere to say it.
@@ -779,7 +780,7 @@ export const register: Register = (on, options) => {
       const mood: Mood = (pack.walks && onStage.moving) || blinkFrame !== undefined ? 'walking' : shown.mood
       const labelShown = isStrolling ? label('strolling') : shown.label
 
-      const moved = step(pack, motion, mood, frame, Math.random)
+      const moved = step(pack, motion, mood, frame, Math.random, urge)
       motion = moved.motion
       // Busy with an activity, the line says what, in its language or else in English.
       const pastime = pack.actions.find(one => one.name === activityIn(moved.motion, frame))?.activity?.label
