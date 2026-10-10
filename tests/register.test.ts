@@ -914,13 +914,19 @@ test('a pet that draws no walking stays put', async ($, on) => {
 // A pet asleep, breathing in two frames, with the frame clock running; returns
 // the repaints the clock sends between full redraws.
 const asleepWithClock = async ($: Parameters<TestBody>[0], on: On, moods: Record<string, string[][]> = {}, napFor = 5 * 60_000) => {
-  const breathing = JSON.stringify({ ...JSON.parse(pack('cat')), main: { moods: { sleeping: [['oo', 'bb'], ['bb', 'oo']], ...moods } } })
+  const breathing = JSON.stringify({
+    ...JSON.parse(pack('cat')),
+    main: { moods: { sleeping: [['oo', 'bb'], ['bb', 'oo']], ...moods } },
+    mini: { moods: { working: [['ob', 'bo'], ['bo', 'ob']] } },
+  })
   const { clock } = setup(on, { '/pets/cat.json': breathing })
   const blits: string[] = []
   const engineDraws = { count: 0 }
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('command.register', (_$, e) => ({ value: { command: e.name } }))
   on('agent.spawn', () => ({ model: 'haiku', agentId: 'a1' }))
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', () => ({ result: 'boom', isError: true }))
   // The engine's own band, drawn while the pet is hidden.
   on('ui.render', ($, e) => {
     engineDraws.count += 1
@@ -945,14 +951,37 @@ test('asleep, only its frame is repainted between full redraws', async ($, on) =
   expect(new Set(blits)).toEqual(new Set(['main']))
 })
 
-test('with agents around, the band is redrawn in full, not just the pet', async ($, on) => {
+test('with agents around, the pet and its agents are repainted between full redraws', async ($, on) => {
   const { clock, blits } = await asleepWithClock($, on)
   await $.agent.spawn({ ...spawn, background: true })
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(await ui.find({ text: '· waiting for agents' })).toBeDefined()
 
   await clock.advance(2000)
-  expect(blits).toEqual([])
+  expect(new Set(blits)).toEqual(new Set(['main', 'mini-a1']))
+})
+
+test('at work, only its frame is repainted between full redraws', async ($, on) => {
+  const { clock, blits } = await asleepWithClock($, on, { thinking: [['oo', 'bb'], ['bb', 'oo']] })
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+  expect(await ui.find({ text: '· thinking' })).toBeDefined()
+
+  await clock.advance(2000)
+  expect(new Set(blits)).toEqual(new Set(['main']))
+})
+
+test('a reaction gives way on time, between full redraws', async ($, on) => {
+  const { clock } = await asleepWithClock($, on)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  // Half a second off the clock's redraws, so that only the reaction's end redraws it.
+  await clock.advance(500)
+  await $.tool.call({ tool: 'Bash', command: 'false' })
+  expect(await ui.find({ text: /failed/ })).toBeDefined()
+
+  // Two seconds of it, and a frame for the clock to see it is over.
+  await clock.advance(2300)
+  expect(await ui.find({ text: /failed/ })).toBeUndefined()
 })
 
 test('a second session.start does not start a second frame clock', async ($, on) => {
@@ -964,14 +993,18 @@ test('a second session.start does not start a second frame clock', async ($, on)
   expect(blits.length).toBeLessThanOrEqual(8)
 })
 
-test('awake, a pet that may stroll off is redrawn in full, not just repainted', async ($, on) => {
+test('awake, a pet that strolls is redrawn as it steps and repainted as it stands', async ($, on) => {
   const moods = { idle: [['oo', 'bb'], ['bb', 'oo']], walking: [['bo', 'ob']] }
   const { clock, blits } = await asleepWithClock($, on, moods, 1000)
-  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await ui.find({ text: /hanging around|strolling around/ })).toBeDefined()
-
-  await clock.advance(10_000)
-  expect(blits).toEqual([])
+  // A narrow stage: its strolls are short, and it stands a while after each.
+  const ui = await $.ui.mount({ ...band(false), props: { ...band(false).props, bodyColumns: 12 }, surface: 'terminal' })
+  const seen = new Set<string | undefined>()
+  for (let tick = 0; tick < 120; tick++) {
+    await clock.advance(250)
+    seen.add((await ui.find({ text: /^· / }))?.text)
+  }
+  expect(seen).toEqual(new Set(['· hanging around', '· strolling around']))
+  expect(blits.length).toBeGreaterThan(0)
 })
 
 test('hidden, nothing is repainted or redrawn', async ($, on) => {

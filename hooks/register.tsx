@@ -55,11 +55,18 @@ const AGENT_SLOT = 20
 // Room kept for the " +N" that stands for agents with no slot.
 const OVERFLOW_COLUMNS = 4
 const MAX_AGENTS = 6
-// While only its own frame moves, the clock repaints that frame and redraws the
-// band in full only this often, in seconds, for what changes with time alone
-// (a reaction running out, dozing off): once a second awake, every 5 asleep.
+// While only the pets' frames move, the clock repaints them and redraws the band
+// in full only this often, in seconds, for what changes with time alone (dozing
+// off, a long turn's minutes): once a second awake, every 5 asleep.
 const REDRAW_AWAKE_S = 1
 const REDRAW_ASLEEP_S = 5
+
+// What the band shows on a tick: `layout` stands for all of it but the Rasters'
+// cells, which are by key.
+type Shot = { layout: string; rasters: Record<string, string> }
+// The band as last drawn: what it showed, how to play it a tick on, and the tick
+// by which something it shows runs out.
+type Scene = { requestId: string; shot: Shot; play: () => Shot; redrawAt: number; isAsleep: boolean }
 
 // One body color per subagent, picked in spawn order.
 const AGENT_COLORS = [0x7cc4f2, 0x9bd57a, 0xc69af2, 0xf2d16b, 0xf28fb0, 0x6fd8c8]
@@ -293,11 +300,13 @@ export const register: Register = (on, options) => {
   let motion: Motion | undefined
   // Where it stands and each agent's side, kept so none hops over when another leaves.
   let stage: Stage = EMPTY_STAGE
-  // A full redraw costs Claude Code far more than repainting the pet, and every
-  // open session pays it. While the band shows nothing but the pet's own frame
-  // moving, `still` holds what the clock needs to repaint that frame alone; while
-  // the pet is hidden the clock redraws nothing, as showing it again redraws.
-  let still: { requestId: string; mood: Mood; facing: Side; cells: string } | null = null
+  // A full redraw costs Claude Code far more than repainting a Raster, and every
+  // open session pays it. The band keeps how to play itself a tick on: the clock
+  // plays it and repaints the Rasters whose cells changed, and redraws in full only
+  // when anything else would change (a step, its words), when something it shows
+  // runs out, and now and then for what changes with time alone. While the pet is
+  // hidden the clock redraws nothing, as showing it again redraws.
+  let scene: Scene | null = null
   let isOff = false
   // The tool call running for each agent and tool, so a permission prompt (which
   // names only those) finds the call it is for; and the calls that asked.
@@ -372,22 +381,28 @@ export const register: Register = (on, options) => {
       const pack = playing
       frame += 1
       if (isOff || pack === undefined) return
-      const scene = still
-      const isAsleep = scene?.mood === 'sleeping' || scene?.mood === 'deepSleep'
-      const every = pack.fps * (isAsleep ? REDRAW_ASLEEP_S : REDRAW_AWAKE_S)
-      if (scene === null || frame % every === 0) {
+      const last = scene
+      const every = pack.fps * (last?.isAsleep === true ? REDRAW_ASLEEP_S : REDRAW_AWAKE_S)
+      // With no stage of its own drawn (a survey, or a line of text), there is nothing to play.
+      if (last === null) {
+        if (frame % every === 0) $.ui.invalidate('ui.render')
+        return
+      }
+      if (frame % every === 0 || frame >= last.redrawAt) {
         $.ui.invalidate('ui.render')
         return
       }
-      const moved = step(pack, motion, scene.mood, frame, Math.random)
-      motion = moved.motion
-      const cells = encode(facingFrame(moved.frame, scene.facing, pack.mirrors), pack.colors)
-      if (cells === scene.cells) return
-      still = { ...scene, cells }
-      // Refused when the band is no longer drawn as it was: redraw it in full.
-      void $.ui
-        .blit({ requestId: scene.requestId, key: 'main', cells })
-        .then(done => done.deny !== undefined)
+      const shot = last.play()
+      if (shot.layout !== last.shot.layout) {
+        $.ui.invalidate('ui.render')
+        return
+      }
+      const changed = Object.entries(shot.rasters).filter(([key, cells]) => last.shot.rasters[key] !== cells)
+      last.shot = shot
+      if (changed.length === 0) return
+      // Refused when the band is no longer last as it was: redraw it in full.
+      void Promise.all(changed.map(([key, cells]) => $.ui.blit({ requestId: last.requestId, key, cells })))
+        .then(done => done.some(one => one.deny !== undefined))
         .catch(() => true)
         .then(refused => {
           if (refused) $.ui.invalidate('ui.render')
@@ -428,7 +443,7 @@ export const register: Register = (on, options) => {
     loading = { name, pack: Promise.resolve(found) }
     playing = found
     motion = undefined
-    still = null
+    scene = null
     restartClock()
     $.ui.invalidate('ui.render')
     return { text: say(locale, isDefault ? 'projectPetDefault' : 'projectPet', name) }
@@ -622,7 +637,7 @@ export const register: Register = (on, options) => {
   }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    still = null
+    scene = null
     isOff = await read($, isHidden)
     if (e.props.hasSurvey || isOff) {
       return next(e)
@@ -730,74 +745,93 @@ export const register: Register = (on, options) => {
     const extraColumns = hidden > 0 ? OVERFLOW_COLUMNS : 0
     // A pet that draws no walking but a teleport gets about by vanishing and appearing.
     const teleport = pack.walks ? null : pack.teleport
-    const onStage = moveOnStage(stage, {
-      tick: frame,
-      room,
-      fps: pack.fps,
-      random: Math.random,
-      pace: paceOf(drives),
-      walks: pack.walks,
-      teleport: teleport === null ? null : { vanish: teleport.vanish.length, appear: teleport.appear.length },
-      agents: visible.map(one => one.id),
-      width,
-      extra: extraColumns,
-      // Busy with an activity it stays put: a step would cut it short.
-      wants: placed =>
-        visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless && activityIn(motion, frame) === undefined ? 'wander' : 'stay',
-    })
-    stage = onStage.stage
-    const { drawn, drawnCount, standX, blinking } = onStage
-    const blinkFrame = teleport === null || blinking === undefined ? undefined : teleport[blinking.phase][blinking.at]
-    const showsMore = standX === onStage.placed.x && hidden > 0
-    const sideOf = (index: number) => sideIn(drawn, index)
-    const isOnTheMove = onStage.moving || blinkFrame !== undefined
-    const isStrolling = isOnTheMove && onStage.wants === 'wander'
-    // A teleport is its walk: what falls due meanwhile waits for it to land.
-    const mood: Mood = (pack.walks && onStage.moving) || blinkFrame !== undefined ? 'walking' : shown.mood
-    const labelShown = isStrolling ? label('strolling') : shown.label
+    const pace = paceOf(drives)
     // A line it says takes Claude's line for a moment, unless a reaction or a mood that
     // must show is on it.
     // With no line there is nowhere to say it.
     const isQuoting = showsLine && saying !== null && saying.until > now && busy === null && !(flash !== null && flash.until > now)
 
-    const moved = step(pack, motion, mood, frame, Math.random)
-    motion = moved.motion
-    // Busy with an activity, the line says what, in its language or else in English.
-    const pastime = pack.actions.find(one => one.name === activityIn(moved.motion, frame))?.activity?.label
-    const said = isQuoting ? `“${saying?.text}”` : (pastime?.[locale.code] ?? pastime?.en ?? words(labelShown))
-    // It faces the way it walks, else the agent finishing as it says goodbye, else the
-    // first; through an action, the way it faced as the action began.
-    const finishing = visible.slice(0, drawnCount).findLastIndex(one => one.leaving !== undefined)
-    const facesNow = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
-    const once = moved.motion.once
-    const held = holdFacing(heldFacing, once?.isAction ? once : undefined, facesNow, isOnTheMove)
-    heldFacing = held.held
-    const facing = held.side
-    const shape = blinkFrame ?? moved.frame
-    const body = facingFrame(shape, facing, pack.mirrors)
-    const cells = encode(body, pack.colors)
-    // Nothing but the pet's own frame will move until something is written or
-    // time passes: no turn, agents, stroll or blink, reaction or line it says.
-    const isStill =
-      !e.props.isWorking &&
-      list.length === 0 &&
-      !isOnTheMove &&
-      stage.blink === undefined &&
-      (!(pack.walks || teleport !== null) || onStage.wants === 'stay') &&
-      busy === null &&
-      !(flash !== null && flash.until > now) &&
-      !isQuoting
-    still = isStill ? { requestId: e.requestId, mood, facing, cells } : null
+    // Moves the pet and its agents one tick on from where the last draw or tick left
+    // them. Safe to call again on the same tick: it shows the same.
+    const play = () => {
+      const onStage = moveOnStage(stage, {
+        tick: frame,
+        room,
+        fps: pack.fps,
+        random: Math.random,
+        pace,
+        walks: pack.walks,
+        teleport: teleport === null ? null : { vanish: teleport.vanish.length, appear: teleport.appear.length },
+        agents: visible.map(one => one.id),
+        width,
+        extra: extraColumns,
+        // Busy with an activity it stays put: a step would cut it short.
+        wants: placed =>
+          visible.length > 0 ? { go: placed.x } : list.length === 0 && isRestless && activityIn(motion, frame) === undefined ? 'wander' : 'stay',
+      })
+      stage = onStage.stage
+      const { drawn, drawnCount, standX, blinking } = onStage
+      const blinkFrame = teleport === null || blinking === undefined ? undefined : teleport[blinking.phase][blinking.at]
+      const showsMore = standX === onStage.placed.x && hidden > 0
+      const isOnTheMove = onStage.moving || blinkFrame !== undefined
+      const isStrolling = isOnTheMove && onStage.wants === 'wander'
+      // A teleport is its walk: what falls due meanwhile waits for it to land.
+      const mood: Mood = (pack.walks && onStage.moving) || blinkFrame !== undefined ? 'walking' : shown.mood
+      const labelShown = isStrolling ? label('strolling') : shown.label
+
+      const moved = step(pack, motion, mood, frame, Math.random)
+      motion = moved.motion
+      // Busy with an activity, the line says what, in its language or else in English.
+      const pastime = pack.actions.find(one => one.name === activityIn(moved.motion, frame))?.activity?.label
+      const said = isQuoting ? `“${saying?.text}”` : (pastime?.[locale.code] ?? pastime?.en ?? words(labelShown))
+      // It faces the way it walks, else the agent finishing as it says goodbye, else the
+      // first; through an action, the way it faced as the action began.
+      const finishing = visible.slice(0, drawnCount).findLastIndex(one => one.leaving !== undefined)
+      const facesNow = faceFor(isOnTheMove, stage.walk?.facing ?? 1, drawn, Math.max(finishing, 0))
+      const once = moved.motion.once
+      const held = holdFacing(heldFacing, once?.isAction ? once : undefined, facesNow, isOnTheMove)
+      heldFacing = held.held
+      const facing = held.side
+      const body = facingFrame(blinkFrame ?? moved.frame, facing, pack.mirrors)
+
+      const rasters: Record<string, string> = { main: encode(body, pack.colors) }
+      for (const index of [...drawn.left, ...drawn.right]) {
+        const one = visible[index]
+        if (one === undefined) continue
+        // The ones still at work on the side it faces jump while it startles them, their
+        // jump played from its first frame as it does, not with the clock.
+        const startledAt = sideIn(drawn, index) === facing && one.leaving === undefined ? moved.startled : undefined
+        const miniFrames = pack.mini?.[one.leaving?.mood ?? (startledAt === undefined ? 'working' : 'startled')] ?? []
+        const mini = miniFrames[(startledAt ?? frame) % miniFrames.length] ?? []
+        rasters[`mini-${one.id}`] = encode(mini, { ...pack.colors, [pack.tint]: one.color })
+      }
+      const leftColumns = drawn.left.length * width + (showsMore && drawn.more === -1 ? extraColumns : 0)
+      const marginLeft = standX - leftColumns
+      const layout = JSON.stringify([said, marginLeft, drawn.left, drawn.right, drawn.more, showsMore])
+      return { shot: { layout, rasters }, said, marginLeft, drawn, showsMore }
+    }
+
+    const { shot, said, marginLeft, drawn, showsMore } = play()
+    // What it shows that runs out on its own: a reaction, a line it says, a look at
+    // the prompt, an agent saying goodbye. The rest that changes with time alone
+    // waits for the clock's redraw now and then.
+    const soonest = Math.min(
+      ...[flash?.until, saying?.until, typedAt === null ? undefined : typedAt + TYPING_MS, ...list.map(one => one.leaving?.until)].filter(
+        (until): until is number => until !== undefined && until > now,
+      ),
+    )
+    scene = {
+      requestId: e.requestId,
+      shot,
+      play: () => play().shot,
+      redrawAt: frame + Math.ceil(((soonest - now) / 1000) * pack.fps),
+      isAsleep: lastState === 'asleep',
+    }
 
     const { Box, Raster, Text } = $.ui.resolve(e)
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
-      // The ones still at work on the side it faces jump while it startles them, their
-      // jump played from its first frame as it does, not with the clock.
-      const startledAt = side === facing && one.leaving === undefined ? moved.startled : undefined
-      const miniFrames = pack.mini?.[one.leaving?.mood ?? (startledAt === undefined ? 'working' : 'startled')] ?? []
-      const mini = miniFrames[(startledAt ?? frame) % miniFrames.length] ?? []
       return (
         // On the left the slot hugs the pet too: its pet and words lean right.
         <Box
@@ -808,13 +842,12 @@ export const register: Register = (on, options) => {
           marginLeft={side === 1 ? 1 : 0}
           marginRight={side === 1 ? 0 : 1}
         >
-          <Raster key={`mini-${one.id}`} {...miniSize} cells={encode(mini, { ...pack.colors, [pack.tint]: one.color })} />
+          <Raster key={`mini-${one.id}`} {...miniSize} cells={shot.rasters[`mini-${one.id}`] ?? ''} />
           {showsAgentLabels && <Text bold>{short(one.type, slot)}</Text>}
           {showsAgentLabels && <Text dimColor>{short(agentWords(one), slot)}</Text>}
         </Box>
       )
     }
-    const leftColumns = drawn.left.length * width + (showsMore && drawn.more === -1 ? extraColumns : 0)
 
     return (
       <Box flexDirection="column">
@@ -823,14 +856,14 @@ export const register: Register = (on, options) => {
             <Text bold>Claude</Text> <Text dimColor>· {said}{extra}</Text>
           </Text>
         )}
-        <Box flexDirection="row" marginLeft={standX - leftColumns}>
+        <Box flexDirection="row" marginLeft={marginLeft}>
           {showsMore && drawn.more === -1 && (
             <Box width={OVERFLOW_COLUMNS}>
               <Text dimColor>+{hidden}</Text>
             </Box>
           )}
           {[...drawn.left].reverse().map(i => agentPet(i, -1))}
-          <Raster key="main" {...mainSize} cells={cells} />
+          <Raster key="main" {...mainSize} cells={shot.rasters.main ?? ''} />
           {drawn.right.map(i => agentPet(i, 1))}
           {showsMore && drawn.more === 1 && <Text dimColor> +{hidden}</Text>}
         </Box>
