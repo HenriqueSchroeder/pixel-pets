@@ -736,6 +736,16 @@ test('how long it stays awake comes from the config', { options: { awakeMinutes:
   expect(await ui.find({ text: '· sleeping' })).toBeDefined()
 })
 
+test('a long awake time keeps it out of a deep sleep until it has dozed off', { options: { awakeMinutes: 30 } }, async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+
+  await clock.advance(DEEP_SLEEP_MS + 60_000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  expect((await ui.find({ text: /^· / }))?.text).not.toBe('· fast asleep')
+})
+
 test("with labelLine off the band is the stage alone, without Claude's line", { options: { labelLine: false } }, async ($, on) => {
   setup(on)
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })

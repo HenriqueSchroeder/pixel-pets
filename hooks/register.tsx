@@ -336,9 +336,17 @@ export const register: Register = (on, options) => {
   const wokeForThem = (idleSince: number | null) => gladAt !== null && idleSince !== null && gladAt >= idleSince
   // Busy with an activity, it is up whatever the time: sleep would cut it short.
   const isPlaying = () => activityIn(motion, frame) !== undefined
-  // In a deep spell of the pause that began at `idleSince`, and not up on its own nor glad to see them.
+  // It dozes off sooner at night, and when it runs low on energy; not drawn yet, it is rested.
+  const howLongAwake = (now: number) => (isNight(hourOf(now)) ? awakeMs / 2 : awakeMs) * (drives === undefined ? 1 : alertness(drives))
+  // Dozed off and in a deep spell of the pause that began at `idleSince`, and not up on
+  // its own nor glad to see them.
   const isFastAsleep = (idleSince: number | null, now: number) =>
-    idleSince !== null && now >= stirredUntil && !isPlaying() && isDeep(idleSince, now - idleSince) && !wokeForThem(idleSince)
+    idleSince !== null &&
+    now - idleSince > howLongAwake(now) &&
+    now >= stirredUntil &&
+    !isPlaying() &&
+    isDeep(idleSince, now - idleSince) &&
+    !wokeForThem(idleSince)
   // Brings the drives up to `now` before `change` touches them.
   const touch = (now: number, change: (settled: Drives) => Drives) => {
     if (drives !== undefined) drives = change(drift(drives, now, lastState, traits))
@@ -653,10 +661,9 @@ export const register: Register = (on, options) => {
       shown = isLong ? { ...current, mood: 'sweating' } : current
       if (isLong) extra = ` · ${Math.floor(elapsed / 60_000)}m`
     } else {
-      // It dozes off sooner at night, and when it runs low on energy. Unknown idle time
-      // (nothing has run yet) counts as a plain nap.
+      // Unknown idle time (nothing has run yet) counts as a plain nap.
       const hour = hourOf(now)
-      const awakeFor = (isNight(hour) ? awakeMs / 2 : awakeMs) * alertness(drives)
+      const awakeFor = howLongAwake(now)
       const idleFor = idleSince === null ? awakeFor + 1 : now - idleSince
       const isTyping = typedAt !== null && now - typedAt < TYPING_MS
       // Once glad to see them it only dozes, so the prompt it sends does not startle it.
