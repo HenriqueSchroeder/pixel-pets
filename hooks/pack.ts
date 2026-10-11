@@ -34,6 +34,9 @@ export const PARENT: Record<Mood, Mood | null> = {
 
 export const MOODS = Object.keys(PARENT) as Mood[]
 
+// Moods of a turn at work.
+export const WORK: ReadonlySet<Mood> = new Set(['thinking', 'typing', 'running', 'writing', 'reading', 'searching', 'supervising'])
+
 export const MINI_MOODS: readonly MiniMood[] = ['working', 'happy', 'sad', 'startled']
 
 export const DEFAULT_PET = 'cat'
@@ -77,6 +80,8 @@ export type Pack = {
   // Only a pack that draws `walking` leaves its spot by walking; one that draws
   // `teleport` and no `walking` gets about by vanishing and appearing.
   walks: boolean
+  // The moods it draws itself, rather than borrows.
+  drawn: ReadonlySet<Mood>
   teleport: { vanish: Frame[]; appear: Frame[] } | null
   speech: Record<string, Partial<Record<Situation, string[]>>>
   personality: Traits
@@ -228,9 +233,10 @@ const parseActions = (checkFrames: CheckFrames, raw: unknown): Action[] => {
   })
 }
 
-// Where an activity can play: idle, or what stands in for it. Walking would cut it at
-// once, a work mood would hide its words, and sleep would fight it.
-const PASTIMES: ReadonlySet<Mood> = new Set(['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy'])
+// Where an activity can play: idle, or what stands in for it, and at work, where it
+// is something the pet drifts off to now and then. Walking would cut it at once, and
+// sleep would fight it.
+const PASTIMES: ReadonlySet<Mood> = new Set(['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy', ...WORK])
 
 const parseActivities = (checkFrames: CheckFrames, raw: unknown, taken: ReadonlySet<string>): Action[] => {
   if (raw === undefined) return []
@@ -255,7 +261,7 @@ const parseActivities = (checkFrames: CheckFrames, raw: unknown, taken: Readonly
     }
     const moods = checkMoods(activity.moods, where)
     const restless = moods.find(mood => !PASTIMES.has(mood))
-    if (restless !== undefined) throw new Error(`${where}.moods: "${restless}" is not a mood it idles in (${new Intl.ListFormat('en', { type: 'disjunction' }).format([...PASTIMES])})`)
+    if (restless !== undefined) throw new Error(`${where}.moods: "${restless}" is not a mood it can pass the time in (${new Intl.ListFormat('en', { type: 'disjunction' }).format([...PASTIMES])})`)
     return {
       name,
       frames: optional(activity.start, 'start'),
@@ -403,6 +409,7 @@ export const parsePack = (raw: unknown): Pack => {
     tint,
     mirrors,
     walks: drawn.has('walking'),
+    drawn: new Set(drawn.keys()),
     teleport,
     speech,
     personality,

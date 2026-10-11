@@ -71,5 +71,11 @@ export const paceOf = (drives: Drives): Pace => ({
 // Whether it has missed the person enough to greet them.
 export const misses = (drives: Drives) => drives.longing >= MISSING
 
+export type Urge = 'tired' | 'longing' | 'bored'
+
+// What a pet at work drifts off to when it does: a tired one flags, one that misses
+// the person looks for them, else it finds something to do.
+export const urgeOf = (drives: Drives): Urge => (drives.energy < LOW_ENERGY ? 'tired' : misses(drives) ? 'longing' : 'bored')
+
 // Whether a dozing pet gets up on its own.
 export const stirs = (drives: Drives) => drives.boredom >= STIR_BOREDOM && drives.energy >= STIR_ENERGY

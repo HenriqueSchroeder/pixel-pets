@@ -26,6 +26,9 @@ const REST_SECONDS: [number, number] = [3, 10]
 const BREAK_FROM_COLUMNS = 12
 const BREAK_CHANCE = 0.3
 const LOOK_SECONDS: [number, number] = [1, 2]
+// A teleport is over in a blink, where a walk takes a while: it rests this many times
+// longer between them, or it would flit about the band all the time.
+const TELEPORT_REST = 3
 
 // How it strolls: `rest` stretches the pauses, `lean` (0 to 1) draws its spots
 // toward the left, where the prompt starts, and `stride` sets the columns a tick
@@ -212,7 +215,7 @@ export const moveOnStage = (stage: Stage, scene: Scene) => {
   const placed = gather(from, room, agents.length, scene.width, scene.extra, sides)
   const wants = scene.wants(placed)
   const moves = scene.walks || teleport !== null
-  const pace = teleport === null ? scene.pace : { ...scene.pace, stride: Infinity }
+  const pace = teleport === null ? scene.pace : { ...scene.pace, stride: Infinity, rest: scene.pace.rest * TELEPORT_REST }
   const walked = walkStep(stage.walk, moves && stage.blink === undefined ? wants : 'stay', tick, room, scene.fps, scene.random, pace)
   // A pet that does neither is set down where they fit.
   const walk = moves || placed.x === walked.walk.x ? walked.walk : { ...walked.walk, x: placed.x, target: placed.x }

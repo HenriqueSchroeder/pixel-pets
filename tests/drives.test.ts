@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs } from '../hooks/drives'
+import { alertness, drift, engaged, misses, paceOf, rested, seen, stirred, stirs, urgeOf } from '../hooks/drives'
 import type { Drives } from '../hooks/drives'
 import type { Traits } from '../types'
 
@@ -74,5 +74,11 @@ describe('drives', () => {
     expect(stirs({ ...rested(0), boredom: 0.4 })).toBe(true)
     expect(stirs({ ...rested(0), boredom: 0.4, energy: 0.3 })).toBe(false)
     expect(stirs({ ...rested(0), boredom: 0.2 })).toBe(false)
+  })
+
+  test('at work, a tired pet flags before it misses the person, else it finds something to do', () => {
+    expect(urgeOf({ ...rested(0), energy: 0.3, longing: 0.9 })).toBe('tired')
+    expect(urgeOf({ ...rested(0), longing: 0.6 })).toBe('longing')
+    expect(urgeOf({ ...rested(0), energy: 0.5, longing: 0.2, boredom: 1 })).toBe('bored')
   })
 })

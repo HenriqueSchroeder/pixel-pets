@@ -25,6 +25,7 @@ describe('parsePack', () => {
     expect(pack.moods.writing).toEqual([['bb']])
     expect(pack.moods.searching).toEqual([['ob']])
     expect(pack.moods.compacting).toEqual([['oo']])
+    expect([...pack.drawn].sort()).toEqual(['reading', 'sleeping', 'typing'])
   })
 
   test('only a pack that draws walking walks', () => {
@@ -129,13 +130,13 @@ describe('parsePack', () => {
     expect(() => parsePack(withActivities({ play: { ...ok, seconds: [20, 10] } }))).toThrow(/activities.play.seconds/)
     expect(() => parsePack(withActivities({ play: { ...ok, every: [0, 10] } }))).toThrow(/activities.play.every/)
     expect(() => parsePack(withActivities({ play: { ...ok, moods: ['dancing'] } }))).toThrow(/activities.play.moods/)
-    // Only where it idles: walking would cut it at once, work would hide its words, sleep would fight it.
-    for (const mood of ['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy']) {
+    // Where it idles, or at work to drift off to: walking would cut it at once, sleep would fight it.
+    for (const mood of ['idle', 'proud', 'sleepy', 'tired', 'worried', 'grumpy', 'running', 'reading', 'supervising']) {
       expect(() => parsePack(withActivities({ play: { ...ok, moods: [mood] } }))).not.toThrow()
     }
-    for (const mood of ['walking', 'reading', 'supervising', 'sleeping', 'deepSleep', 'happy']) {
+    for (const mood of ['walking', 'watching', 'sleeping', 'deepSleep', 'happy']) {
       expect(() => parsePack(withActivities({ play: { ...ok, moods: ['idle', mood] } }))).toThrow(
-        new RegExp(`activities.play.moods: "${mood}" is not a mood it idles in \\(idle, proud, sleepy, tired, worried, or grumpy\\)`),
+        new RegExp(`activities.play.moods: "${mood}" is not a mood it can pass the time in \\(idle, proud, sleepy, tired, worried, grumpy, thinking, typing, running, writing, reading, searching, or supervising\\)`),
       )
     }
     expect(() => parsePack(withActivities({ play: { ...ok, end: [['ooo', 'bbb']] } }))).toThrow(/every frame needs the same size/)

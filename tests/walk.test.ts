@@ -235,6 +235,31 @@ describe('moveOnStage', () => {
     // It lands on 36 at tick 1, but shows where it was until it has vanished.
     expect(seen).toEqual(['-@0', 'vanish@0', 'vanish@0', 'appear@36', '-@36'])
   })
+
+  test('a pet that teleports rests three times as long between teleports as one that walks', () => {
+    const scene = (walks: boolean, tick: number) => ({
+      tick,
+      room: 40,
+      fps: 1,
+      random: always(0.9),
+      pace: { rest: 1, lean: 0 },
+      walks,
+      teleport: walks ? null : { vanish: 2, appear: 1 },
+      agents: [],
+      width: 10,
+      extra: 0,
+      wants: () => 'wander' as const,
+    })
+    // Both set off at tick 1 for 36; the walker gets there at tick 36, the teleport at once.
+    const restOf = (walks: boolean, until: number) => {
+      let stage: Stage = EMPTY_STAGE
+      for (let tick = 0; tick <= until; tick++) stage = moveOnStage(stage, scene(walks, tick)).stage
+      return (stage.walk?.restUntil ?? 0) - (walks ? 36 : 1)
+    }
+    // 3 + 7 * 0.9 seconds, and three times that.
+    expect(restOf(true, 36)).toBe(9)
+    expect(restOf(false, 1)).toBe(28)
+  })
 })
 
 test('mirror flips a frame left to right', () => {

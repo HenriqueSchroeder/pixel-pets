@@ -516,6 +516,34 @@ test('an activity waits for a teleport to land, as for a stroll to stop', async 
   expect([...seen['playing with yarn']].filter(cells => seen['strolling around'].has(cells))).toEqual([])
 })
 
+test('a while into one long command it drifts off for a moment, the line still saying what Claude runs', async ($, on) => {
+  const restless = {
+    ...JSON.parse(pack('cat')),
+    main: {
+      moods: { sleeping: [['oo', 'bb']], typing: [['bb', 'oo']], running: [['bo', 'bo']] },
+      activities: { tail: { loop: [['ob', 'ob']], seconds: [5, 5], moods: ['running'], every: [1, 1], label: { en: 'chasing its tail' } } },
+    },
+  }
+  const { clock } = setup(on, { '/pets/cat.json': JSON.stringify(restless) })
+  on('session.start', (_$, e) => ({ cwd: e.cwd }))
+  on('command.register', (_$, e) => ({ value: { command: e.name } }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.tool.call({ tool: 'Bash', command: 'sleep 90' })
+  const drawings = new Set<unknown>()
+  const lines = new Set<string | undefined>()
+  for (let second = 0; second < 40; second++) {
+    await clock.advance(1000)
+    const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
+    drawings.add(JSON.stringify((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells))
+    lines.add((await ui.find({ text: /^· / }))?.text)
+  }
+  // Its own run, then the tail it chases.
+  expect(drawings.size).toBe(2)
+  expect(lines.has('· running sleep 90')).toBe(true)
+  expect([...lines].some(line => /tail/.test(line ?? ''))).toBe(false)
+})
+
 test('after hours of work it runs low on energy and dozes off sooner', async ($, on) => {
   const { clock } = setup(on)
   on('turn.start', (_$, e) => ({ turnId: e.turnId }))
