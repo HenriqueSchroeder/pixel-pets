@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { encode, facingFrame, mirror, sizeOf } from '../hooks/render'
+import { artOf, encode, facingFrame, mirror, sizeOf } from '../hooks/render'
 
 const NONE = 0x01000000
 
@@ -35,6 +35,31 @@ describe('glyph frames', () => {
 describe('pixel frames', () => {
   test('a letter outside the basic plane is one see-through cell, as the frame is measured', () => {
     expect(words(encode(['𝄞a'], { a: 1 }))).toEqual([0x20, NONE, NONE, 0x2580, 1, NONE])
+  })
+})
+
+describe('artOf', () => {
+  test('a pixel frame is half blocks, cells that look alike joined into one run', () => {
+    const colors = { a: 0x112233, b: 0xaabbcc }
+    expect(artOf(['aa.b', 'bb.a'], colors)).toEqual([
+      [
+        ['▀▀', '#112233', '#aabbcc'],
+        [' ', '', ''],
+        ['▀', '#aabbcc', '#112233'],
+      ],
+    ])
+    expect(artOf(['.a', 'a.'], colors)).toEqual([[['▄▀', '#112233', '']]])
+  })
+
+  test('a glyph frame is its glyphs in their mask colors, a space with none', () => {
+    expect(artOf({ art: ['ab 𝄞'], color: ['.x..'] }, { '.': 1, x: 2 })).toEqual([
+      [
+        ['a', '#000001', ''],
+        ['b', '#000002', ''],
+        [' ', '', ''],
+        ['𝄞', '#000001', ''],
+      ],
+    ])
   })
 })
 

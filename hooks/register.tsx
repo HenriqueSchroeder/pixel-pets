@@ -13,10 +13,11 @@ import { activityIn, step } from './motion'
 import type { Motion } from './motion'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
-import { encode, facingFrame, sizeOf } from './render'
+import { artOf, encode, facingFrame, sizeOf } from './render'
 import { FIRST_NAP_MS, isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
+import type { Art } from './touch'
 import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage, sideIn } from './walk'
 import type { Held, Side, Stage } from './walk'
 
@@ -61,9 +62,9 @@ const MAX_AGENTS = 6
 const REDRAW_AWAKE_S = 1
 const REDRAW_ASLEEP_S = 5
 
-// What the band shows on a tick: `layout` stands for all of it but the Rasters'
-// cells, which are by key.
-type Shot = { layout: string; rasters: Record<string, string> }
+// What the band shows on a tick: `layout` stands for all of it but the pets'
+// drawings: the main pet's `art` (`main` its key) and the agents' Raster cells by key.
+type Shot = { layout: string; main: string; art: Art; rasters: Record<string, string> }
 // The band as last drawn: what it showed, how to play it a tick on, and the tick
 // by which something it shows runs out.
 type Scene = { requestId: string; shot: Shot; play: () => Shot; redrawAt: number; isAsleep: boolean }
@@ -302,11 +303,14 @@ export const register: Register = (on, options) => {
   let stage: Stage = EMPTY_STAGE
   // A full redraw costs Claude Code far more than repainting a Raster, and every
   // open session pays it. The band keeps how to play itself a tick on: the clock
-  // plays it and repaints the Rasters whose cells changed, and redraws in full only
-  // when anything else would change (a step, its words), when something it shows
-  // runs out, and now and then for what changes with time alone. While the pet is
-  // hidden the clock redraws nothing, as showing it again redraws.
+  // plays it, repaints the agents' Rasters whose cells changed, leaves the main
+  // pet's frame for its Client to ask for, and redraws in full only when anything
+  // else would change (a step, its words), when something it shows runs out, and
+  // now and then for what changes with time alone. While the pet is hidden the
+  // clock redraws nothing, as showing it again redraws.
   let scene: Scene | null = null
+  // The main pet's frame its Client has, by `Shot.main`.
+  let sentMain: string | null = null
   let isOff = false
   // The tool call running for each agent and tool, so a permission prompt (which
   // names only those) finds the call it is for; and the calls that asked.
@@ -397,6 +401,7 @@ export const register: Register = (on, options) => {
         $.ui.invalidate('ui.render')
         return
       }
+      // The agents' Rasters are repainted here; the main pet's Client asks for its frame.
       const changed = Object.entries(shot.rasters).filter(([key, cells]) => last.shot.rasters[key] !== cells)
       last.shot = shot
       if (changed.length === 0) return
@@ -417,6 +422,16 @@ export const register: Register = (on, options) => {
     if (isInteractive) await atThePrompt($, now)
     else await update($, restedAt, at => at ?? now)
     return next(e)
+  })
+
+  // The main pet's Client asks for its frame each tick: it gets the one the clock
+  // played last, when it has not had it yet.
+  on('ui.message', async ($, e, next) => {
+    if (e.element !== 'touch') return next(e)
+    const shot = scene?.shot
+    if (shot === undefined || shot.main === sentMain) return {}
+    sentMain = shot.main
+    return { props: shot.art }
   })
 
   on('command.run', { command: 'pet' }, async ($, e) => {
@@ -795,7 +810,8 @@ export const register: Register = (on, options) => {
       const facing = held.side
       const body = facingFrame(blinkFrame ?? moved.frame, facing, pack.mirrors)
 
-      const rasters: Record<string, string> = { main: encode(body, pack.colors) }
+      const art: Art = { ...mainSize, fps: pack.fps, art: artOf(body, pack.colors) }
+      const rasters: Record<string, string> = {}
       for (const index of [...drawn.left, ...drawn.right]) {
         const one = visible[index]
         if (one === undefined) continue
@@ -809,10 +825,11 @@ export const register: Register = (on, options) => {
       const leftColumns = drawn.left.length * width + (showsMore && drawn.more === -1 ? extraColumns : 0)
       const marginLeft = standX - leftColumns
       const layout = JSON.stringify([said, marginLeft, drawn.left, drawn.right, drawn.more, showsMore])
-      return { shot: { layout, rasters }, said, marginLeft, drawn, showsMore }
+      return { shot: { layout, main: JSON.stringify(art.art), art, rasters }, said, marginLeft, drawn, showsMore }
     }
 
     const { shot, said, marginLeft, drawn, showsMore } = play()
+    sentMain = shot.main
     // What it shows that runs out on its own: a reaction, a line it says, a look at
     // the prompt, an agent saying goodbye. The rest that changes with time alone
     // waits for the clock's redraw now and then.
@@ -829,7 +846,7 @@ export const register: Register = (on, options) => {
       isAsleep: lastState === 'asleep',
     }
 
-    const { Box, Raster, Text } = $.ui.resolve(e)
+    const { Box, Client, Raster, Text } = $.ui.resolve(e)
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
@@ -864,7 +881,7 @@ export const register: Register = (on, options) => {
             </Box>
           )}
           {[...drawn.left].reverse().map(i => agentPet(i, -1))}
-          <Raster key="main" {...mainSize} cells={shot.rasters.main ?? ''} />
+          <Client key="touch" module="./touch.tsx" props={shot.art} width={mainSize.columns} height={mainSize.rows} />
           {drawn.right.map(i => agentPet(i, 1))}
           {showsMore && drawn.more === 1 && <Text dimColor> +{hidden}</Text>}
         </Box>
