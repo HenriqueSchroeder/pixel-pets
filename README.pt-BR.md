@@ -30,7 +30,7 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 | `sleepy` | à toa à noite, das 22h às 6h | idle |
 | `tired` | à toa depois de 3 horas de trabalho sem uma pausa de uma hora | sleepy |
 | `walking` | passeando quando está à toa e sozinho; um pack sem ele nunca anda | idle |
-| `watching` | você está digitando no prompt enquanto o Claude está parado | reading |
+| `watching` | você está digitando no prompt enquanto o Claude está parado, ou o seu mouse está parado em cima dele | reading |
 | `waking` | por um instante, quando um prompt o acorda de um sono profundo | thinking |
 | `thinking` | um turno começou | sleeping |
 | `typing` | qualquer outra tool, incluindo as de MCP | thinking |
@@ -59,6 +59,8 @@ Ele também tem vontades próprias, que valem só para a sessão. Energia: dormi
 A hora do dia é a sua hora local. À noite ele fica com sono e cochila na metade do `awakeMinutes`. Ele lembra de você entre sessões. A primeira vez que ele te vê no dia vem com uma saudação: um aniversário (uma semana, um mês, 100 dias, cada ano juntos), "senti sua falta!" depois de dois dias ou mais fora, ou bom dia. O `/pet` também diz há quanto tempo vocês estão juntos. Tarde da noite ele comenta uma vez só, na sessão que te vir primeiro. Um `claude -p` não conta como te ver.
 
 De vez em quando ele fala alguma coisa, entre aspas na linha do Claude: "hmm…" depois de 30 segundos pensando sem tool, um comentário na 20ª leitura de arquivo do turno, com três agents trabalhando ao mesmo tempo, num prompt à noite, um suspiro quando o tédio o tira de um cochilo, e uma palavra dormindo de vez em quando. Cada um no máximo uma vez por turno, e nunca dois em menos de três minutos.
+
+Dá para mexer nele com o mouse. Um clique faz carinho ("♥ carinho", ou "senti sua falta!" se ele estava com saudade), e no trabalho ele fica contente por um instante enquanto a linha do Claude continua dizendo o que roda. Um clique acorda um pet cochilando contente e acordado por um tempo; num sono profundo ele resmunga ("me acordou…") e continua dormindo. Quatro cliques em três segundos o irritam ("ei, para!"), e ele ignora cliques por três segundos. Deixar o mouse parado em cima dele por meio segundo, quando ele está à toa, faz ele olhar para você. O carinho não passa por cima de uma reação que já está aparecendo, como uma falha.
 
 Cada subagent ganha um mini pet com o tipo dele (`Explore`, `Plan`, ...) e a ação atual. Quando o agent termina, o pet fica feliz (ou triste, se falhou) por um instante e sai.
 
@@ -177,6 +179,7 @@ O pixel-pets lê os seus packs de pet, o setting `language` do Claude Code e as 
 ## Limitações
 
 - O pixel art precisa de um terminal. As outras superfícies recebem uma linha de texto.
+- Mexer no pet precisa de um terminal que repasse o mouse ao Claude Code. Nos outros ele só aparece.
 - O pack é lido quando o plugin carrega. Depois de editar um, rode `/reload-plugins`.
 - A API de mods está em early access e pode mudar entre versões do Claude Code.
 

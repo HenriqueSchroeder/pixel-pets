@@ -11,12 +11,15 @@ import { asVisit, daysBetween, welcome } from './memory'
 import type { Visit } from './memory'
 import { activityIn, step } from './motion'
 import type { Motion } from './motion'
+import { ANNOY_MS, gazes, hover, leave, press, untouched } from './gestures'
+import type { Poke, Sleep, Touch } from './gestures'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
-import { encode, facingFrame, sizeOf } from './render'
+import { artOf, encode, facingFrame, sizeOf } from './render'
 import { FIRST_NAP_MS, isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
+import type { Art } from './touch'
 import { EMPTY_STAGE, faceFor, holdFacing, moveOnStage, sideIn } from './walk'
 import type { Held, Side, Stage } from './walk'
 
@@ -61,9 +64,9 @@ const MAX_AGENTS = 6
 const REDRAW_AWAKE_S = 1
 const REDRAW_ASLEEP_S = 5
 
-// What the band shows on a tick: `layout` stands for all of it but the Rasters'
-// cells, which are by key.
-type Shot = { layout: string; rasters: Record<string, string> }
+// What the band shows on a tick: `layout` stands for all of it but the pets'
+// drawings: the main pet's `art` (`main` its key) and the agents' Raster cells by key.
+type Shot = { layout: string; main: string; art: Art; rasters: Record<string, string> }
 // The band as last drawn: what it showed, how to play it a tick on, and the tick
 // by which something it shows runs out.
 type Scene = { requestId: string; shot: Shot; play: () => Shot; redrawAt: number; isAsleep: boolean }
@@ -80,6 +83,29 @@ const short = (text: string, max = 32) => (text.length > max ? `${text.slice(0, 
 const basename = (path: string) => path.split('/').pop() ?? path
 const label = (text: Text, detail = ''): Label => ({ text, detail })
 const stillHere = (list: AgentPet[], now: number) => list.filter(pet => pet.leaving === undefined || pet.leaving.until > now)
+const stirFor = () => (STIR_SECONDS[0] + (STIR_SECONDS[1] - STIR_SECONDS[0]) * Math.random()) * 1000
+// A reaction still showing that a new one waits for: one the pointer did gives way.
+const holds = (live: Reaction | null, now: number) => live !== null && live.until > now && live.byTouch !== true
+
+// What the pointer posted: the kinds of what it did, in order. Code sent it, so it is checked.
+const pointerEvents = (data: unknown): string[] => {
+  const events = (data as { events?: unknown } | null)?.events
+  return Array.isArray(events) ? events.filter((one): one is string => typeof one === 'string') : []
+}
+
+const reactionTo = (poke: Exclude<Poke, 'ignore'>, missed: boolean, now: number): Reaction => {
+  const until = now + REACTION_MS
+  switch (poke) {
+    case 'pet':
+      return { mood: 'happy', label: label(missed ? 'missedYou' : 'petted'), until, byTouch: true }
+    case 'wake':
+      return { mood: 'happy', label: label('wakingUp'), until, byTouch: true }
+    case 'rouse':
+      return { mood: 'grumpy', label: label('rudeAwakening'), until, byTouch: true }
+    case 'annoy':
+      return { mood: 'grumpy', label: label('annoyed'), until: now + ANNOY_MS, byTouch: true }
+  }
+}
 
 const describe = (e: ToolCallInput): Activity => {
   switch (e.tool) {
@@ -302,11 +328,22 @@ export const register: Register = (on, options) => {
   let stage: Stage = EMPTY_STAGE
   // A full redraw costs Claude Code far more than repainting a Raster, and every
   // open session pays it. The band keeps how to play itself a tick on: the clock
-  // plays it and repaints the Rasters whose cells changed, and redraws in full only
-  // when anything else would change (a step, its words), when something it shows
-  // runs out, and now and then for what changes with time alone. While the pet is
-  // hidden the clock redraws nothing, as showing it again redraws.
+  // plays it, repaints the agents' Rasters whose cells changed, leaves the main
+  // pet's frame for its Client to ask for, and redraws in full only when anything
+  // else would change (a step, its words), when something it shows runs out, and
+  // now and then for what changes with time alone. While the pet is hidden the
+  // clock redraws nothing, as showing it again redraws.
   let scene: Scene | null = null
+  // The main pet's frame its Client has, by `Shot.main`.
+  let sentMain: string | null = null
+  // What the pointer has done to it, and whether it was looking back as last drawn.
+  let touched: Touch = untouched
+  let gazing = false
+  // With no Client drawn, no `leave` comes: the pointer counts as gone.
+  const letGo = () => {
+    touched = leave(touched)
+    gazing = false
+  }
   let isOff = false
   // The tool call running for each agent and tool, so a permission prompt (which
   // names only those) finds the call it is for; and the calls that asked.
@@ -357,6 +394,16 @@ export const register: Register = (on, options) => {
     !isPlaying() &&
     isDeep(idleSince, now - idleSince) &&
     !wokeForThem(idleSince)
+  // Long idle, it naps, unless up on its own or busy with an activity; `isDozing`
+  // also unless bored enough to get up.
+  const isDrowsy = (idleSince: number | null, now: number) => {
+    const awakeFor = howLongAwake(now)
+    // Unknown idle time (nothing has run yet) counts as a plain nap.
+    const idleFor = idleSince === null ? awakeFor + 1 : now - idleSince
+    return idleFor > awakeFor && now >= stirredUntil && !isPlaying()
+  }
+  const isDozing = (idleSince: number | null, now: number) =>
+    isDrowsy(idleSince, now) && !(drives !== undefined && stirs(drift(drives, now, lastState, traits)))
   // Brings the drives up to `now` before `change` touches them.
   const touch = (now: number, change: (settled: Drives) => Drives) => {
     if (drives !== undefined) drives = change(drift(drives, now, lastState, traits))
@@ -397,6 +444,7 @@ export const register: Register = (on, options) => {
         $.ui.invalidate('ui.render')
         return
       }
+      // The agents' Rasters are repainted here; the main pet's Client asks for its frame.
       const changed = Object.entries(shot.rasters).filter(([key, cells]) => last.shot.rasters[key] !== cells)
       last.shot = shot
       if (changed.length === 0) return
@@ -417,6 +465,50 @@ export const register: Register = (on, options) => {
     if (isInteractive) await atThePrompt($, now)
     else await update($, restedAt, at => at ?? now)
     return next(e)
+  })
+
+  // The main pet's Client hands over what the pointer did each tick, and asks for
+  // its frame: it gets the one the clock played last, when it has not had it yet.
+  on('ui.message', async ($, e, next) => {
+    if (e.element !== 'touch') return next(e)
+    const now = await $.clock.now()
+    const events = pointerEvents(e.data)
+    // How a click finds it: at work or watching agents it is awake whatever the time.
+    let sleep: Sleep = 'awake'
+    if (events.includes('down')) {
+      const idleSince = await read($, lastActiveAt)
+      const isBusy = (await read($, turnStartedAt)) !== null || stillHere(await read($, agents), now).some(one => one.leaving === undefined)
+      sleep = isBusy ? 'awake' : isFastAsleep(idleSince, now) ? 'deep' : isDozing(idleSince, now) ? 'dozing' : 'awake'
+    }
+    let poke: Poke = 'ignore'
+    for (const event of events) {
+      if (event === 'down') {
+        const pressed = press(touched, now, sleep)
+        touched = pressed.touch
+        if (pressed.poke !== 'ignore') poke = pressed.poke
+      } else if (event === 'leave') touched = leave(touched)
+      else if (event === 'enter' || event === 'move') touched = hover(touched, now)
+    }
+    if (poke !== 'ignore') {
+      // Any touch is the person being there; woken glad, it stays up a while.
+      let missed = false
+      touch(now, settled => {
+        missed = misses(settled)
+        return seen(settled)
+      })
+      if (poke === 'wake') stirredUntil = now + stirFor()
+      const shown = reactionTo(poke, missed, now)
+      await update($, reaction, live => (holds(live, now) ? live : shown))
+      $.ui.invalidate('ui.render')
+    }
+    if (gazes(touched, now) !== gazing) {
+      gazing = !gazing
+      $.ui.invalidate('ui.render')
+    }
+    const shot = scene?.shot
+    if (shot === undefined || shot.main === sentMain) return {}
+    sentMain = shot.main
+    return { props: shot.art }
   })
 
   on('command.run', { command: 'pet' }, async ($, e) => {
@@ -462,7 +554,7 @@ export const register: Register = (on, options) => {
     if (missed && (await read($, turnStartedAt)) === null) {
       gladAt = now
       const glad: Reaction = { mood: 'happy', label: label('missedYou'), until: now + REACTION_MS }
-      await update($, reaction, live => (live !== null && live.until > now ? live : glad))
+      await update($, reaction, live => (holds(live, now) ? live : glad))
     }
     return next(e)
   }).catch(($, e, next) => next(e))
@@ -530,7 +622,7 @@ export const register: Register = (on, options) => {
     // "fine, I won't" after a denied permission, a failure) is left to finish.
     // A failure always shows; a turn that went well only sometimes cheers.
     const live = await read($, reaction)
-    if (!e.isAborted && (live === null || live.until <= now) && (isBad || cheered !== null)) {
+    if (!e.isAborted && !holds(live, now) && (isBad || cheered !== null)) {
       await update($, reaction, (): Reaction =>
         isBad
           ? { mood: 'sad', label: label('wentWrong'), until }
@@ -640,6 +732,7 @@ export const register: Register = (on, options) => {
     scene = null
     isOff = await read($, isHidden)
     if (e.props.hasSurvey || isOff) {
+      letGo()
       return next(e)
     }
 
@@ -661,9 +754,12 @@ export const register: Register = (on, options) => {
 
     let shown: Activity
     let extra = ''
+    const isFlashing = flash !== null && flash.until > now
+    // Petted at work, it shows it but leaves Claude's line be.
+    const isPettedAtWork = isFlashing && flash.byTouch === true && e.props.isWorking
     if (busy !== null) {
       shown = busy
-    } else if (flash !== null && flash.until > now) {
+    } else if (isFlashing && !isPettedAtWork) {
       shown = flash
     } else if (e.props.isWorking) {
       const elapsed = startedAt === null ? 0 : now - startedAt
@@ -674,13 +770,10 @@ export const register: Register = (on, options) => {
         doing.mood === 'thinking' && list.some(one => one.leaving === undefined)
           ? { mood: 'supervising', label: label('waitingForAgents') }
           : doing
-      shown = isLong ? { ...current, mood: 'sweating' } : current
+      shown = isPettedAtWork ? { ...current, mood: flash.mood } : isLong ? { ...current, mood: 'sweating' } : current
       if (isLong) extra = ` · ${Math.floor(elapsed / 60_000)}m`
     } else {
-      // Unknown idle time (nothing has run yet) counts as a plain nap.
       const hour = hourOf(now)
-      const awakeFor = howLongAwake(now)
-      const idleFor = idleSince === null ? awakeFor + 1 : now - idleSince
       const isTyping = typedAt !== null && now - typedAt < TYPING_MS
       // Once glad to see them it only dozes, so the prompt it sends does not startle it.
       const isDeeplyAsleep = isFastAsleep(idleSince, now)
@@ -689,16 +782,18 @@ export const register: Register = (on, options) => {
       // Background agents still at work: it keeps an eye on them rather than dozing off.
       else if (list.some(one => one.leaving === undefined)) shown = { mood: 'supervising', label: label('waitingForAgents') }
       else if (isDeeplyAsleep) shown = { mood: 'deepSleep', label: label('deepSleep') }
-      else if (idleFor > awakeFor && now >= stirredUntil && !isPlaying() && !stirs(drives)) shown = asleep
+      else if (isDozing(idleSince, now)) shown = asleep
       else {
         // Bored in a nap, it gets up for a while on its own.
-        if (idleFor > awakeFor && now >= stirredUntil && !isPlaying()) {
-          stirredUntil = now + (STIR_SECONDS[0] + (STIR_SECONDS[1] - STIR_SECONDS[0]) * Math.random()) * 1000
+        if (isDrowsy(idleSince, now)) {
+          stirredUntil = now + stirFor()
           drives = stirred(drives)
           speak('bored', now, pack, locale)
         }
         const felt = idleMood(await read($, feelings), now, await read($, restedAt), hour)
-        shown = felt === undefined ? { mood: 'idle', label: label('idle') } : { mood: felt, label: label(felt) }
+        // A pointer resting on it gets a look back.
+        if (gazes(touched, now)) shown = { mood: 'watching', label: label('lookingAtYou') }
+        else shown = felt === undefined ? { mood: 'idle', label: label('idle') } : { mood: felt, label: label(felt) }
       }
     }
 
@@ -732,6 +827,7 @@ export const register: Register = (on, options) => {
     // A line of text has no stage, and must not move the pet on the one that has.
     const mainSize = sizeOf(pack.moods.sleeping[0] ?? [])
     if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + (showsLine ? 1 : 0) || e.props.bodyColumns < mainSize.columns) {
+      letGo()
       const { Text } = $.ui.resolve(e)
       const others = list.map(one => ` · ${one.type}: ${agentWords(one)}`).join('')
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>
@@ -795,7 +891,8 @@ export const register: Register = (on, options) => {
       const facing = held.side
       const body = facingFrame(blinkFrame ?? moved.frame, facing, pack.mirrors)
 
-      const rasters: Record<string, string> = { main: encode(body, pack.colors) }
+      const art: Art = { ...mainSize, fps: pack.fps, art: artOf(body, pack.colors) }
+      const rasters: Record<string, string> = {}
       for (const index of [...drawn.left, ...drawn.right]) {
         const one = visible[index]
         if (one === undefined) continue
@@ -809,10 +906,11 @@ export const register: Register = (on, options) => {
       const leftColumns = drawn.left.length * width + (showsMore && drawn.more === -1 ? extraColumns : 0)
       const marginLeft = standX - leftColumns
       const layout = JSON.stringify([said, marginLeft, drawn.left, drawn.right, drawn.more, showsMore])
-      return { shot: { layout, rasters }, said, marginLeft, drawn, showsMore }
+      return { shot: { layout, main: JSON.stringify(art.art), art, rasters }, said, marginLeft, drawn, showsMore }
     }
 
     const { shot, said, marginLeft, drawn, showsMore } = play()
+    sentMain = shot.main
     // What it shows that runs out on its own: a reaction, a line it says, a look at
     // the prompt, an agent saying goodbye. The rest that changes with time alone
     // waits for the clock's redraw now and then.
@@ -829,7 +927,7 @@ export const register: Register = (on, options) => {
       isAsleep: lastState === 'asleep',
     }
 
-    const { Box, Raster, Text } = $.ui.resolve(e)
+    const { Box, Client, Raster, Text } = $.ui.resolve(e)
     const agentPet = (index: number, side: Side) => {
       const one = visible[index]
       if (one === undefined) return null
@@ -864,7 +962,7 @@ export const register: Register = (on, options) => {
             </Box>
           )}
           {[...drawn.left].reverse().map(i => agentPet(i, -1))}
-          <Raster key="main" {...mainSize} cells={shot.rasters.main ?? ''} />
+          <Client key="touch" module="./touch.tsx" props={shot.art} width={mainSize.columns} height={mainSize.rows} />
           {drawn.right.map(i => agentPet(i, 1))}
           {showsMore && drawn.more === 1 && <Text dimColor> +{hidden}</Text>}
         </Box>

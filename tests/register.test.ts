@@ -72,7 +72,9 @@ const finished = { answer: '', durationMs: 1, isAborted: false, turnId: 't1', re
 test('sleeps while no turn runs', async ($, on) => {
   setup(on)
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await ui.find({ type: 'Raster', key: 'main' })).toBeDefined()
+  // Drawn as text in a Client, which gets the pointer over it: two pixel rows a cell.
+  expect(await ui.find({ type: 'Raster' })).toBeUndefined()
+  expect((await ui.find({ text: '▀▀', in: 'touch' }))?.text).toBe('▀▀')
   expect(await ui.find({ text: /sleeping/ })).toBeDefined()
 })
 
@@ -123,11 +125,11 @@ test('/pet hides and brings back the band', async ($, on) => {
   on('ui.render', ($, e) => $.ui.resolve(e).Text({ children: 'engine band' }))
   await $.command.run(runPet)
   const hidden = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await hidden.find({ type: 'Raster', key: 'main' })).toBeUndefined()
+  expect(await hidden.find({ type: 'Client', key: 'touch' })).toBeUndefined()
 
   await $.command.run(runPet)
   const shown = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await shown.find({ type: 'Raster', key: 'main' })).toBeDefined()
+  expect(await shown.find({ type: 'Client', key: 'touch' })).toBeDefined()
 })
 
 test('falls back to a line of text off the terminal', async ($, on) => {
@@ -141,7 +143,7 @@ test('falls back to a line of text on a terminal narrower than the pet', async (
   // The test pet is 2 columns wide.
   const narrow = { ...band(false), props: { ...band(false).props, bodyColumns: 1 } }
   const ui = await $.ui.mount({ ...narrow, surface: 'terminal' })
-  expect(await ui.find({ type: 'Raster', key: 'main' })).toBeUndefined()
+  expect(await ui.find({ type: 'Client', key: 'touch' })).toBeUndefined()
   expect(await ui.find({ text: /Claude: sleeping/ })).toBeDefined()
 })
 
@@ -214,7 +216,7 @@ test('a broken pack falls back to the shipped cat and says why', async ($, on) =
   setup(on, { [`${HOME}/.claude/pets/cat.json`]: '{"name":"cat"}', '/pets/cat.json': pack('cat') })
 
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await ui.find({ type: 'Raster', key: 'main' })).toBeDefined()
+  expect(await ui.find({ type: 'Client', key: 'touch' })).toBeDefined()
   expect(toasts.join()).toMatch(/palette: required/)
 })
 
@@ -507,7 +509,7 @@ test('an activity waits for a teleport to land, as for a stroll to stop', async 
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
     const said = (await ui.find({ text: /^· / }))?.text?.slice(2)
     if (said === 'playing with yarn' || said === 'strolling around') {
-      seen[said].add(JSON.stringify((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells))
+      seen[said].add(JSON.stringify((await ui.find({ type: 'Client', key: 'touch' }))?.props.props))
     }
   }
   expect(seen['playing with yarn'].size).toBeGreaterThan(0)
@@ -535,7 +537,7 @@ test('a while into one long command it drifts off for a moment, the line still s
   for (let second = 0; second < 40; second++) {
     await clock.advance(1000)
     const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
-    drawings.add(JSON.stringify((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells))
+    drawings.add(JSON.stringify((await ui.find({ type: 'Client', key: 'touch' }))?.props.props))
     lines.add((await ui.find({ text: /^· / }))?.text)
   }
   // Its own run, then the tail it chases.
@@ -798,7 +800,7 @@ test("with labelLine off the band is the stage alone, without Claude's line", { 
   setup(on)
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(await ui.find({ text: /^· / })).toBeUndefined()
-  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
+  expect(await ui.find({ type: 'Client', key: 'touch' })).toBeDefined()
 })
 
 test("agents' pets stand to the right with their labels in full", async ($, on) => {
@@ -820,7 +822,7 @@ test('with agentLabels off an agent is its mini pet alone', { options: { agentLa
   await $.tool.call({ tool: 'Grep', pattern: 'pet', agentId: 'a1' } as never)
 
   const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
-  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(2)
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
   expect(await ui.find({ text: 'searching (Grep)' })).toBeUndefined()
 })
 
@@ -832,7 +834,7 @@ test('a pack with no mini pets shows none for its agents, and no "+N"', async ($
   for (let i = 0; i < 2; i++) await $.agent.spawn({ ...spawn, tool_use_id: `toolu_${i}` })
 
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(0)
   expect(await ui.find({ text: /^\+/ })).toBeUndefined()
   expect(await ui.find({ text: '· waiting for agents' })).toBeDefined()
 })
@@ -846,7 +848,7 @@ test('on a narrow terminal it shows the agents that fit and counts the rest', as
   const narrow = { ...band(true), props: { ...band(true).props, bodyColumns: 30 } }
   const ui = await $.ui.mount({ ...narrow, surface: 'terminal' })
   // 30 columns leave room beside the 2-column test pet for one slot and the " +N".
-  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(2)
+  expect(await ui.findAll({ type: 'Raster' })).toHaveLength(1)
   expect(await ui.find({ key: 'mini-a1' })).toBeDefined()
   expect(await ui.find({ text: '+2' })).toBeDefined()
 })
@@ -898,7 +900,7 @@ test('a teleport draws its vanish and appear frames', async ($, on) => {
   for (let half = 0; half < 60; half++) {
     await clock.advance(500)
     const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
-    drawings.add((await ui.find({ type: 'Raster', key: 'main' }))?.props.cells)
+    drawings.add((await ui.find({ type: 'Client', key: 'touch' }))?.props.props)
   }
   // The pet itself, then the teleport's own frames.
   expect(drawings.size).toBeGreaterThan(1)
@@ -969,34 +971,52 @@ const asleepWithClock = async ($: Parameters<TestBody>[0], on: On, moods: Record
   return { clock, blits, engineDraws }
 }
 
-test('asleep, only its frame is repainted between full redraws', async ($, on) => {
+// What the main pet's Client has to show, as a drawing it asks for its frames in.
+type Asking = {
+  post: (data: { events: string[] }, scope: { in: string }) => Promise<void>
+  drawn: (scope: { in: string }) => Promise<unknown>
+}
+const shownBy = async (ui: Asking) => JSON.stringify(await ui.drawn({ in: 'touch' }))
+
+// The frames the main pet's Client gets over `ticks` frames of the clock, asking
+// each tick as it does.
+const framesAsked = async (ui: Asking, clock: { advance: (ms: number) => Promise<unknown> }, ticks = 8) => {
+  const frames = new Set<string>()
+  for (let tick = 0; tick < ticks; tick++) {
+    await clock.advance(250)
+    await ui.post({ events: [] }, { in: 'touch' })
+    frames.add(await shownBy(ui))
+  }
+  return frames
+}
+
+test('asleep, its Client gets each new frame between full redraws', async ($, on) => {
   const { clock, blits } = await asleepWithClock($, on)
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(await ui.find({ text: '· sleeping' })).toBeDefined()
 
-  await clock.advance(2000)
-  expect(blits.length).toBeGreaterThan(0)
-  expect(new Set(blits)).toEqual(new Set(['main']))
+  expect((await framesAsked(ui, clock)).size).toBe(2)
+  expect(blits).toEqual([])
 })
 
-test('with agents around, the pet and its agents are repainted between full redraws', async ($, on) => {
+test('with agents around, the pet gets its frames and its agents are repainted between full redraws', async ($, on) => {
   const { clock, blits } = await asleepWithClock($, on)
   await $.agent.spawn({ ...spawn, background: true })
   const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
   expect(await ui.find({ text: '· waiting for agents' })).toBeDefined()
 
-  await clock.advance(2000)
-  expect(new Set(blits)).toEqual(new Set(['main', 'mini-a1']))
+  expect((await framesAsked(ui, clock)).size).toBe(2)
+  expect(new Set(blits)).toEqual(new Set(['mini-a1']))
 })
 
-test('at work, only its frame is repainted between full redraws', async ($, on) => {
+test('at work, its Client gets each new frame between full redraws', async ($, on) => {
   const { clock, blits } = await asleepWithClock($, on, { thinking: [['oo', 'bb'], ['bb', 'oo']] })
   await $.turn.start({ text: 'hi', turnId: 't1' })
   const ui = await $.ui.mount({ ...band(true), surface: 'terminal' })
   expect(await ui.find({ text: '· thinking' })).toBeDefined()
 
-  await clock.advance(2000)
-  expect(new Set(blits)).toEqual(new Set(['main']))
+  expect((await framesAsked(ui, clock)).size).toBe(2)
+  expect(blits).toEqual([])
 })
 
 test('a reaction gives way on time, between full redraws', async ($, on) => {
@@ -1014,25 +1034,30 @@ test('a reaction gives way on time, between full redraws', async ($, on) => {
 
 test('a second session.start does not start a second frame clock', async ($, on) => {
   const { clock, blits } = await asleepWithClock($, on)
+  await $.agent.spawn({ ...spawn, background: true })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.ui.mount({ ...band(false), surface: 'terminal' })
-  // Two frames that take turns, four frames a second: at most one repaint a frame.
+  // An agent's two frames that take turns, four frames a second: at most one repaint a frame.
   await clock.advance(2000)
   expect(blits.length).toBeLessThanOrEqual(8)
 })
 
-test('awake, a pet that strolls is redrawn as it steps and repainted as it stands', async ($, on) => {
+test('awake, a pet that strolls is redrawn as it steps and gets its frames as it stands', async ($, on) => {
   const moods = { idle: [['oo', 'bb'], ['bb', 'oo']], walking: [['bo', 'ob']] }
-  const { clock, blits } = await asleepWithClock($, on, moods, 1000)
+  const { clock } = await asleepWithClock($, on, moods, 1000)
   // A narrow stage: its strolls are short, and it stands a while after each.
   const ui = await $.ui.mount({ ...band(false), props: { ...band(false).props, bodyColumns: 12 }, surface: 'terminal' })
   const seen = new Set<string | undefined>()
+  const standing = new Set<string>()
   for (let tick = 0; tick < 120; tick++) {
     await clock.advance(250)
-    seen.add((await ui.find({ text: /^· / }))?.text)
+    await ui.post({ events: [] }, { in: 'touch' })
+    const said = (await ui.find({ text: /^· / }))?.text
+    seen.add(said)
+    if (said === '· hanging around') standing.add(await shownBy(ui))
   }
   expect(seen).toEqual(new Set(['· hanging around', '· strolling around']))
-  expect(blits.length).toBeGreaterThan(0)
+  expect(standing.size).toBeGreaterThan(1)
 })
 
 test('hidden, nothing is repainted or redrawn', async ($, on) => {
@@ -1384,4 +1409,139 @@ test('a slow tool is no long think', async ($, on) => {
   expect(await line($)).toBe('· running npm run build')
   await clock.advance(20_000)
   await running
+})
+
+// The pointer over the main pet: what it does, handed over as its Client does each tick.
+const pointer = async ($: Parameters<TestBody>[0], working: boolean, ...events: string[]) => {
+  const ui = await $.ui.mount({ ...band(working), surface: 'terminal' })
+  await ui.post({ events }, { in: 'touch' })
+  const after = await $.ui.mount({ ...band(working), surface: 'terminal' })
+  return { line: (await after.find({ text: /^· / }))?.text, drawn: await shownBy(after) }
+}
+
+const lineNow = async ($: Parameters<TestBody>[0], working = false) =>
+  (await (await $.ui.mount({ ...band(working), surface: 'terminal' })).find({ text: /^· / }))?.text
+
+test('a click pets it awake, and then it looks back at the pointer on it', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  expect((await pointer($, false, 'move', 'down', 'up')).line).toBe('· ♥ petted')
+  // The pointer still on it, it looks back once the petting is over.
+  await clock.advance(2500)
+  expect(await lineNow($)).toBe('· looking at you')
+})
+
+test('petted after a long while without the person, it missed them', { options: { awakeMinutes: 60 } }, async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await lineNow($)
+  await clock.advance(40 * 60_000)
+  expect((await pointer($, false, 'down')).line).toBe('· missed you!')
+})
+
+test("petted at work, it is glad but Claude's line still says what runs", async ($, on) => {
+  const glad = JSON.stringify({ ...JSON.parse(pack('cat')), main: { moods: { sleeping: [['oo', 'bb']], running: [['bb', 'oo']], happy: [['ob', 'ob']] } } })
+  setup(on, { '/pets/cat.json': glad })
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await $.tool.call({ tool: 'Bash', command: 'npm test' })
+  const before = await shownBy(await $.ui.mount({ ...band(true), surface: 'terminal' }))
+  const petted = await pointer($, true, 'down')
+  expect(petted.line).toBe('· running npm test')
+  expect(petted.drawn).not.toBe(before)
+})
+
+test('a click does not cut short a failure it is showing', async ($, on) => {
+  setup(on)
+  on('tool.call', () => ({ result: 'boom', isError: true }))
+  await $.tool.call({ tool: 'Bash', command: 'false' })
+  expect((await pointer($, true, 'down')).line).toBe('· failed: false')
+})
+
+test('a click wakes a dozing pet glad, and it stays up a while', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(2 * 60_000)
+  expect(await lineNow($)).toBe('· sleeping')
+  expect((await pointer($, false, 'down')).line).toBe('· waking up')
+  await clock.advance(2500)
+  expect(await lineNow($)).toBe('· hanging around')
+})
+
+test('a click fast asleep is a rude awakening, and it sleeps on', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(12 * 60_000)
+  expect(await lineNow($)).toBe('· fast asleep')
+  expect((await pointer($, false, 'down')).line).toBe('· woke me up…')
+  await clock.advance(2500)
+  expect(await lineNow($)).toBe('· fast asleep')
+})
+
+test('clicked four times in a row it gets annoyed, and ignores clicks for a while', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  expect((await pointer($, false, 'down', 'up', 'down', 'up', 'down')).line).toBe('· ♥ petted')
+  await clock.advance(250)
+  expect((await pointer($, false, 'down')).line).toBe('· hey, stop it!')
+  await clock.advance(2000)
+  expect((await pointer($, false, 'down')).line).toBe('· hey, stop it!')
+  await clock.advance(1100)
+  expect((await pointer($, false, 'down')).line).toBe('· ♥ petted')
+})
+
+test('a pointer resting on it gets a look back, until it leaves', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  expect((await pointer($, false, 'enter', 'move')).line).toBe('· hanging around')
+  await clock.advance(600)
+  expect((await pointer($, false)).line).toBe('· looking at you')
+  expect((await pointer($, false, 'leave')).line).toBe('· hanging around')
+})
+
+test('at work a pointer resting on it changes nothing', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await pointer($, true, 'move')
+  await clock.advance(600)
+  expect((await pointer($, true)).line).toBe('· thinking')
+})
+
+test('what the pointer posts is checked: junk does nothing', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  for (const junk of [null, 5, { events: 'down' }, { events: [{ type: 'down' }, 7] }]) {
+    await (ui as unknown as { post: (data: unknown, scope: { in: string }) => Promise<void> }).post(junk, { in: 'touch' })
+  }
+  expect(await lineNow($)).toBe('· hanging around')
+})
+
+test('hidden and shown again, it does not look back at a pointer it never saw leave', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  // The engine's own band, drawn while the pet is hidden.
+  on('ui.render', ($, e) => $.ui.resolve(e).Text({ children: 'engine band' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  await pointer($, false, 'move')
+  await clock.advance(600)
+  expect((await pointer($, false)).line).toBe('· looking at you')
+  await $.command.run(runPet)
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  await $.command.run(runPet)
+  expect(await lineNow($)).toBe('· hanging around')
 })

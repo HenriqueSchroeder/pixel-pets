@@ -134,6 +134,10 @@ export type Text =
   | 'goodMorning'
   | 'phew'
   | 'missedYou'
+  | 'petted'
+  | 'lookingAtYou'
+  | 'rudeAwakening'
+  | 'annoyed'
   | 'aWeekTogether'
   | 'aMonthTogether'
   | 'daysTogether'
@@ -155,7 +159,9 @@ export type Feelings = { worry: number; pride: number; at: number }
 export type Activity = { mood: Mood; label: Label }
 
 // A short-lived mood (done, failed, waking up) shown over the activity until `until`.
-export type Reaction = { mood: Mood; label: Label; until: number }
+// `byTouch`: the person's pointer did it; it gives way to any other reaction
+// still showing, and at work it leaves Claude's line be.
+export type Reaction = { mood: Mood; label: Label; until: number; byTouch?: true }
 
 // A subagent's pet; `leaving` holds its last reaction before it goes.
 export type AgentPet = {

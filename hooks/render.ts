@@ -20,40 +20,66 @@ export const sizeOf = (frame: Frame) => {
   return { columns: widthOf(rows[0]), rows: isGlyphs(frame) ? rows.length : Math.ceil(rows.length / 2) }
 }
 
+// A cell: its glyph's code point, then foreground and background, NONE for none.
+type Cell = [number, number, number]
+
 // Two pixel rows share one terminal cell: '▀' takes the top as foreground
 // and the bottom as background. Letters missing from the palette are see-through.
-const pixelWords = (frame: string[], colors: Colors) => {
-  const words: number[] = []
+const pixelCells = (frame: string[], colors: Colors) => {
+  const rows: Cell[][] = []
   for (let r = 0; r < frame.length; r += 2) {
     // By code point, as `widthOf` measures the frame.
     const top = [...(frame[r] ?? '')]
     const bottom = [...(frame[r + 1] ?? '')]
-    for (let c = 0; c < top.length; c++) {
-      const up = colors[top[c] ?? '.']
-      const down = colors[bottom[c] ?? '.']
-      if (up === undefined && down === undefined) words.push(0x20, NONE, NONE)
-      else if (up === undefined) words.push(HALF_BOTTOM, down ?? NONE, NONE)
-      else words.push(HALF_TOP, up, down ?? NONE)
-    }
+    rows.push(
+      top.map((letter, c): Cell => {
+        const up = colors[letter]
+        const down = colors[bottom[c] ?? '.']
+        if (up === undefined && down === undefined) return [0x20, NONE, NONE]
+        if (up === undefined) return [HALF_BOTTOM, down ?? NONE, NONE]
+        return [HALF_TOP, up, down ?? NONE]
+      }),
+    )
   }
-  return words
+  return rows
 }
 
 // One glyph a cell, in its mask's color; '.' in the mask is the pack's ink.
-const glyphWords = ({ art, color }: Glyphs, colors: Colors) =>
-  art.flatMap((row, r) => {
+const glyphCells = ({ art, color }: Glyphs, colors: Colors) =>
+  art.map((row, r) => {
     const mask = [...(color[r] ?? '')]
-    return [...row].flatMap((glyph, c) =>
+    return [...row].map((glyph, c): Cell =>
       glyph === ' ' ? [0x20, NONE, NONE] : [glyph.codePointAt(0) ?? 0x20, colors[mask[c] ?? '.'] ?? NONE, NONE],
     )
   })
 
+const cellsOf = (frame: Frame, colors: Colors) => (isGlyphs(frame) ? glyphCells(frame, colors) : pixelCells(frame, colors))
+
 export const encode = (frame: Frame, colors: Colors) => {
-  const words = isGlyphs(frame) ? glyphWords(frame, colors) : pixelWords(frame, colors)
+  const words = cellsOf(frame, colors).flat(2)
   // The engine's runtime has TC39 base64; TypeScript's es2023 lib does not type it.
   const bytes = new Uint8Array(Uint32Array.from(words).buffer) as Uint8Array & { toBase64(): string }
   return bytes.toBase64()
 }
+
+// A stretch of a row in one look: its text, then foreground and background as
+// "#rrggbb", '' for none.
+export type Run = [text: string, fg: string, bg: string]
+
+const hexOf = (color: number) => (color === NONE ? '' : `#${color.toString(16).padStart(6, '0')}`)
+
+// The frame as styled text, for where a Raster cannot go: a row of runs a line,
+// neighbors that look alike joined.
+export const artOf = (frame: Frame, colors: Colors): Run[][] =>
+  cellsOf(frame, colors).map(row =>
+    row.reduce<Run[]>((runs, [glyph, fg, bg]) => {
+      const text = String.fromCodePoint(glyph)
+      const last = runs.at(-1)
+      if (last !== undefined && last[1] === hexOf(fg) && last[2] === hexOf(bg)) last[0] += text
+      else runs.push([text, hexOf(fg), hexOf(bg)])
+      return runs
+    }, []),
+  )
 
 // Glyphs that point one way swap for their twin when the art is flipped.
 const SWAP: Record<string, string> = {}

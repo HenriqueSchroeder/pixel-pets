@@ -30,7 +30,7 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 | `sleepy` | idle at night, from 22h to 6h | idle |
 | `tired` | idle after 3 hours of work with no break of an hour | sleepy |
 | `walking` | strolling around while idle and alone; a pack without it never walks | idle |
-| `watching` | you are typing in the prompt while Claude is idle | reading |
+| `watching` | you are typing in the prompt while Claude is idle, or your pointer rests on it | reading |
 | `waking` | for a moment when a prompt wakes it from a deep sleep | thinking |
 | `thinking` | a turn started | sleeping |
 | `typing` | any other tool, MCP tools included | thinking |
@@ -59,6 +59,8 @@ It has wants of its own too, for the session. Energy: sleep fills it and work dr
 The time of day is your local time. At night it is sleepy and dozes off in half of `awakeMinutes`. It remembers you across sessions. The day's first sight of you opens with one welcome: an anniversary (a week, a month, 100 days, each year together), "missed you!" after two days or more away, or good morning. `/pet` also says how long you have been together. Late at night it says so once, whichever session sees you first. A `claude -p` run does not count as seeing you.
 
 Now and then it says something of its own, in quotes on Claude's line: "hmm…" after 30 seconds of thinking with no tool, a remark on the 20th file read in a turn, on three agents at work at once, on a prompt at night, a sigh when boredom gets it up from a nap, and a word in its sleep now and then. Each at most once a turn, and never two within three minutes.
+
+You can touch it with the pointer. A click pets it ("♥ petted", or "missed you!" if it did), and at work it is glad for a moment while Claude's line still says what runs. A click wakes a dozing pet glad and up for a while; out of a deep sleep it grumbles ("woke me up…") and sleeps on. Four clicks within three seconds annoy it ("hey, stop it!"), and it ignores clicks for three seconds. Resting the pointer on it half a second while it is idle gets a look back. A petting gives way to a reaction already showing, as a failure.
 
 Each subagent gets a mini pet with its type (`Explore`, `Plan`, ...) and its current action. When the agent ends, its pet is happy (or sad, if it failed) for a moment and then leaves.
 
@@ -238,6 +240,7 @@ pixel-pets reads your pet packs, Claude Code's `language` setting and the `HOME`
 ## Limitations
 
 - The pixel art needs a terminal. Other surfaces get a line of text.
+- Touching the pet needs a terminal that reports the pointer to Claude Code. Elsewhere it only shows.
 - A pet pack is read when the plugin loads. After editing one, run `/reload-plugins`.
 - The mods API is in early access and can change between Claude Code releases.
 
