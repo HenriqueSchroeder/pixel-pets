@@ -973,7 +973,7 @@ const asleepWithClock = async ($: Parameters<TestBody>[0], on: On, moods: Record
 
 // What the main pet's Client has to show, as a drawing it asks for its frames in.
 type Asking = {
-  post: (data: { events: never[] }, scope: { in: string }) => Promise<void>
+  post: (data: { events: string[] }, scope: { in: string }) => Promise<void>
   drawn: (scope: { in: string }) => Promise<unknown>
 }
 const shownBy = async (ui: Asking) => JSON.stringify(await ui.drawn({ in: 'touch' }))
@@ -1409,4 +1409,123 @@ test('a slow tool is no long think', async ($, on) => {
   expect(await line($)).toBe('· running npm run build')
   await clock.advance(20_000)
   await running
+})
+
+// The pointer over the main pet: what it does, handed over as its Client does each tick.
+const pointer = async ($: Parameters<TestBody>[0], working: boolean, ...events: string[]) => {
+  const ui = await $.ui.mount({ ...band(working), surface: 'terminal' })
+  await ui.post({ events }, { in: 'touch' })
+  const after = await $.ui.mount({ ...band(working), surface: 'terminal' })
+  return { line: (await after.find({ text: /^· / }))?.text, drawn: await shownBy(after) }
+}
+
+const lineNow = async ($: Parameters<TestBody>[0], working = false) =>
+  (await (await $.ui.mount({ ...band(working), surface: 'terminal' })).find({ text: /^· / }))?.text
+
+test('a click pets it awake, and then it looks back at the pointer on it', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  expect((await pointer($, false, 'move', 'down', 'up')).line).toBe('· ♥ petted')
+  // The pointer still on it, it looks back once the petting is over.
+  await clock.advance(2500)
+  expect(await lineNow($)).toBe('· looking at you')
+})
+
+test('petted after a long while without the person, it missed them', { options: { awakeMinutes: 60 } }, async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await lineNow($)
+  await clock.advance(40 * 60_000)
+  expect((await pointer($, false, 'down')).line).toBe('· missed you!')
+})
+
+test("petted at work, it is glad but Claude's line still says what runs", async ($, on) => {
+  const glad = JSON.stringify({ ...JSON.parse(pack('cat')), main: { moods: { sleeping: [['oo', 'bb']], running: [['bb', 'oo']], happy: [['ob', 'ob']] } } })
+  setup(on, { '/pets/cat.json': glad })
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  on('tool.call', () => ({ result: 'ok' }))
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await $.tool.call({ tool: 'Bash', command: 'npm test' })
+  const before = await shownBy(await $.ui.mount({ ...band(true), surface: 'terminal' }))
+  const petted = await pointer($, true, 'down')
+  expect(petted.line).toBe('· running npm test')
+  expect(petted.drawn).not.toBe(before)
+})
+
+test('a click does not cut short a failure it is showing', async ($, on) => {
+  setup(on)
+  on('tool.call', () => ({ result: 'boom', isError: true }))
+  await $.tool.call({ tool: 'Bash', command: 'false' })
+  expect((await pointer($, true, 'down')).line).toBe('· failed: false')
+})
+
+test('a click wakes a dozing pet glad, and it stays up a while', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(2 * 60_000)
+  expect(await lineNow($)).toBe('· sleeping')
+  expect((await pointer($, false, 'down')).line).toBe('· waking up')
+  await clock.advance(2500)
+  expect(await lineNow($)).toBe('· hanging around')
+})
+
+test('a click fast asleep is a rude awakening, and it sleeps on', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(12 * 60_000)
+  expect(await lineNow($)).toBe('· fast asleep')
+  expect((await pointer($, false, 'down')).line).toBe('· woke me up…')
+  await clock.advance(2500)
+  expect(await lineNow($)).toBe('· fast asleep')
+})
+
+test('clicked four times in a row it gets annoyed, and ignores clicks for a while', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  expect((await pointer($, false, 'down', 'up', 'down', 'up', 'down')).line).toBe('· ♥ petted')
+  await clock.advance(250)
+  expect((await pointer($, false, 'down')).line).toBe('· hey, stop it!')
+  await clock.advance(2000)
+  expect((await pointer($, false, 'down')).line).toBe('· hey, stop it!')
+  await clock.advance(1100)
+  expect((await pointer($, false, 'down')).line).toBe('· ♥ petted')
+})
+
+test('a pointer resting on it gets a look back, until it leaves', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  expect((await pointer($, false, 'enter', 'move')).line).toBe('· hanging around')
+  await clock.advance(600)
+  expect((await pointer($, false)).line).toBe('· looking at you')
+  expect((await pointer($, false, 'leave')).line).toBe('· hanging around')
+})
+
+test('at work a pointer resting on it changes nothing', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  await $.turn.start({ text: 'hi', turnId: 't1' })
+  await pointer($, true, 'move')
+  await clock.advance(600)
+  expect((await pointer($, true)).line).toBe('· thinking')
+})
+
+test('what the pointer posts is checked: junk does nothing', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  const ui = await $.ui.mount({ ...band(false), surface: 'terminal' })
+  for (const junk of [null, 5, { events: 'down' }, { events: [{ type: 'down' }, 7] }]) {
+    await (ui as unknown as { post: (data: unknown, scope: { in: string }) => Promise<void> }).post(junk, { in: 'touch' })
+  }
+  expect(await lineNow($)).toBe('· hanging around')
 })
