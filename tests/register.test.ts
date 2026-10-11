@@ -1529,3 +1529,19 @@ test('what the pointer posts is checked: junk does nothing', async ($, on) => {
   }
   expect(await lineNow($)).toBe('· hanging around')
 })
+
+test('hidden and shown again, it does not look back at a pointer it never saw leave', async ($, on) => {
+  const { clock } = setup(on)
+  on('turn.complete', () => ({ text: '' }))
+  // The engine's own band, drawn while the pet is hidden.
+  on('ui.render', ($, e) => $.ui.resolve(e).Text({ children: 'engine band' }))
+  await $.turn.complete(finished)
+  await clock.advance(3000)
+  await pointer($, false, 'move')
+  await clock.advance(600)
+  expect((await pointer($, false)).line).toBe('· looking at you')
+  await $.command.run(runPet)
+  await $.ui.mount({ ...band(false), surface: 'terminal' })
+  await $.command.run(runPet)
+  expect(await lineNow($)).toBe('· hanging around')
+})

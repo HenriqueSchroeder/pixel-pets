@@ -339,6 +339,11 @@ export const register: Register = (on, options) => {
   // What the pointer has done to it, and whether it was looking back as last drawn.
   let touched: Touch = untouched
   let gazing = false
+  // With no Client drawn, no `leave` comes: the pointer counts as gone.
+  const letGo = () => {
+    touched = leave(touched)
+    gazing = false
+  }
   let isOff = false
   // The tool call running for each agent and tool, so a permission prompt (which
   // names only those) finds the call it is for; and the calls that asked.
@@ -727,6 +732,7 @@ export const register: Register = (on, options) => {
     scene = null
     isOff = await read($, isHidden)
     if (e.props.hasSurvey || isOff) {
+      letGo()
       return next(e)
     }
 
@@ -821,6 +827,7 @@ export const register: Register = (on, options) => {
     // A line of text has no stage, and must not move the pet on the one that has.
     const mainSize = sizeOf(pack.moods.sleeping[0] ?? [])
     if (e.surface !== 'terminal' || e.props.maxRows < mainSize.rows + (showsLine ? 1 : 0) || e.props.bodyColumns < mainSize.columns) {
+      letGo()
       const { Text } = $.ui.resolve(e)
       const others = list.map(one => ` · ${one.type}: ${agentWords(one)}`).join('')
       return <Text dimColor>🐾 Claude: {words(shown.label)}{extra}{others}</Text>
