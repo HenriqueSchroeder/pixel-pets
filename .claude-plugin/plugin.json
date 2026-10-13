@@ -64,10 +64,16 @@
       "description": "Show each subagent's name and what it is doing under its mini pet. Off, the mini pets stand closer, without text",
       "default": true
     },
-    "learning": {
+    "lively": {
       "type": "boolean",
-      "title": "Learning (experiment)",
-      "description": "On every other day the pet lives by its own whims and what you pet it for, waits for you when you usually turn up, and logs it to ~/.claude/pixel-pets/learning/. Never logs what you write",
+      "title": "Lively",
+      "description": "The pet lives by its own whims, learns what you pet it for, wakes up in a temper and waits for you when you usually turn up. Off, it behaves as it always did and keeps nothing of you",
+      "default": true
+    },
+    "learningExperiment": {
+      "type": "boolean",
+      "title": "Learning experiment",
+      "description": "Turn the lively pet on only every other day, and log each day to ~/.claude/pixel-pets/learning/ to compare the two. Never logs what you write",
       "default": false
     }
   }

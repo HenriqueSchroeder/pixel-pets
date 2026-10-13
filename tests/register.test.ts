@@ -28,6 +28,10 @@ const firstLightAfterDeep = (idleSince: number) => {
   return idleFor + 30_000
 }
 
+// A pet that wakes up its usual self on every day these tests live through, so its
+// lively tempers leave their timings be (found by search; days 1-4, 8-11 and 14-17).
+const USUAL_SEED = 373958
+
 const setup = (
   on: On,
   entries: Record<string, string> = { '/pets/cat.json': pack('cat') },
@@ -37,7 +41,7 @@ const setup = (
 ) => {
   const reads: string[] = []
   const clock = mock.clock(on, { now })
-  mock.store(on, stored)
+  mock.store(on, { learning: { seed: USUAL_SEED, bandit: {} }, ...stored })
   mock.env(on, { HOME, LANG: 'en_US.UTF-8' })
   on('settings.read', () => ({ value: settings }))
   on('fs.read', (_$, e) => {
@@ -1616,7 +1620,7 @@ const playYarnAndPet = async ($: Parameters<TestBody>[0], clock: { advance: (ms:
   await lineNow($)
 }
 
-test('learning on, an activity petted within a minute is learned and logged', { options: { learning: true, awakeMinutes: 5 } }, async ($, on) => {
+test('learning on, an activity petted within a minute is learned and logged', { options: { learningExperiment: true, awakeMinutes: 5 } }, async ($, on) => {
   const seed = seedFor('learned')
   const { clock, kept, log } = learningSetup(on, { learning: { seed, bandit: {} } })
   await playYarnAndPet($, clock)
@@ -1634,20 +1638,20 @@ test('learning on, an activity petted within a minute is learned and logged', { 
   expect(Math.abs(wins + losses - lines.length)).toBeLessThan(0.01)
 })
 
-test('learning on, a day picked by hand still logs and learns, with no propensity', { options: { learning: true, awakeMinutes: 5 } }, async ($, on) => {
+test('learning on, a day picked by hand still logs and learns, with no propensity', { options: { learningExperiment: true, awakeMinutes: 5 } }, async ($, on) => {
   const { clock, kept, log } = learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} } })
   await playYarnAndPet($, clock)
   expect((kept.learning as { bandit: Record<string, unknown> }).bandit['afternoon:cat:yarn']).toBeDefined()
   expect(log()[0]).toEqual(expect.objectContaining({ kind: 'shown', arm: 'hand', propensity: null, reward: 1 }))
 })
 
-test('learning on with nothing kept yet, it picks a seed and keeps it', { options: { learning: true } }, async ($, on) => {
-  const { kept } = learningSetup(on)
+test('with nothing kept yet, it picks a seed and keeps it', async ($, on) => {
+  const { kept } = learningSetup(on, { learning: undefined })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
   expect(typeof (kept.learning as { seed?: unknown }).seed).toBe('number')
 })
 
-test('learning on, each prompt logs how unusual its moment is, and nothing it says', { options: { learning: true } }, async ($, on) => {
+test('learning on, each prompt logs how unusual its moment is, and nothing it says', { options: { learningExperiment: true } }, async ($, on) => {
   const { clock, kept, log } = learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} } })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.prompt.submit({ text: 'a secret plan', wait: false, origin: { kind: 'composer' } })
@@ -1663,8 +1667,8 @@ test('learning on, each prompt logs how unusual its moment is, and nothing it sa
   expect(Object.keys(kept.rhythm as object)).toEqual(['weekday:28'])
 })
 
-test('learning off, it keeps and writes nothing of it', { options: { awakeMinutes: 5 } }, async ($, on) => {
-  const { clock, kept, written } = learningSetup(on)
+test('not lively, it keeps and writes nothing of the person', { options: { lively: false, awakeMinutes: 5 } }, async ($, on) => {
+  const { clock, kept, written } = learningSetup(on, { learning: undefined })
   await playYarnAndPet($, clock)
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   expect(kept.learning).toBeUndefined()
@@ -1672,13 +1676,13 @@ test('learning off, it keeps and writes nothing of it', { options: { awakeMinute
   expect(written).toEqual({})
 })
 
-test('learning on, a band drawn with no session.start (a reload) still learns', { options: { learning: true } }, async ($, on) => {
-  const { kept } = learningSetup(on)
+test('a band drawn with no session.start (a reload) still learns', async ($, on) => {
+  const { kept } = learningSetup(on, { learning: undefined })
   await lineNow($)
   expect(typeof (kept.learning as { seed?: unknown }).seed).toBe('number')
 })
 
-test('learning on, a claude -p run logs no moment of the person', { options: { learning: true } }, async ($, on) => {
+test('learning on, a claude -p run logs no moment of the person', { options: { learningExperiment: true } }, async ($, on) => {
   const { clock, kept, written } = learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} } })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
@@ -1688,7 +1692,7 @@ test('learning on, a claude -p run logs no moment of the person', { options: { l
   expect(written).toEqual({})
 })
 
-test('learning on, clicks that annoy it are logged, and so is the activity they spoiled', { options: { learning: true, awakeMinutes: 5 } }, async ($, on) => {
+test('learning on, clicks that annoy it are logged, and so is the activity they spoiled', { options: { learningExperiment: true, awakeMinutes: 5 } }, async ($, on) => {
   const { clock, log } = learningSetup(on, { learning: { seed: seedFor('learned'), bandit: {} } })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
   await $.turn.complete(finished)
@@ -1707,7 +1711,7 @@ test('learning on, clicks that annoy it are logged, and so is the activity they 
   expect(lines[1]).toEqual(expect.objectContaining({ kind: 'shown', activity: 'yarn', annoyed: true }))
 })
 
-test('learning on, what still waits for a pet when the session ends is kept', { options: { learning: true, awakeMinutes: 5 } }, async ($, on) => {
+test('learning on, what still waits for a pet when the session ends is kept', { options: { learningExperiment: true, awakeMinutes: 5 } }, async ($, on) => {
   const { clock, kept, log } = learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} } })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
   await $.turn.complete(finished)
@@ -1735,7 +1739,7 @@ const waitingDay = async ($: Parameters<TestBody>[0], on: On, arm: 'learned' | '
   return { ...found, key }
 }
 
-test('on a lively day it wakes up about when they usually turn up, and is glad they did', { options: { learning: true } }, async ($, on) => {
+test('on a lively day it wakes up about when they usually turn up, and is glad they did', { options: { learningExperiment: true } }, async ($, on) => {
   const { clock, key } = await waitingDay($, on, 'learned')
   // 14:20: away only twenty minutes, it sleeps on.
   await clock.advance(20 * 60_000)
@@ -1747,7 +1751,7 @@ test('on a lively day it wakes up about when they usually turn up, and is glad t
   expect(await lineNow($)).toBe('· there you are!')
 })
 
-test('it gives up waiting once the usual time is past', { options: { learning: true } }, async ($, on) => {
+test('it gives up waiting once the usual time is past', { options: { learningExperiment: true } }, async ($, on) => {
   const { clock } = await waitingDay($, on, 'learned')
   await clock.advance(40 * 60_000)
   expect(await lineNow($)).toBe('· waiting for you')
@@ -1756,7 +1760,7 @@ test('it gives up waiting once the usual time is past', { options: { learning: t
   expect(await lineNow($)).not.toBe('· waiting for you')
 })
 
-test('on a day as usual it does not wait up', { options: { learning: true } }, async ($, on) => {
+test('on a day as usual it does not wait up', { options: { learningExperiment: true } }, async ($, on) => {
   const { clock } = await waitingDay($, on, 'hand')
   await clock.advance(40 * 60_000)
   expect(await lineNow($)).not.toBe('· waiting for you')
@@ -1765,7 +1769,7 @@ test('on a day as usual it does not wait up', { options: { learning: true } }, a
 // A pet that knows the person's moments well, and none of them like this one.
 const knowing = { seen: 80, cells: {} }
 
-test('on a lively day an odd moment gets a curious look, once an hour at most', { options: { learning: true } }, async ($, on) => {
+test('on a lively day an odd moment gets a curious look, once an hour at most', { options: { learningExperiment: true } }, async ($, on) => {
   const { clock } = learningSetup(on, { learning: { seed: seedFor('learned'), bandit: {} }, familiar: knowing })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
@@ -1775,17 +1779,34 @@ test('on a lively day an odd moment gets a curious look, once an hour at most', 
   expect(await lineNow($)).not.toBe('· hm? this is new')
 })
 
-test('an odd moment gets no look while it hardly knows the person', { options: { learning: true } }, async ($, on) => {
+test('an odd moment gets no look while it hardly knows the person', { options: { learningExperiment: true } }, async ($, on) => {
   learningSetup(on, { learning: { seed: seedFor('learned'), bandit: {} }, familiar: { seen: 10, cells: {} } })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   expect(await lineNow($)).not.toBe('· hm? this is new')
 })
 
-test('on a day as usual an odd moment gets no look', { options: { learning: true } }, async ($, on) => {
+test('on a day as usual an odd moment gets no look', { options: { learningExperiment: true } }, async ($, on) => {
   learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} }, familiar: knowing })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
   expect(await lineNow($)).not.toBe('· hm? this is new')
+})
+
+test('lively by default, it learns what it is petted for, and writes nothing to disk', { options: { awakeMinutes: 5 } }, async ($, on) => {
+  const { clock, kept, written } = learningSetup(on)
+  await playYarnAndPet($, clock)
+  expect((kept.learning as { bandit: Record<string, unknown> }).bandit['afternoon:cat:yarn']).toBeDefined()
+  expect(written).toEqual({})
+})
+
+// A seed whose experiment would make today a usual day: with no experiment it is lively all the same.
+test('lively by default every day, it waits up for them about when they usually turn up', async ($, on) => {
+  const { clock, written } = learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} }, rhythm: habitAt1430 })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
+  await $.turn.complete(finished)
+  await clock.advance(40 * 60_000)
+  expect(await lineNow($)).toBe('· waiting for you')
+  expect(written).toEqual({})
 })
 

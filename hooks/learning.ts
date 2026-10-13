@@ -5,10 +5,10 @@ import { seeded, type Random } from '../learn/random'
 import { bumps, coder, encode, type Familiar } from '../learn/recall'
 import { daysBetween } from './memory'
 
-// The experiment of a pet that feels alive: each day it either lives by what it
-// learned and by whims of its own (`learned`) or as it always did (`hand`), and
-// every activity shown is logged with the pets it got. What it learns of the
-// person's taste only tips its choices: it never settles on one.
+// A pet that feels alive: it lives by what it learned of the person and by whims
+// of its own, and what it learns of their taste only tips its choices: it never
+// settles on one. In the experiment it does so only on its `learned` days, as it
+// always did on the `hand` ones, and every activity shown is logged with the pets it got.
 
 export type Arm = 'learned' | 'hand'
 export type Daypart = 'night' | 'morning' | 'afternoon' | 'evening'

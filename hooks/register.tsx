@@ -327,7 +327,8 @@ async function together($: EngineInterface, locale: Locale) {
 }
 
 // What it learned of the person's taste, shared by every session, and the seed that
-// fixes which days learn. The first load picks the seed. With no store it learns nothing.
+// fixes its whims and tempers (and, in the experiment, which days are lively). The
+// first load picks the seed. With no store it learns nothing and lives as it always did.
 type Learning = { seed: number; bandit: Bandit }
 
 async function loadLearning($: EngineInterface): Promise<Learning | undefined> {
@@ -345,6 +346,7 @@ async function loadLearning($: EngineInterface): Promise<Learning | undefined> {
 
 // The experiment's log, a line per event, where the person can read and delete it:
 // a file per session, so sessions open at once never write over each other's lines.
+// With no experiment there is no file name, and nothing is logged.
 async function logPath($: EngineInterface, name: string) {
   const home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE'))
   return home === undefined ? undefined : `${home}/.claude/pixel-pets/learning/${name}.jsonl`
@@ -352,8 +354,8 @@ async function logPath($: EngineInterface, name: string) {
 
 // No append in $.fs: the session's file is read and written again, which a
 // session's few hundred lines afford.
-async function appendLog($: EngineInterface, name: string, lines: string[]) {
-  const path = await logPath($, name)
+async function appendLog($: EngineInterface, name: string | undefined, lines: string[]) {
+  const path = name === undefined ? undefined : await logPath($, name)
   if (path === undefined || lines.length === 0) return
   // A read that fails stops the write, rather than write the lines over what was there.
   const text = (await $.fs.exists(path)) ? await $.fs.read(path) : ''
@@ -365,7 +367,7 @@ async function appendLog($: EngineInterface, name: string, lines: string[]) {
 // ponytail: two sessions settling at the same moment may lose one's update; take a
 // lock in the store if the log shows tallies short of its lines.
 // With no store it learns nothing, but the log still gets its lines.
-async function keepLearned($: EngineInterface, name: string, done: Shown[]) {
+async function keepLearned($: EngineInterface, name: string | undefined, done: Shown[]) {
   let learned: Learning | undefined
   try {
     const kept = await loadLearning($)
@@ -382,7 +384,7 @@ async function keepLearned($: EngineInterface, name: string, done: Shown[]) {
 
 // How unusual a prompt's moment is, before it becomes a little more familiar; and
 // how many of the person's moments it knew by then.
-async function noteMoment($: EngineInterface, name: string, code: number[], now: number, seed: number) {
+async function noteMoment($: EngineInterface, name: string | undefined, code: number[], now: number, seed: number) {
   const { seen: known, cells } = asFamiliarity(await $.store.get('familiar'))
   const news = novelty(cells, code, now, FAMILIAR_HALF_LIFE_MS)
   see(cells, code, now, FAMILIAR_HALF_LIFE_MS)
@@ -401,7 +403,7 @@ async function loadRhythm($: EngineInterface) {
 }
 
 // The person turned up: one more arrival at this half hour of the day.
-async function noteArrival($: EngineInterface, name: string, now: number) {
+async function noteArrival($: EngineInterface, name: string | undefined, now: number) {
   const rhythm = arrived(await loadRhythm($), now)
   await $.store.set('rhythm', rhythm)
   await appendLog($, name, [JSON.stringify({ kind: 'arrival', at: now })])
@@ -428,8 +430,11 @@ export const register: Register = (on, options) => {
   const showsLine = options.labelLine !== false
   // false: each agent is its mini pet alone, without its name and words under it.
   const showsAgentLabels = options.agentLabels !== false
-  // On, it runs the experiment of a pet that learns and lives by its own whims.
-  const learns = options.learning === true
+  // On (the default), the pet lives by its own whims and what it learns of the
+  // person; off, it lives as it always did, and keeps nothing of them.
+  const isAlive = options.lively !== false
+  // The experiment: lively and usual days in turn, each logged, to compare them.
+  const experiments = isAlive && options.learningExperiment === true
   let learning: Learning | undefined
   // When the person usually turns up; what it did lately, the latest first; and
   // when it last found a moment odd.
@@ -438,8 +443,9 @@ export const register: Register = (on, options) => {
   let oddAt = 0
   // Loaded once, at session.start or, after a reload (a settings change), at the next draw.
   let hasLoaded = false
-  // Today it lives by what it learned and its whims, rather than as it always did.
-  const isLively = (now: number) => learning !== undefined && armOf(learning.seed, now) === 'learned'
+  // Today it lives by what it learned and its whims, rather than as it always did:
+  // every day, but in the experiment only on its lively days.
+  const isLively = (now: number) => learning !== undefined && (!experiments || armOf(learning.seed, now) === 'learned')
   // Away a while and about to turn up, as they usually do now: it waits for them.
   const waitsFor = (idleSince: number | null, now: number) =>
     isLively(now) && idleSince !== null && now - idleSince >= AWAY_MS && expects(rhythm, now)
@@ -451,7 +457,7 @@ export const register: Register = (on, options) => {
   let writing = Promise.resolve()
   let logName: string | undefined
   const logNameAt = (now: number) =>
-    (logName ??= `${new Date(now).toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 8)}`)
+    experiments ? (logName ??= `${new Date(now).toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 8)}`) : undefined
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
   // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
@@ -554,7 +560,7 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'pet', description: say(locale, 'commandDescription'), argumentHint: '[name | default]' })
     petName = (await projectPet($)) ?? configured
     playing = await packOf($, petName, locale)
-    if (learns && !hasLoaded) {
+    if (isAlive && !hasLoaded) {
       hasLoaded = true
       learning = await loadLearning($)
       rhythm = await loadRhythm($)
@@ -634,7 +640,7 @@ export const register: Register = (on, options) => {
     if (learning !== undefined && poke === 'pet') recent = petted(recent, now)
     if (learning !== undefined && poke === 'annoy') {
       recent = annoyed(recent, now)
-      const line = JSON.stringify({ kind: 'annoy', at: now, arm: armOf(learning.seed, now) })
+      const line = JSON.stringify({ kind: 'annoy', at: now, arm: isLively(now) ? 'learned' : 'hand' })
       const name = logNameAt(now)
       writing = writing.then(() => appendLog($, name, [line])).catch(() => {})
     }
@@ -941,7 +947,7 @@ export const register: Register = (on, options) => {
     const words = (one: Label) => say(locale, one.text, one.detail)
     // ponytail: the drives move only when the band is drawn, so a band hidden by /pet
     // counts all that time as what it last showed; give them a clock of their own if that skews them.
-    if (learns && !hasLoaded) {
+    if (isAlive && !hasLoaded) {
       hasLoaded = true
       learning = await loadLearning($)
       rhythm = await loadRhythm($)
@@ -1088,9 +1094,9 @@ export const register: Register = (on, options) => {
       const mood: Mood = (pack.walks && onStage.moving) || blinkFrame !== undefined ? 'walking' : shown.mood
       const labelShown = isStrolling ? label('strolling') : shown.label
 
-      // On a learning day it picks the activity by what earned pets at this time of day.
+      // On a lively day it picks the activity by its whims and what earned pets at this time of day.
       const known = learning
-      const arm = known === undefined ? undefined : armOf(known.seed, now)
+      const arm = known === undefined ? undefined : isLively(now) ? 'learned' : 'hand'
       const daypart = daypartOf(hourOf(now))
       const choose =
         known !== undefined && arm === 'learned'

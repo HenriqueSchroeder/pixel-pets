@@ -99,7 +99,8 @@ Run `/plugin configure pixel-pets@pixel-pets`, or find **pixel-pets** in `/confi
 | `awakeMinutes` | `1` | How long the pet stays awake, strolling around, after Claude finishes, before it falls asleep (half as long at night). `0` sends it straight to sleep |
 | `labelLine` | `true` | Shows Claude's line above the pet: what it is doing, how long the turn has run and what the pet says. `false` leaves the pet and its agents alone, one row shorter |
 | `agentLabels` | `true` | Shows each subagent's type and what it is doing under its mini pet. `false` leaves the mini pets alone, standing closer, told apart only by their color |
-| `learning` | `false` | An experiment in a pet that feels alive. On every other day it lives by its own whims, which drift over days, and by what you pet it for at that time of day, and tires of repeating itself; it wakes up in a temper, waits for you about when you usually turn up, and finds an unusual moment curious. On the other days it is as usual. Each activity shown, each annoyed click, each arrival and how unusual each prompt's moment is go to `~/.claude/pixel-pets/learning/`, a file per session, never what you write. Delete that folder, and `learning`, `familiar` and `rhythm` in the plugin's store, to forget it all |
+| `lively` | `true` | The pet lives by its own whims, which drift over days, and by what you pet it for at each time of day, and tires of repeating itself. It wakes up in a temper, waits for you about when you usually turn up, and finds an unusual moment curious. What it learns stays in the plugin's store (`learning`, `familiar`, `rhythm`), never what you write. `false` makes it the pet it always was |
+| `learningExperiment` | `false` | Makes the pet lively only every other day and logs each day to `~/.claude/pixel-pets/learning/`, a file per session, to compare the two: each activity shown, each annoyed click, each arrival and how unusual each prompt's moment is |
 
 ## Use another pet
 
