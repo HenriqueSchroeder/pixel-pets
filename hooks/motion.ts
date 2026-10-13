@@ -147,7 +147,17 @@ const holds = (pack: Pack, motion: Motion, mood: Mood, tick: number) => {
 // agents, if it does. Safe to call more than once per tick: the same tick gives
 // the same frame.
 // `urge`, what the pet feels like, lets it drift off at work; without it, it never does.
-export const step = (pack: Pack, given: Motion | undefined, mood: Mood, tick: number, random: Random, urge?: Urge) => {
+// `choose`, given the activities of the mood when one falls due, names the one to play
+// instead; without it, the one due plays.
+export const step = (
+  pack: Pack,
+  given: Motion | undefined,
+  mood: Mood,
+  tick: number,
+  random: Random,
+  urge?: Urge,
+  choose?: (activities: string[]) => string,
+) => {
   const previous = given?.pack === pack ? given : undefined
   let motion =
     previous !== undefined && (previous.mood === mood || holds(pack, previous, mood, tick))
@@ -188,7 +198,13 @@ export const step = (pack: Pack, given: Motion | undefined, mood: Mood, tick: nu
     }
   }
   // An activity due goes first: a blink due with it would otherwise put it off.
-  const due = isLeaving ? undefined : (mine.find(one => one.activity !== undefined && isDue(one)) ?? mine.find(isDue))
+  let due = isLeaving ? undefined : (mine.find(one => one.activity !== undefined && isDue(one)) ?? mine.find(isDue))
+  if (due?.activity !== undefined && choose !== undefined) {
+    const activities = mine.filter(one => one.activity !== undefined)
+    const name = choose(activities.map(one => one.name))
+    // The one due waits its own time again below, as anything due meanwhile does.
+    due = activities.find(one => one.name === name) ?? due
+  }
   if (due !== undefined) {
     const frames = playOf(due, pack.fps, random)
     const ends = tick + frames.length

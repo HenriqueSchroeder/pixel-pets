@@ -166,6 +166,46 @@ describe('activities', () => {
     expect(activityIn(after, 11)).toBeUndefined()
   })
 
+  test('one due may give way to the one `choose` names, and waits its own time again', () => {
+    const two = parsePack({
+      name: 'two',
+      palette: { a: '#000000' },
+      fps: 1,
+      main: {
+        moods: { sleeping: [f('zzz')], thinking: [f('hmm')], idle: [f('idl')] },
+        activities: {
+          play: { start: [f('st1')], loop: [f('lp1')], end: [f('en1')], seconds: [5, 5], moods: ['idle'], every: [3, 3] },
+          dig: { start: [f('dg1')], loop: [f('dg2')], end: [f('dg3')], seconds: [5, 5], moods: ['idle'], every: [20, 20] },
+        },
+      },
+      mini: { tint: 'a', moods: { working: [f('a')] } },
+    })
+    const offered: string[][] = []
+    const seen: string[] = []
+    let motion: Motion | undefined
+    for (let tick = 0; tick <= 10; tick++) {
+      const moved = step(two, motion, 'idle', tick, always(0), undefined, names => (offered.push(names), 'dig'))
+      motion = moved.motion
+      seen.push(rowsOf(moved.frame)[0] ?? '')
+      if (tick === 4) expect(activityIn(motion, tick)).toBe('dig')
+    }
+    expect(offered[0]).toEqual(['play', 'dig'])
+    expect(seen).toEqual(['idl', 'idl', 'idl', 'dg1', 'dg2', 'dg2', 'dg2', 'dg2', 'dg2', 'dg3', 'idl'])
+    // `play` was due with it: it starts over from the end rather than right after.
+    expect(offered.length).toBe(1)
+  })
+
+  test('a name `choose` does not know leaves the one due to play', () => {
+    let motion: Motion | undefined
+    const seen: string[] = []
+    for (let tick = 0; tick <= 3; tick++) {
+      const moved = step(playful, motion, 'idle', tick, always(0), undefined, () => 'nope')
+      motion = moved.motion
+      seen.push(rowsOf(moved.frame)[0] ?? '')
+    }
+    expect(seen.at(-1)).toBe('st1')
+  })
+
   test('anything else coming up cuts it short, its end unplayed', () => {
     const playing = play('idle', 0, 5, always(0), undefined, playful).motion
     expect(play('thinking', 6, 6, always(0), playing, playful).seen).toEqual(['hmm'])
