@@ -185,12 +185,24 @@ def at(pixels, dx=0, dy=0):
     return [(r + dy, c + dx, ch) for r, c, ch in pixels]
 
 
-def frame(face=(), wing='fold', breath=False, dx=0, dy=0, body=(), fx=(), up=0, ground=()):
+# The fire in its belly showing through its pale scales, wherever they are as it breathes:
+# none, a glimmer, aglow, and up its throat.
+GLOW = [
+    [],
+    [(r, c, 'f') for r in (13, 14) for c in (21, 22, 23)],
+    [(r, c, 'f') for r in (12, 13, 14) for c in range(20, 25)] + [(13, 21, 'y'), (13, 22, 'y')],
+    [(r, c, 'f') for r in range(11, 15) for c in range(20, 25)] + [(r, c, 'y') for r in (12, 13) for c in (21, 22)]
+    + [(9, 20, 'f'), (9, 21, 'f'), (10, 20, 'f'), (10, 21, 'y')],
+]
+
+
+def frame(face=(), wing='fold', breath=False, dx=0, dy=0, body=(), fx=(), up=0, ground=(), glow=0):
     """`face` is painted on the head before it moves by (`dx`, `dy`); `fx` is
     painted where it is, after; `up` flies the whole frame up, and `ground`
-    stays on the ground."""
+    stays on the ground. `glow` lights its belly, 0 to 3."""
     g = over(BODY, WINGS[wing])
     g = paint(g, list(face) + (BREATH if breath else []) + list(body))
+    g = paint(g, [(r, c, ch) for r, c, ch in GLOW[glow] if g[r][c] in 'ck'])
     g = move_head(g, dx, dy)
     return paint(lift(paint(g, list(fx)), up), list(ground))
 
@@ -245,11 +257,33 @@ def drop(r, c):
 
 
 DUST = [(19, 7, 'g'), (18, 8, 'l'), (19, 18, 'l'), (18, 17, 'g'), (19, 27, 'g'), (18, 26, 'l')]
-# sparks drifting down around it as it celebrates
-SPARKS = [[(0, 2, 'y'), (2, 26, 'f'), (1, 13, 'n'), (3, 33, 'y')],
-          [(1, 3, 'f'), (3, 27, 'y'), (2, 13, 'y'), (0, 31, 'n')],
-          [(2, 2, 'n'), (0, 25, 'y'), (3, 12, 'f'), (1, 32, 'f')],
-          [(3, 3, 'y'), (1, 24, 'n'), (0, 14, 'y'), (2, 33, 'n')]]
+
+
+# Fireworks: a fireball spat up past its snout, then a burst somewhere above, spreading and falling.
+SHOT = [[(7, 31, 'y'), (8, 31, 'f')], [(5, 32, 'y'), (6, 32, 'f'), (7, 31, 'q')],
+        [(3, 33, 'y'), (4, 33, 'f'), (5, 32, 'q')], [(1, 34, 'y'), (2, 34, 'f'), (3, 33, 'q')], [(0, 34, 'q')]]
+BURST = [
+    [(0, 0, 'y'), (-1, 0, 'f'), (1, 0, 'f'), (0, -1, 'f'), (0, 1, 'f')],
+    [(-2, 0, 'y'), (2, 0, 'y'), (0, -2, 'y'), (0, 2, 'y'), (-1, -1, 'f'), (-1, 1, 'f'), (1, -1, 'f'), (1, 1, 'f')],
+    [(-2, 0, 'f'), (2, 0, 'f'), (0, -3, 'f'), (0, 3, 'f'), (-2, -2, 'q'), (-2, 2, 'q'), (2, -2, 'q'), (2, 2, 'q')],
+    [(-1, 0, 'q'), (3, 0, 'q'), (1, -3, 'q'), (1, 3, 'q'), (3, -2, 'g'), (3, 2, 'g')],
+    [(2, -3, 'g'), (2, 3, 'g')],
+]
+
+
+def burst(i, r, c):
+    return [(r + dr, c + dc, ch) for dr, dc, ch in BURST[i]] if 0 <= i < len(BURST) else []
+
+
+def fireworks(i):
+    """Two shots a loop, each bursting on its own side of the sky."""
+    k = i % 8
+    r, c = [(2, 6), (3, 13)][i // 8 % 2]
+    return (SHOT[k] if k < len(SHOT) else []) + burst(k - 3, r, c)
+
+
+# sparks struck off the ground by a scratching claw
+SCRATCH = [[(17, 25, 'y'), (18, 26, 'f')], [(16, 26, 'f'), (17, 27, 'q'), (19, 26, 'y')]]
 COIN = [(18, 28, 'y'), (18, 29, 'y'), (19, 28, 'f'), (19, 29, 'f')]
 GLINT = [(17, 30, 'n'), (16, 31, 'n'), (17, 27, 'n')]
 
@@ -264,36 +298,42 @@ F = {
     'sleeping': [asleep(breath=i >= 8, fx=puff(i - 8, dy=SLEEP_DROP)) for i in range(16)],
     'deepSleep': [asleep(breath=i >= 8) for i in range(16)],
     'waking': [frame(WIDE + SMALL)] * 4 + [frame(SHUT)] * 2 + [frame(OPEN)] * 2,
-    'idle': [frame(OPEN, 'lift' if i >= 8 else 'fold', breath=i >= 8, fx=EMBER if i % 8 < 4 else []) for i in range(16)],
+    # the fire in its belly glimmers at the top of each breath
+    'idle': [frame(OPEN, 'lift' if i >= 8 else 'fold', breath=i >= 8, glow=1 if 10 <= i < 14 else 0, fx=EMBER if i % 8 < 4 else [])
+             for i in range(16)],
     'sleepy': [frame(HALF, 'lift' if 6 <= i < 12 else 'fold', breath=6 <= i < 12) for i in range(12)] + [frame(SHUT)] * 4,
     'tired': [frame(HALF + SMALL, dy=1)] * 8 + [frame(SHUT + SMALL, 'lift', breath=True, dy=1)] * 8,
     'watching': breathing(DOWN),
     # smoke curling from its nostril as it thinks
     'thinking': [frame(UP, 'lift' if i >= 8 else 'fold', breath=i >= 8, fx=puff(i // 2)) for i in range(16)],
     'typing': [frame(DOWN, body=TAP_FRONT)] * 2 + [frame(DOWN)] * 2 + [frame(DOWN, body=TAP_HIND)] * 2 + [frame(DOWN)] * 2,
-    # snorting smoke, its ember flaring
-    'running': [frame(OPEN, fx=(HOT if i % 2 else EMBER) + puff(i % 6)) for i in range(12)],
-    # a claw scratching away, quicker than typing
-    'writing': [frame(DOWN, body=TAP_FRONT), frame(DOWN)] * 4,
+    # snorting smoke, its ember flaring, now and then a lick of flame
+    'running': [frame(OPEN + (SMALL if 8 <= i < 11 else []), fx=(HOT if i % 2 else EMBER) + puff(i % 6) + (fire(i % 2) if 8 <= i < 11 else []))
+                for i in range(12)],
+    # a claw scratching away, quicker than typing, striking sparks
+    'writing': [frame(DOWN, body=TAP_FRONT, fx=SCRATCH[0]), frame(DOWN, fx=SCRATCH[1])] * 4,
     'reading': breathing(DOWN),
     # its long neck sweeps back and forth
     'searching': [frame(BACK, dx=-1)] * 4 + [frame(OPEN)] * 4 + [frame(OPEN, dx=1)] * 4 + [frame(OPEN)] * 4,
     # leaning towards its agents (drawn on its right)
     'supervising': breathing(OPEN, dx=1),
-    'compacting': [frame(HALF, breath=i < 4, fx=puff(i % 6) + puff((i + 3) % 6)) for i in range(8)],
+    # melting it all down: hot breath and smoke, its belly aglow
+    'compacting': [frame(HALF + SMALL, breath=i < 4, glow=2 if i < 4 else 1, fx=puff(i % 6) + [[], fire(0), fire(1), fire(0)][i % 4])
+                   for i in range(8)],
     # panting, a drop running down its brow
     'sweating': [frame(OPEN + SMALL, breath=i % 2 == 0, fx=drop(3 + i // 2, 25)) for i in range(8)],
     'worried': [frame(SAD + SMALL)] * 6 + [frame(BACK + SMALL)] * 4 + [frame(SAD + SMALL)] * 6,
     # dark smoke from a glaring dragon
     'grumpy': [frame(GLARE, fx=EMBER + puff(i // 2 - 2, dark=True)) for i in range(16)],
     # chest out, wings half spread
-    'proud': [frame(JOY, 'up', breath=True, fx=EMBER + ([(12, 22, 'n')] if i % 8 < 2 else []))
+    'proud': [frame(JOY, 'up', breath=True, glow=2 if i % 8 >= 4 else 1, fx=EMBER + ([(12, 22, 'n')] if i % 8 < 2 else []))
               for i in range(16)],
     # wings flapping, hopping off all four feet
     'happy': [frame(JOY + OPEN_MOUTH, 'up' if i % 4 < 2 else 'down', body=TAP_FRONT + TAP_HIND if i % 4 < 2 else ())
               for i in range(16)],
-    # a long job done: a roar of fire, wings beating, sparks raining down
-    'celebrating': [frame(JOY + ROAR, 'up' if i % 4 < 2 else 'down', fx=fire(2 + i % 2) + SPARKS[i % 4]) for i in range(16)],
+    # a long job done: wings beating, it spits fireballs that burst in the sky
+    'celebrating': [frame(JOY + (ROAR if i % 8 < 2 else OPEN_MOUTH), 'up' if i % 4 < 2 else 'down',
+                          glow=3 if i % 8 in (7, 0) else 2, fx=fireworks(i)) for i in range(16)],
     # head low, a tear running down
     'sad': [frame(SAD, dy=1, fx=drop(7 + (i // 4) % 3, 21)) for i in range(16)],
 }
@@ -367,6 +407,41 @@ def rings(i):
     return RING_WAY[i // 2 % 8] + RING_WAY[(i // 2 + 4) % 8]
 
 
+# Juggling: fireballs blown up past its snout, falling down the far side and tossed up again.
+JUGGLE_WAY = [(9, 32), (7, 32), (5, 32), (3, 32), (1, 32), (0, 33), (1, 34), (3, 34),
+              (5, 34), (7, 34), (9, 34), (11, 34), (13, 34), (14, 33), (13, 32), (11, 32)]
+JUGGLED = (0, 5, 11)
+
+
+def fireball(step):
+    r, c = JUGGLE_WAY[step % len(JUGGLE_WAY)]
+    hot, warm, edge = ('y', 'f', 'q') if step % 2 == 0 else ('f', 'y', 'q')
+    return [(r, c, hot), (r, c + 1, warm), (r + 1, c, warm), (r + 1, c + 1, edge)]
+
+
+def juggling(t, balls=JUGGLED, last=len(JUGGLE_WAY)):
+    """At loop time `t`, each of `balls` that is up: thrown at step 0, caught after `last`."""
+    up = [t + b for b in balls if 0 <= t + b < last]
+    face = (UP if 2 <= t % 16 <= 8 else OPEN) + (OPEN_MOUTH if any(n % 16 in (0, 15) for n in up) else SMALL)
+    return frame(face, glow=2 if t % 8 < 2 else 1, fx=[px for n in up for px in fireball(n)])
+
+
+# Roasting: a stick in its raised claw, held out before it, the marshmallow over a small flame.
+STICK = [(18 - n, 24 + n, 'k') for n in range(7)]
+MALLOW = {'raw': ['nnn', 'nnn'], 'warm': ['nnn', 'ccc'], 'turned': ['ccc', 'nnn'], 'golden': ['ccc', 'kkk'],
+          'burning': ['kok', 'oks'], 'charred': ['oso', 'sos']}
+TOAST = [[(8, 31, 'f'), (9, 31, 'y')], [(8, 31, 'q'), (9, 31, 'f'), (9, 32, 'y')]]
+ABLAZE = [[(9, 31, 'f'), (9, 32, 'y'), (9, 33, 'q'), (8, 32, 'f')], [(9, 31, 'q'), (9, 32, 'f'), (9, 33, 'y'), (8, 33, 'f'), (7, 32, 'q')]]
+
+
+def mallow(state):
+    return [(10 + r, 31 + c, ch) for r, row in enumerate(MALLOW[state]) for c, ch in enumerate(row)]
+
+
+def roasting(state, face=DOWN, fx=(), **kw):
+    return frame(face, body=TAP_FRONT, fx=STICK + mallow(state) + list(fx), **kw)
+
+
 ACT = {
     # it counts its hoard: eyes on the gold, a coin flipped up and caught, a glint here and there
     'hoard': {'start': [frame(OPEN, fx=EMBER + HOARD), frame(DOWN, fx=HOARD)],
@@ -387,6 +462,24 @@ ACT = {
                              ground=[(19, c, 'g') for c in (1 + i % 2, 8 + i % 2, 30 + i % 2)]) for i in range(16)],
               'end': [frame(OPEN, 'down', body=TAP_FRONT + TAP_HIND), frame(OPEN, 'up'), IDLE],
               'seconds': [10, 25], 'every': [45, 120], 'label': {'en': 'hovering', 'pt-BR': 'pairando no ar'}},
+    # fireballs blown up and caught again, three at once, eyes on the highest
+    'juggle': {'start': [IDLE, frame(OPEN, 'lift', breath=True, glow=2)] + [juggling(t) for t in range(-max(JUGGLED), 0)],
+               'loop': [juggling(t) for t in range(16)],
+               # the loop ends with the first ball back in its mouth; the others finish their way down
+               'end': [juggling(t, JUGGLED[1:], last=16) for t in range(11)] + [frame(JOY + SMALL, glow=2), IDLE],
+               'seconds': [12, 25], 'every': [60, 150], 'label': {'en': 'juggling fireballs', 'pt-BR': 'fazendo malabares com fogo'}},
+    # it toasts a marshmallow, turning it over the flame, until it catches; blown out, it is eaten anyway
+    'roast': {'start': [IDLE, roasting('raw'), roasting('raw', DOWN + SMALL, TOAST[0], glow=1)],
+              'loop': [roasting('warm' if i < 8 else 'turned', DOWN + SMALL, TOAST[i % 2], glow=1,
+                                wing='lift' if i >= 8 else 'fold', breath=i >= 8) for i in range(16)],
+              'end': [roasting('golden', DOWN + SMALL, TOAST[0], glow=1), roasting('golden', JOY)]
+                     + [roasting('burning', WIDE + OPEN_MOUTH, ABLAZE[i % 2]) for i in range(4)]
+                     + [roasting('burning', DOWN + SMALL, [(9, 32, 'g'), (8, 33, 'l')]),
+                        roasting('charred', DOWN + SMALL, [(7, 33, 'g'), (6, 34, 'l')]),
+                        roasting('charred', SAD), roasting('charred', JOY),
+                        frame(JOY + OPEN_MOUTH, body=TAP_FRONT, fx=STICK), frame(JOY + SMALL, body=TAP_FRONT, fx=STICK),
+                        frame(JOY), IDLE],
+              'seconds': [15, 30], 'every': [60, 150], 'label': {'en': 'roasting a marshmallow', 'pt-BR': 'assando um marshmallow'}},
 }
 # Anything can cut an activity short, so it starts and ends with idle's face: no jump in the eyes.
 for name, a in ACT.items():
@@ -405,14 +498,21 @@ A = {
                               for i in range(7)],
                    'moods': ['proud'], 'every': [8, 18]},
     # it draws a deep breath, rears back, and lets loose
-    'fireBreath': {'frames': [frame(OPEN, 'lift', breath=True, fx=EMBER),
-                              frame(WIDE, 'lift', breath=True, dx=-1, fx=at(EMBER, -1)),
-                              frame(WIDE, 'lift', breath=True, dx=-1, fx=at(HOT, -1)),
-                              frame(GLARE, 'lift', breath=True, dx=-2, fx=at(HOT, -2))]
-                             + [frame(GLARE + ROAR, fx=fire(i)) for i in (0, 1, 2, 3, 2, 3, 2, 3)]
+    # the fire in its belly rising to its throat as it does
+    'fireBreath': {'frames': [frame(OPEN, 'lift', breath=True, glow=1, fx=EMBER),
+                              frame(WIDE, 'lift', breath=True, dx=-1, glow=2, fx=at(EMBER, -1)),
+                              frame(WIDE, 'lift', breath=True, dx=-1, glow=3, fx=at(HOT, -1)),
+                              frame(GLARE, 'lift', breath=True, dx=-2, glow=3, fx=at(HOT, -2))]
+                             + [frame(GLARE + ROAR, glow=2 if n < 6 else 1, fx=fire(i)) for n, i in enumerate((0, 1, 2, 3, 2, 3, 2, 3))]
                              + [frame(OPEN + OPEN_MOUTH, fx=fire(4)), frame(OPEN + SMALL, fx=fire(5)),
                                 frame(OPEN, fx=puff(1)), frame(OPEN, fx=puff(3))],
                    'moods': ['idle'], 'every': [25, 60]},
+    # a short, angry burst of flame and a huff of dark smoke
+    'grumpyFlare': {'frames': [frame(GLARE, 'lift', breath=True, glow=2, fx=HOT),
+                               frame(GLARE + ROAR, glow=1, fx=fire(0)), frame(GLARE + ROAR, fx=fire(1)), frame(GLARE + ROAR, fx=fire(1)),
+                               frame(GLARE + OPEN_MOUTH, fx=fire(4)), frame(GLARE + SMALL, fx=puff(1, dark=True)),
+                               frame(GLARE, fx=EMBER + puff(3, dark=True))],
+                    'moods': ['grumpy'], 'every': [6, 14]},
     'snort': {'frames': [frame(OPEN, fx=HOT + puff(i)) for i in range(6)], 'moods': ['idle'], 'every': [8, 20]},
     'wingStretch': {'frames': [frame(SHUT, 'up')] * 3 + [frame(SHUT, 'down')] * 2 + [frame(SHUT, 'up')] * 2 + [frame(OPEN)],
                     'moods': ['idle'], 'every': [20, 45]},
