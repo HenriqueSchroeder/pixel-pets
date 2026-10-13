@@ -1,8 +1,9 @@
-// Offline experiments S1–S6 for the learners in learn/, against a synthetic user.
+// Offline experiments S1–S7 for the learners in learn/, against a synthetic user.
 // Run: npx tsx scripts/simulate-learning.ts [S1 S2 ...]
 
 import { choose, mean, reward, type Bandit } from '../learn/bandit'
 import { credit, type Shown } from '../learn/credit'
+import { pickFor } from '../hooks/learning'
 import { learn, predict, type Weights } from '../learn/logistic'
 import { seeded, type Random } from '../learn/random'
 import { bumps, coder, encode, novelty, pick, recall, remember, see, type Familiar, type Memory } from '../learn/recall'
@@ -425,6 +426,65 @@ const lastWithin = (shown: Shown[], now: number, window: number): Record<string,
   return last === undefined ? {} : { [last.action]: 1 }
 }
 
-const experiments: Record<string, () => void> = { S1: s1, S2: s2, S3: s3, S4: s4, S5: s5, S6: s6 }
+// --- S7: does the lively pick learn the person's taste and still surprise?
+
+const s7 = () => {
+  const petRate: Record<string, number> = { juggle: 0.7, roast: 0.4, nap: 0.3, grumpy: 0.1 }
+  const perDay = 10
+  const days = 60
+  // Shannon entropy of a list's spread, in bits: 2 is all four alike, 0 one only.
+  const entropy = (picks: string[]) => {
+    const counts = ACTIONS.map(a => picks.filter(p => p === a).length / picks.length).filter(p => p > 0)
+    return -counts.reduce((sum, p) => sum + p * Math.log2(p), 0)
+  }
+  const policies: [string, (bandit: Bandit, lately: string[], now: number, random: Random) => string][] = [
+    ['random (as by hand)', (_b, _l, _n, random) => at(ACTIONS, Math.floor(random() * 4))],
+    ['TS, most pets', (bandit, _l, now, random) => choose(bandit, ACTIONS.map(a => `afternoon:cat:${a}`), now, 7 * DAY, random).split(':')[2] ?? ''],
+    ['lively pick', (bandit, lately, now, random) =>
+      pickFor({ bandit, seed: 1, pet: 'cat', daypart: 'afternoon', activities: ACTIONS, lately }, now, random).activity],
+  ]
+  const rows = policies.map(([name, pick]) => {
+    const pets: number[] = []
+    const spread: number[] = []
+    const repeats: number[] = []
+    const streaks: number[] = []
+    for (let seed = 0; seed < 30; seed++) {
+      const random = seeded(seed)
+      let bandit: Bandit = {}
+      let lately: string[] = []
+      const picks: string[] = []
+      for (let i = 0; i < perDay * days; i++) {
+        const now = (i / perDay) * DAY
+        const action = pick(bandit, lately, now, random)
+        const p = petRate[action] ?? 0
+        if (i >= perDay * 30) pets.push(p)
+        picks.push(action)
+        lately = [action, ...lately].slice(0, 5)
+        bandit = reward(bandit, `afternoon:cat:${action}`, random() < p ? 1 : 0, now, 7 * DAY)
+      }
+      const late = picks.slice(perDay * 30)
+      for (let week = 0; week < late.length; week += 7 * perDay) spread.push(entropy(late.slice(week, week + 7 * perDay)))
+      repeats.push(late.filter((one, i) => i > 0 && one === late[i - 1]).length / (late.length - 1))
+      let longest = 1
+      let run = 1
+      for (let i = 1; i < late.length; i++) {
+        run = late[i] === late[i - 1] ? run + 1 : 1
+        longest = Math.max(longest, run)
+      }
+      streaks.push(longest)
+    }
+    return {
+      policy: name,
+      'pets/event, days 30-60': fix(avg(pets), 3),
+      'variety a week (bits, max 2)': fix(avg(spread)),
+      'same as the one before': `${Math.round(avg(repeats) * 100)}%`,
+      'longest run (median)': fix(median(streaks), 0),
+    }
+  })
+  console.log('\nS7 — pet rates 0.7/0.4/0.3/0.1, 10 activities a day for 60 days, the last 30 measured; 30 runs')
+  table(rows)
+}
+
+const experiments: Record<string, () => void> = { S1: s1, S2: s2, S3: s3, S4: s4, S5: s5, S6: s6, S7: s7 }
 const picked = process.argv.slice(2)
 for (const [name, run] of Object.entries(experiments)) if (picked.length === 0 || picked.includes(name)) run()
