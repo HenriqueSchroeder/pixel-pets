@@ -358,7 +358,7 @@
         "actions": {
           "description": "Frames played once at random while the pet is in one of `moods`: blinks, ear twitches, yawns. `every` is [min, max] seconds between the end of one play and the next.",
           "type": "object",
-          "maxProperties": 16,
+          "maxProperties": 32,
           "additionalProperties": {
             "type": "object",
             "required": [

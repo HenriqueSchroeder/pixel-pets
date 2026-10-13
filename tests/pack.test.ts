@@ -79,6 +79,10 @@ describe('parsePack', () => {
     expect(bad({ actions: { __proto__x: { frames: [['oo']], moods: ['thinking'], every: [2, 6] } } })).toThrow(/name with letters/)
     expect(bad({ actions: { blink: { frames: [['oo']], moods: ['thinking'], every: [6, 2] } } })).toThrow(/every/)
     expect(bad({ actions: { blink: { frames: [['ooo']], moods: ['thinking'], every: [2, 6] } } })).toThrow(/same size/)
+
+    const actions = (n: number) => ({ actions: Object.fromEntries(Array.from({ length: n }, (_, i) => [`a${i}`, { frames: [['oo']], moods: ['thinking'], every: [2, 6] }])) })
+    expect(parsePack({ ...tiny(), main: { moods, ...actions(32) } }).actions).toHaveLength(32)
+    expect(bad(actions(33))).toThrow(/at most 32/)
   })
 
   test('an activity is read as an action that loops for a while, with its words', () => {

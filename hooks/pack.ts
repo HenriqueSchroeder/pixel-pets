@@ -47,7 +47,7 @@ const LIMITS = {
   framesPerMood: 16,
   variantsPerMood: 4,
   transitions: 32,
-  actions: 16,
+  actions: 32,
   activities: 8,
   activitySeconds: { min: 5, max: 300 },
   everySeconds: { min: 1, max: 600 },
