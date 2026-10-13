@@ -146,6 +146,9 @@ export type Text =
   | 'justMet'
   | 'togetherADay'
   | 'togetherDays'
+  | 'waitingForYou'
+  | 'thereYouAre'
+  | 'somethingNew'
   | Situation
 
 // What a pet says, kept as a locale key so a language change redraws it right.

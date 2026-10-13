@@ -1568,7 +1568,7 @@ const seedFor = (arm: 'learned' | 'hand') => {
 const learningSetup = (on: On, stored: Record<string, unknown> = {}) => {
   // Seen before the store takes it.
   const kept: Record<string, unknown> = {}
-  for (const key of ['learning', 'familiar'])
+  for (const key of ['learning', 'familiar', 'rhythm'])
     on('store.set', { key }, (_$, e, next) => {
       kept[e.key] = e.value
       return next(e)
@@ -1653,10 +1653,14 @@ test('learning on, each prompt logs how unusual its moment is, and nothing it sa
   await $.prompt.submit({ text: 'a secret plan', wait: false, origin: { kind: 'composer' } })
   await clock.advance(1)
   await lineNow($)
-  const [line] = log()
-  expect(line).toEqual(expect.objectContaining({ kind: 'novelty', arm: 'hand', daypart: 'afternoon', novelty: 1 }))
+  // Opening the session is the person turning up; the prompt is a moment it never saw.
+  expect(log().map(one => one.kind)).toEqual(['arrival', 'novelty'])
+  expect(log()[1]).toEqual(expect.objectContaining({ kind: 'novelty', arm: 'hand', daypart: 'afternoon', novelty: 1 }))
   expect(JSON.stringify(log())).not.toContain('secret')
-  expect(Object.keys(kept.familiar as object).length).toBe(50)
+  const familiar = kept.familiar as { seen: number; cells: object }
+  expect(familiar.seen).toBe(1)
+  expect(Object.keys(familiar.cells).length).toBe(50)
+  expect(Object.keys(kept.rhythm as object)).toEqual(['weekday:28'])
 })
 
 test('learning off, it keeps and writes nothing of it', { options: { awakeMinutes: 5 } }, async ($, on) => {
@@ -1715,5 +1719,73 @@ test('learning on, what still waits for a pet when the session ends is kept', { 
   await $.session.end({ reason: 'other', sessionId: 's1', resume: { id: 's1' } } as Parameters<typeof $.session.end>[0])
   expect(log()).toEqual([expect.objectContaining({ kind: 'shown', activity: 'yarn', reward: 0 })])
   expect((kept.learning as { bandit: Record<string, unknown> }).bandit['afternoon:cat:yarn']).toBeDefined()
+})
+
+// They turn up between 14:30 and 15:00 on weekdays (the tests' day is a Thursday).
+const habitAt1430 = { 'weekday:29': { count: 6, at: at(14) } }
+
+const waitingDay = async ($: Parameters<TestBody>[0], on: On, arm: 'learned' | 'hand') => {
+  const found = learningSetup(on, { learning: { seed: seedFor(arm), bandit: {} }, rhythm: habitAt1430 })
+  on('prompt.edit', (_$, e) => ({ text: e.text + e.inputText, cursor: e.cursor + e.inputText.length }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
+  await $.turn.complete(finished)
+  // The kit raises prompt.edit, though its types leave the call out.
+  const raise = ($.prompt as unknown as { edit: (e: Args<'prompt.edit'>) => Promise<unknown> }).edit
+  const key = () => raise({ origin: { kind: 'composer' }, text: '', cursor: 0, start: 0, end: 0, inputText: 'h' })
+  return { ...found, key }
+}
+
+test('on a lively day it wakes up about when they usually turn up, and is glad they did', { options: { learning: true } }, async ($, on) => {
+  const { clock, key } = await waitingDay($, on, 'learned')
+  // 14:20: away only twenty minutes, it sleeps on.
+  await clock.advance(20 * 60_000)
+  expect(await lineNow($)).toBe('· fast asleep')
+  // 14:40: away long enough, and they usually come by now.
+  await clock.advance(20 * 60_000)
+  expect(await lineNow($)).toBe('· waiting for you')
+  await key()
+  expect(await lineNow($)).toBe('· there you are!')
+})
+
+test('it gives up waiting once the usual time is past', { options: { learning: true } }, async ($, on) => {
+  const { clock } = await waitingDay($, on, 'learned')
+  await clock.advance(40 * 60_000)
+  expect(await lineNow($)).toBe('· waiting for you')
+  // 14:50 on: the next half hour is no habit.
+  await clock.advance(15 * 60_000)
+  expect(await lineNow($)).not.toBe('· waiting for you')
+})
+
+test('on a day as usual it does not wait up', { options: { learning: true } }, async ($, on) => {
+  const { clock } = await waitingDay($, on, 'hand')
+  await clock.advance(40 * 60_000)
+  expect(await lineNow($)).not.toBe('· waiting for you')
+})
+
+// A pet that knows the person's moments well, and none of them like this one.
+const knowing = { seen: 80, cells: {} }
+
+test('on a lively day an odd moment gets a curious look, once an hour at most', { options: { learning: true } }, async ($, on) => {
+  const { clock } = learningSetup(on, { learning: { seed: seedFor('learned'), bandit: {} }, familiar: knowing })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await lineNow($)).toBe('· hm? this is new')
+  await clock.advance(5 * 60_000)
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await lineNow($)).not.toBe('· hm? this is new')
+})
+
+test('an odd moment gets no look while it hardly knows the person', { options: { learning: true } }, async ($, on) => {
+  learningSetup(on, { learning: { seed: seedFor('learned'), bandit: {} }, familiar: { seen: 10, cells: {} } })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await lineNow($)).not.toBe('· hm? this is new')
+})
+
+test('on a day as usual an odd moment gets no look', { options: { learning: true } }, async ($, on) => {
+  learningSetup(on, { learning: { seed: seedFor('hand'), bandit: {} }, familiar: knowing })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.prompt.submit({ text: 'hi', wait: false, origin: { kind: 'composer' } })
+  expect(await lineNow($)).not.toBe('· hm? this is new')
 })
 

@@ -99,7 +99,7 @@ Rode `/plugin configure pixel-pets@pixel-pets`, ou procure **pixel-pets** no `/c
 | `awakeMinutes` | `1` | Quanto tempo o pet fica acordado, passeando, depois que o Claude termina, antes de dormir (metade à noite). `0` manda direto dormir |
 | `labelLine` | `true` | Mostra a linha do Claude acima do pet: o que ele está fazendo, há quanto tempo o turno roda e o que o pet fala. `false` deixa só o pet e os agents, uma linha a menos |
 | `agentLabels` | `true` | Mostra o tipo de cada subagent e o que ele está fazendo embaixo do mini pet. `false` deixa só os mini pets, mais juntos, diferenciados só pela cor |
-| `learning` | `false` | Um experimento: em dias alternados o pet escolhe as atividades pelo que rende carinho naquela hora do dia, e nos outros como sempre. Cada atividade mostrada, cada clique de irritação e o quão incomum é o momento de cada prompt vão para `~/.claude/pixel-pets/learning/`, um arquivo por sessão, nunca o que você escreve. Apague o arquivo, e `learning` e `familiar` no store do plugin, para esquecer tudo |
+| `learning` | `false` | Um experimento de um pet que parece ter vida própria. Em dias alternados ele vive pelas próprias vontades, que mudam ao longo dos dias, e pelo que rende carinho naquela hora do dia, e cansa de se repetir; acorda com um humor, espera você perto da hora em que costuma chegar e estranha um momento incomum. Nos outros dias ele é como sempre. Cada atividade mostrada, cada clique de irritação, cada chegada e o quão incomum é o momento de cada prompt vão para `~/.claude/pixel-pets/learning/`, um arquivo por sessão, nunca o que você escreve. Apague essa pasta, e `learning`, `familiar` e `rhythm` no store do plugin, para esquecer tudo |
 
 ## Usar outro pet
 

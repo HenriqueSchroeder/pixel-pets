@@ -13,15 +13,20 @@ import {
   annoyed,
   armOf,
   asBandit,
-  asFamiliar,
+  asFamiliarity,
   CREDIT_MS,
   daypartOf,
   FAMILIAR_HALF_LIFE_MS,
+  KNOWS,
   logLine,
   momentCode,
+  ODD,
+  ODD_GAP_MS,
   petted,
   pickFor,
   settle,
+  tempered,
+  temperOf,
 } from './learning'
 import type { Shown } from './learning'
 import { asVisit, daysBetween, welcome } from './memory'
@@ -33,6 +38,8 @@ import type { Poke, Sleep, Touch } from './gestures'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
 import { artOf, encode, facingFrame, sizeOf } from './render'
+import { arrived, asRhythm, AWAY_MS, expects } from './rhythm'
+import type { Rhythm } from './rhythm'
 import { FIRST_NAP_MS, isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
 import type { Speaker } from './speech'
@@ -296,12 +303,14 @@ async function saidTonight($: EngineInterface, now: number) {
   }
 }
 
-// The person is at the prompt: the day's welcome, and their rest, from the visit before.
+// The person is at the prompt: the day's welcome, and their rest, from the visit
+// before, which it returns.
 async function atThePrompt($: EngineInterface, now: number) {
   const before = await remember($, now)
   await greet($, now, before)
   const since = await restedSince($, now, before)
   await update($, restedAt, () => since)
+  return before
 }
 
 // "Together for 12 days", for /pet; nothing when it has no memory of the person.
@@ -371,13 +380,32 @@ async function keepLearned($: EngineInterface, name: string, done: Shown[]) {
   return learned
 }
 
-// How unusual a prompt's moment is, before it becomes a little more familiar.
+// How unusual a prompt's moment is, before it becomes a little more familiar; and
+// how many of the person's moments it knew by then.
 async function noteMoment($: EngineInterface, name: string, code: number[], now: number, seed: number) {
-  const familiar = asFamiliar(await $.store.get('familiar'))
-  const news = novelty(familiar, code, now, FAMILIAR_HALF_LIFE_MS)
-  see(familiar, code, now, FAMILIAR_HALF_LIFE_MS)
-  await $.store.set('familiar', familiar)
-  await appendLog($, name, [JSON.stringify({ kind: 'novelty', at: now, arm: armOf(seed, now), daypart: daypartOf(hourOf(now)), novelty: news })])
+  const { seen: known, cells } = asFamiliarity(await $.store.get('familiar'))
+  const news = novelty(cells, code, now, FAMILIAR_HALF_LIFE_MS)
+  see(cells, code, now, FAMILIAR_HALF_LIFE_MS)
+  await $.store.set('familiar', { seen: known + 1, cells })
+  const line = { kind: 'novelty', at: now, arm: armOf(seed, now), temper: temperOf(seed, now), daypart: daypartOf(hourOf(now)), novelty: news }
+  await appendLog($, name, [JSON.stringify(line)])
+  return { news, known }
+}
+
+async function loadRhythm($: EngineInterface) {
+  try {
+    return asRhythm(await $.store.get('rhythm'))
+  } catch {
+    return {}
+  }
+}
+
+// The person turned up: one more arrival at this half hour of the day.
+async function noteArrival($: EngineInterface, name: string, now: number) {
+  const rhythm = arrived(await loadRhythm($), now)
+  await $.store.set('rhythm', rhythm)
+  await appendLog($, name, [JSON.stringify({ kind: 'arrival', at: now })])
+  return rhythm
 }
 
 // Clears the override only if it is still the one this hook set.
@@ -400,11 +428,21 @@ export const register: Register = (on, options) => {
   const showsLine = options.labelLine !== false
   // false: each agent is its mini pet alone, without its name and words under it.
   const showsAgentLabels = options.agentLabels !== false
-  // On, it runs the experiment of learning which activities the person likes.
+  // On, it runs the experiment of a pet that learns and lives by its own whims.
   const learns = options.learning === true
   let learning: Learning | undefined
+  // When the person usually turns up; what it did lately, the latest first; and
+  // when it last found a moment odd.
+  let rhythm: Rhythm = {}
+  let lately: string[] = []
+  let oddAt = 0
   // Loaded once, at session.start or, after a reload (a settings change), at the next draw.
   let hasLoaded = false
+  // Today it lives by what it learned and its whims, rather than as it always did.
+  const isLively = (now: number) => learning !== undefined && armOf(learning.seed, now) === 'learned'
+  // Away a while and about to turn up, as they usually do now: it waits for them.
+  const waitsFor = (idleSince: number | null, now: number) =>
+    isLively(now) && idleSince !== null && now - idleSince >= AWAY_MS && expects(rhythm, now)
   // Activities shown in the last minute, waiting for a pet; and the learned pick last made.
   let recent: Shown[] = []
   let lastPick: { activity: string; propensity: number } | undefined
@@ -519,6 +557,7 @@ export const register: Register = (on, options) => {
     if (learns && !hasLoaded) {
       hasLoaded = true
       learning = await loadLearning($)
+      rhythm = await loadRhythm($)
     }
     const now = await $.clock.now()
     await update($, lastActiveAt, () => now)
@@ -560,8 +599,13 @@ export const register: Register = (on, options) => {
     }
     restartClock()
     isInteractive = e.isInteractive
-    if (isInteractive) await atThePrompt($, now)
-    else await update($, restedAt, at => at ?? now)
+    if (isInteractive) {
+      const before = await atThePrompt($, now)
+      if (learning !== undefined && (before === undefined || now - before.lastSeenAt >= AWAY_MS)) {
+        const name = logNameAt(now)
+        writing = writing.then(() => noteArrival($, name, now).then(kept => void (rhythm = kept))).catch(() => {})
+      }
+    } else await update($, restedAt, at => at ?? now)
     return next(e)
   })
 
@@ -651,14 +695,16 @@ export const register: Register = (on, options) => {
   on('prompt.edit', async ($, e, next) => {
     const now = await $.clock.now()
     await update($, typingAt, () => now)
+    // Waiting up for them, it is glad they came as it thought they would.
+    const waited = waitsFor(await read($, lastActiveAt), now)
     let missed = false
     touch(now, settled => {
       missed = misses(settled)
       return seen(settled)
     })
-    if (missed && (await read($, turnStartedAt)) === null) {
+    if ((missed || waited) && (await read($, turnStartedAt)) === null) {
       gladAt = now
-      const glad: Reaction = { mood: 'happy', label: label('missedYou'), until: now + REACTION_MS }
+      const glad: Reaction = { mood: 'happy', label: label(waited ? 'thereYouAre' : 'missedYou'), until: now + REACTION_MS }
       await update($, reaction, live => (holds(live, now) ? live : glad))
     }
     return next(e)
@@ -685,19 +731,39 @@ export const register: Register = (on, options) => {
     const idleSince = await read($, lastActiveAt)
     const busySince = await read($, turnStartedAt)
     const isSupervising = stillHere(await read($, agents), now).some(one => one.leaving === undefined)
-    if (busySince === null && !isSupervising && isFastAsleep(idleSince, now)) {
+    // Up waiting for them, it is no more asleep than when they type.
+    if (busySince === null && !isSupervising && isFastAsleep(idleSince, now) && !waitsFor(idleSince, now)) {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
     touch(now, seen)
-    // How unusual this moment is: logged only, to see whether it means anything.
+    // How unusual this moment is. Once it knows the person's moments well, an odd
+    // one gets a curious look on a lively day, an hour apart at most.
     // A `claude -p` run is no moment of the person's.
     if (learning !== undefined && isInteractive) {
       const { seed } = learning
       const code = momentCode(hourOf(now), idleSince === null ? 0 : (now - idleSince) / 60_000, toolsThisTurn)
       const name = logNameAt(now)
-      writing = writing.then(() => noteMoment($, name, code, now, seed)).catch(() => {})
+      const noted = writing.then(() => noteMoment($, name, code, now, seed))
+      writing = noted.then(
+        () => {},
+        () => {},
+      )
+      const moment = await noted.catch(() => undefined)
+      if (moment !== undefined && isLively(now) && moment.known >= KNOWS && moment.news >= ODD && now - oddAt >= ODD_GAP_MS) {
+        oddAt = now
+        const curious: Reaction = { mood: 'watching', label: label('somethingNew'), until: now + REACTION_MS }
+        await update($, reaction, live => (holds(live, now) ? live : curious))
+      }
     }
-    if (isInteractive) await atThePrompt($, now)
+    if (isInteractive) {
+      const before = await atThePrompt($, now)
+      // Away a while: they just turned up, and when is worth remembering.
+      const isArrival = (before === undefined || now - before.lastSeenAt >= AWAY_MS) && (idleSince === null || now - idleSince >= AWAY_MS)
+      if (learning !== undefined && isArrival) {
+        const name = logNameAt(now)
+        writing = writing.then(() => noteArrival($, name, now).then(kept => void (rhythm = kept))).catch(() => {})
+      }
+    }
     // Once a night across every session: the first to see the person late says it.
     const tonight = nightOf(now)
     if (isNight(hourOf(now)) && saidNight !== tonight) {
@@ -875,12 +941,14 @@ export const register: Register = (on, options) => {
     const words = (one: Label) => say(locale, one.text, one.detail)
     // ponytail: the drives move only when the band is drawn, so a band hidden by /pet
     // counts all that time as what it last showed; give them a clock of their own if that skews them.
-    traits = pack.personality
-    drives = drives === undefined ? rested(now) : drift(drives, now, lastState, traits)
     if (learns && !hasLoaded) {
       hasLoaded = true
       learning = await loadLearning($)
+      rhythm = await loadRhythm($)
     }
+    // On a lively day it wakes up in a temper: a little more playful, lazy, clingy or curious.
+    traits = learning !== undefined && isLively(now) ? tempered(pack.personality, temperOf(learning.seed, now)) : pack.personality
+    drives = drives === undefined ? rested(now) : drift(drives, now, lastState, traits)
     // What is past its minute counts for what it learned, and goes in the log.
     const done = recent.filter(one => now - one.at > CREDIT_MS)
     if (done.length > 0) {
@@ -923,6 +991,8 @@ export const register: Register = (on, options) => {
       if (isTyping && !isDeeplyAsleep) shown = { mood: 'watching', label: label('watching') }
       // Background agents still at work: it keeps an eye on them rather than dozing off.
       else if (list.some(one => one.leaving === undefined)) shown = { mood: 'supervising', label: label('waitingForAgents') }
+      // About when they usually turn up, it gets up and watches the prompt for them.
+      else if (waitsFor(idleSince, now)) shown = { mood: 'watching', label: label('waitingForYou') }
       else if (isDeeplyAsleep) shown = { mood: 'deepSleep', label: label('deepSleep') }
       else if (isDozing(idleSince, now)) shown = asleep
       else {
@@ -1024,7 +1094,8 @@ export const register: Register = (on, options) => {
       const daypart = daypartOf(hourOf(now))
       const choose =
         known !== undefined && arm === 'learned'
-          ? (names: string[]) => (lastPick = pickFor(known.bandit, names, daypart, pack.name, now, Math.random)).activity
+          ? (activities: string[]) =>
+              (lastPick = pickFor({ bandit: known.bandit, seed: known.seed, pet: pack.name, daypart, activities, lately }, now, Math.random)).activity
           : undefined
       const before = motion?.once
       const moved = step(pack, motion, mood, frame, Math.random, urge, choose)
@@ -1032,6 +1103,7 @@ export const register: Register = (on, options) => {
       if (arm !== undefined && begun !== before && begun?.activity !== undefined) {
         const propensity = arm === 'learned' && lastPick?.activity === begun.activity ? lastPick.propensity : null
         recent = [...recent, { at: now, arm, daypart, pet: pack.name, activity: begun.activity, propensity, petted: 0, annoyed: false }]
+        lately = [begun.activity, ...lately].slice(0, 5)
       }
       motion = moved.motion
       // Busy with an activity, the line says what, in its language or else in English.
