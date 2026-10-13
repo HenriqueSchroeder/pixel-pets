@@ -41,7 +41,7 @@ describe('rhythm', () => {
   test('survives the store, and only well-formed counts come back', () => {
     const rhythm = habit()
     expect(expects(asRhythm(JSON.parse(JSON.stringify(rhythm))), on(16, 8, 50))).toBe(true)
-    expect(asRhythm({ 'weekday:18': { count: 2, at: 0 }, 'monday:18': { count: 2, at: 0 }, 'weekend:3': { count: -1, at: 0 }, 'weekday:4': null })).toEqual({
+    expect(asRhythm({ 'weekday:18': { count: 2, at: 0 }, 'monday:18': { count: 2, at: 0 }, 'weekend:3': { count: -1, at: 0 }, 'weekday:4': null, 'weekday:5': { count: Infinity, at: 0 } })).toEqual({
       'weekday:18': { count: 2, at: 0 },
     })
     expect(asRhythm([])).toEqual({})

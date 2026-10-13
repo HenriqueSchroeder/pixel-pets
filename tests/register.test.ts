@@ -1749,6 +1749,30 @@ test('on a lively day it wakes up about when they usually turn up, and is glad t
   expect(await lineNow($)).toBe('· waiting for you')
   await key()
   expect(await lineNow($)).toBe('· there you are!')
+  // Greeted once: the keys after do not greet them again.
+  await clock.advance(3000)
+  await key()
+  expect(await lineNow($)).not.toBe('· there you are!')
+})
+
+test('a click on a pet waiting up for them pets it, as awake as it looks', { options: { learningExperiment: true } }, async ($, on) => {
+  const { clock } = await waitingDay($, on, 'learned')
+  await clock.advance(40 * 60_000)
+  expect(await lineNow($)).toBe('· waiting for you')
+  expect((await pointer($, false, 'down', 'up')).line).toBe('· ♥ petted')
+})
+
+test('however many half hours in a row they may turn up, it waits twenty minutes at most', { options: { learningExperiment: true } }, async ($, on) => {
+  const rhythm = Object.fromEntries([29, 30, 31, 32].map(slot => [`weekday:${slot}`, { count: 6, at: at(14) }]))
+  const { clock } = learningSetup(on, { learning: { seed: seedFor('learned'), bandit: {} }, rhythm })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: false })
+  await $.turn.complete(finished)
+  await clock.advance(40 * 60_000)
+  expect(await lineNow($)).toBe('· waiting for you')
+  await clock.advance(15 * 60_000)
+  expect(await lineNow($)).toBe('· waiting for you')
+  await clock.advance(10 * 60_000)
+  expect(await lineNow($)).not.toBe('· waiting for you')
 })
 
 test('it gives up waiting once the usual time is past', { options: { learningExperiment: true } }, async ($, on) => {

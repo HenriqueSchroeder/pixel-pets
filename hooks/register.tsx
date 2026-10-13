@@ -38,7 +38,7 @@ import type { Poke, Sleep, Touch } from './gestures'
 import { DEFAULT_PET, packPaths, parsePack } from './pack'
 import type { Pack } from './pack'
 import { artOf, encode, facingFrame, sizeOf } from './render'
-import { arrived, asRhythm, AWAY_MS, expects } from './rhythm'
+import { arrived, asRhythm, AWAY_MS, expects, PATIENCE_MS } from './rhythm'
 import type { Rhythm } from './rhythm'
 import { FIRST_NAP_MS, isDeep } from './sleep'
 import { LONG_THINK_MS, MANY_AGENTS, MANY_READS, lineFor, maySpeak, quiet, spoke } from './speech'
@@ -446,9 +446,15 @@ export const register: Register = (on, options) => {
   // Today it lives by what it learned and its whims, rather than as it always did:
   // every day, but in the experiment only on its lively days.
   const isLively = (now: number) => learning !== undefined && (!experiments || armOf(learning.seed, now) === 'learned')
-  // Away a while and about to turn up, as they usually do now: it waits for them.
-  const waitsFor = (idleSince: number | null, now: number) =>
-    isLively(now) && idleSince !== null && now - idleSince >= AWAY_MS && expects(rhythm, now)
+  // Away a while and about to turn up, as they usually do now: it waits for them,
+  // until it has greeted them or run out of patience. `waitingFrom` is when it began
+  // to wait through the pause that began at its `idleSince`.
+  let waitingFrom: { idleSince: number; at: number } | undefined
+  const waitsFor = (idleSince: number | null, now: number) => {
+    if (idleSince === null || !isLively(now) || now - idleSince < AWAY_MS || !expects(rhythm, now) || wokeForThem(idleSince)) return false
+    if (waitingFrom?.idleSince !== idleSince) waitingFrom = { idleSince, at: now }
+    return now - waitingFrom.at < PATIENCE_MS
+  }
   // Activities shown in the last minute, waiting for a pet; and the learned pick last made.
   let recent: Shown[] = []
   let lastPick: { activity: string; propensity: number } | undefined
@@ -626,7 +632,8 @@ export const register: Register = (on, options) => {
     if (events.includes('down')) {
       const idleSince = await read($, lastActiveAt)
       const isBusy = (await read($, turnStartedAt)) !== null || stillHere(await read($, agents), now).some(one => one.leaving === undefined)
-      sleep = isBusy ? 'awake' : isFastAsleep(idleSince, now) ? 'deep' : isDozing(idleSince, now) ? 'dozing' : 'awake'
+      // Up waiting for them, it is awake whatever the time.
+      sleep = isBusy || waitsFor(idleSince, now) ? 'awake' : isFastAsleep(idleSince, now) ? 'deep' : isDozing(idleSince, now) ? 'dozing' : 'awake'
     }
     let poke: Poke = 'ignore'
     for (const event of events) {

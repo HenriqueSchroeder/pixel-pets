@@ -8,8 +8,11 @@ const DAY_MS = 24 * 60 * MINUTE_MS
 const HALF_LIFE_MS = 14 * DAY_MS
 // A prompt after this long without the person is them arriving.
 export const AWAY_MS = 30 * MINUTE_MS
-// How long before a usual half hour it starts to wait.
+// How long before a usual half hour it starts to wait, and how long it waits at
+// most before it gives up and goes back to sleep, however many half hours in a row
+// are habits.
 const LEAD_MS = 15 * MINUTE_MS
+export const PATIENCE_MS = 20 * MINUTE_MS
 // A half hour is a habit once it holds this many recent arrivals, and this share
 // of the busiest half hour of its kind of day.
 const HABIT = 2
@@ -50,7 +53,7 @@ export const asRhythm = (value: unknown): Rhythm => {
   const rhythm: Rhythm = {}
   for (const [slot, kept] of Object.entries(value)) {
     const { count, at } = (kept ?? {}) as { count?: unknown; at?: unknown }
-    if (/^week(day|end):\d{1,2}$/.test(slot) && typeof count === 'number' && count >= 0 && typeof at === 'number' && Number.isFinite(at))
+    if (/^week(day|end):\d{1,2}$/.test(slot) && typeof count === 'number' && Number.isFinite(count) && count >= 0 && typeof at === 'number' && Number.isFinite(at))
       rhythm[slot] = { count, at }
   }
   return rhythm
