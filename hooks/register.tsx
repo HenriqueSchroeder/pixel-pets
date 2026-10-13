@@ -7,6 +7,23 @@ import type { Drives, State } from './drives'
 import { calm, cheer, feel, idleMood, isNight, nightOf } from './feelings'
 import { pickLocale, say } from './i18n'
 import type { Locale, Text } from './i18n'
+import type { Bandit } from '../learn/bandit'
+import { novelty, see } from '../learn/recall'
+import {
+  annoyed,
+  armOf,
+  asBandit,
+  asFamiliar,
+  CREDIT_MS,
+  daypartOf,
+  FAMILIAR_HALF_LIFE_MS,
+  logLine,
+  momentCode,
+  petted,
+  pickFor,
+  settle,
+} from './learning'
+import type { Shown } from './learning'
 import { asVisit, daysBetween, welcome } from './memory'
 import type { Visit } from './memory'
 import { activityIn, step } from './motion'
@@ -300,6 +317,69 @@ async function together($: EngineInterface, locale: Locale) {
   }
 }
 
+// What it learned of the person's taste, shared by every session, and the seed that
+// fixes which days learn. The first load picks the seed. With no store it learns nothing.
+type Learning = { seed: number; bandit: Bandit }
+
+async function loadLearning($: EngineInterface): Promise<Learning | undefined> {
+  try {
+    const kept = (await $.store.get('learning')) as { seed?: unknown; bandit?: unknown } | undefined
+    if (typeof kept?.seed === 'number') return { seed: kept.seed, bandit: asBandit(kept.bandit) }
+    await $.store.set('learning', { seed: Math.floor(Math.random() * 2 ** 32), bandit: {} })
+    // Read back: a session starting at the same moment may have set its own seed last.
+    const settled = (await $.store.get('learning')) as { seed?: unknown; bandit?: unknown } | undefined
+    return typeof settled?.seed === 'number' ? { seed: settled.seed, bandit: asBandit(settled.bandit) } : undefined
+  } catch {
+    return undefined
+  }
+}
+
+// The experiment's log, a line per event, where the person can read and delete it:
+// a file per session, so sessions open at once never write over each other's lines.
+async function logPath($: EngineInterface, name: string) {
+  const home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE'))
+  return home === undefined ? undefined : `${home}/.claude/pixel-pets/learning/${name}.jsonl`
+}
+
+// No append in $.fs: the session's file is read and written again, which a
+// session's few hundred lines afford.
+async function appendLog($: EngineInterface, name: string, lines: string[]) {
+  const path = await logPath($, name)
+  if (path === undefined || lines.length === 0) return
+  // A read that fails stops the write, rather than write the lines over what was there.
+  const text = (await $.fs.exists(path)) ? await $.fs.read(path) : ''
+  await $.fs.write(path, text + lines.map(line => `${line}\n`).join(''))
+}
+
+// What is past its minute counts for the bandit, read again from the store as
+// another session may have learned meanwhile, and goes in the log.
+// ponytail: two sessions settling at the same moment may lose one's update; take a
+// lock in the store if the log shows tallies short of its lines.
+// With no store it learns nothing, but the log still gets its lines.
+async function keepLearned($: EngineInterface, name: string, done: Shown[]) {
+  let learned: Learning | undefined
+  try {
+    const kept = await loadLearning($)
+    if (kept !== undefined) {
+      learned = { ...kept, bandit: settle(kept.bandit, done, Infinity).bandit }
+      await $.store.set('learning', learned)
+    }
+  } catch {
+    learned = undefined
+  }
+  await appendLog($, name, done.map(logLine))
+  return learned
+}
+
+// How unusual a prompt's moment is, before it becomes a little more familiar.
+async function noteMoment($: EngineInterface, name: string, code: number[], now: number, seed: number) {
+  const familiar = asFamiliar(await $.store.get('familiar'))
+  const news = novelty(familiar, code, now, FAMILIAR_HALF_LIFE_MS)
+  see(familiar, code, now, FAMILIAR_HALF_LIFE_MS)
+  await $.store.set('familiar', familiar)
+  await appendLog($, name, [JSON.stringify({ kind: 'novelty', at: now, arm: armOf(seed, now), daypart: daypartOf(hourOf(now)), novelty: news })])
+}
+
 // Clears the override only if it is still the one this hook set.
 async function release($: EngineInterface, mood: Mood) {
   await update($, override, current => (current?.mood === mood ? null : current))
@@ -320,6 +400,20 @@ export const register: Register = (on, options) => {
   const showsLine = options.labelLine !== false
   // false: each agent is its mini pet alone, without its name and words under it.
   const showsAgentLabels = options.agentLabels !== false
+  // On, it runs the experiment of learning which activities the person likes.
+  const learns = options.learning === true
+  let learning: Learning | undefined
+  // Loaded once, at session.start or, after a reload (a settings change), at the next draw.
+  let hasLoaded = false
+  // Activities shown in the last minute, waiting for a pet; and the learned pick last made.
+  let recent: Shown[] = []
+  let lastPick: { activity: string; propensity: number } | undefined
+  // The store and the log are written one change at a time, in order, the log to
+  // a file of this session's own: its day, and a few random letters.
+  let writing = Promise.resolve()
+  let logName: string | undefined
+  const logNameAt = (now: number) =>
+    (logName ??= `${new Date(now).toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 8)}`)
   const awakeMs = (typeof options.awakeMinutes === 'number' && options.awakeMinutes >= 0 ? options.awakeMinutes : 1) * 60_000
   let frame = 0
   // What the main pet is playing and where it stands, between draws; a reload starts them fresh.
@@ -422,6 +516,10 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'pet', description: say(locale, 'commandDescription'), argumentHint: '[name | default]' })
     petName = (await projectPet($)) ?? configured
     playing = await packOf($, petName, locale)
+    if (learns && !hasLoaded) {
+      hasLoaded = true
+      learning = await loadLearning($)
+    }
     const now = await $.clock.now()
     await update($, lastActiveAt, () => now)
     const tick = () => {
@@ -488,6 +586,13 @@ export const register: Register = (on, options) => {
         if (pressed.poke !== 'ignore') poke = pressed.poke
       } else if (event === 'leave') touched = leave(touched)
       else if (event === 'enter' || event === 'move') touched = hover(touched, now)
+    }
+    if (learning !== undefined && poke === 'pet') recent = petted(recent, now)
+    if (learning !== undefined && poke === 'annoy') {
+      recent = annoyed(recent, now)
+      const line = JSON.stringify({ kind: 'annoy', at: now, arm: armOf(learning.seed, now) })
+      const name = logNameAt(now)
+      writing = writing.then(() => appendLog($, name, [line])).catch(() => {})
     }
     if (poke !== 'ignore') {
       // Any touch is the person being there; woken glad, it stays up a while.
@@ -559,6 +664,19 @@ export const register: Register = (on, options) => {
     return next(e)
   }).catch(($, e, next) => next(e))
 
+  // What is still waiting for a pet when the session ends counts as it stands: no
+  // pet can come any more. The writes left are seen through before it goes.
+  on('session.end', async ($, e, next) => {
+    if (learning !== undefined && recent.length > 0) {
+      const done = recent
+      recent = []
+      const name = logNameAt(await $.clock.now())
+      writing = writing.then(() => keepLearned($, name, done).then(() => {})).catch(() => {})
+    }
+    await writing
+    return next(e)
+  }).catch(($, e, next) => next(e))
+
   // Only a pet in deep sleep is startled awake; a dozing one just starts thinking,
   // one keeping an eye on background agents was awake all along, and one glad to
   // see the person woke up already.
@@ -571,6 +689,14 @@ export const register: Register = (on, options) => {
       await update($, reaction, (): Reaction => ({ mood: 'waking', label: label('wakingUp'), until: now + WAKING_MS }))
     }
     touch(now, seen)
+    // How unusual this moment is: logged only, to see whether it means anything.
+    // A `claude -p` run is no moment of the person's.
+    if (learning !== undefined && isInteractive) {
+      const { seed } = learning
+      const code = momentCode(hourOf(now), idleSince === null ? 0 : (now - idleSince) / 60_000, toolsThisTurn)
+      const name = logNameAt(now)
+      writing = writing.then(() => noteMoment($, name, code, now, seed)).catch(() => {})
+    }
     if (isInteractive) await atThePrompt($, now)
     // Once a night across every session: the first to see the person late says it.
     const tonight = nightOf(now)
@@ -751,6 +877,22 @@ export const register: Register = (on, options) => {
     // counts all that time as what it last showed; give them a clock of their own if that skews them.
     traits = pack.personality
     drives = drives === undefined ? rested(now) : drift(drives, now, lastState, traits)
+    if (learns && !hasLoaded) {
+      hasLoaded = true
+      learning = await loadLearning($)
+    }
+    // What is past its minute counts for what it learned, and goes in the log.
+    const done = recent.filter(one => now - one.at > CREDIT_MS)
+    if (done.length > 0) {
+      recent = recent.filter(one => now - one.at <= CREDIT_MS)
+      const name = logNameAt(now)
+      writing = writing
+        .then(() => keepLearned($, name, done))
+        .then(kept => {
+          if (kept !== undefined) learning = kept
+        })
+        .catch(() => {})
+    }
 
     let shown: Activity
     let extra = ''
@@ -876,7 +1018,21 @@ export const register: Register = (on, options) => {
       const mood: Mood = (pack.walks && onStage.moving) || blinkFrame !== undefined ? 'walking' : shown.mood
       const labelShown = isStrolling ? label('strolling') : shown.label
 
-      const moved = step(pack, motion, mood, frame, Math.random, urge)
+      // On a learning day it picks the activity by what earned pets at this time of day.
+      const known = learning
+      const arm = known === undefined ? undefined : armOf(known.seed, now)
+      const daypart = daypartOf(hourOf(now))
+      const choose =
+        known !== undefined && arm === 'learned'
+          ? (names: string[]) => (lastPick = pickFor(known.bandit, names, daypart, pack.name, now, Math.random)).activity
+          : undefined
+      const before = motion?.once
+      const moved = step(pack, motion, mood, frame, Math.random, urge, choose)
+      const begun = moved.motion.once
+      if (arm !== undefined && begun !== before && begun?.activity !== undefined) {
+        const propensity = arm === 'learned' && lastPick?.activity === begun.activity ? lastPick.propensity : null
+        recent = [...recent, { at: now, arm, daypart, pet: pack.name, activity: begun.activity, propensity, petted: 0, annoyed: false }]
+      }
       motion = moved.motion
       // Busy with an activity, the line says what, in its language or else in English.
       const pastime = pack.actions.find(one => one.name === activityIn(moved.motion, frame))?.activity?.label

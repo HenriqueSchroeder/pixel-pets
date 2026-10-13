@@ -63,6 +63,12 @@
       "title": "Agent labels",
       "description": "Show each subagent's name and what it is doing under its mini pet. Off, the mini pets stand closer, without text",
       "default": true
+    },
+    "learning": {
+      "type": "boolean",
+      "title": "Learning (experiment)",
+      "description": "Let the pet learn which activities you pet it for, on every other day, and log each one to ~/.claude/pixel-pets/learning/. Never logs what you write",
+      "default": false
     }
   }
 }
