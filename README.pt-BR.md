@@ -20,6 +20,8 @@ Os pets são arquivos JSON, então você pode desenhar o seu ou usar um que outr
 
 ![pixel-pets: o wizard na mesma cena, desenhado em texto, sumindo num redemoinho de faíscas e preparando poções](screenshots/wizard.gif)
 
+![pixel-pets: o duck na mesma cena, um patinho amarelo bamboleando, batendo as asas e fazendo quá](screenshots/duck.gif)
+
 ## O que ele mostra
 
 | Humor | Quando | Herda de |
@@ -121,6 +123,7 @@ Pets que vêm junto:
 - [`capybara`](pets/capybara.json), a mais calma de todas: mastiga capim, deixa um passarinho pousar na cabeça e equilibra uma laranja. Não desenha mini pets.
 - [`kaomoji`](pets/kaomoji.json), uma carinha de texto que cantarola enquanto passeia e nunca te dá as costas.
 - [`wizard`](pets/wizard.json), um mago desenhado em texto: em vez de andar, some num redemoinho de faíscas e aparece em outro lugar. Prepara poções, faz malabares com orbes, brinca com o morcego e solta raios do cajado, assustando os agents, que são pequenos aprendizes.
+- [`duck`](pets/duck.json), um patinho amarelo que bamboleia e faz quá, chapinha em poças, bica migalhas, corre atrás de borboletas, tropeça nos próprios pés e conversa sobre o problema com um patinho de borracha. Os agents são patinhos nas cores deles.
 
 ![O cat, o slime, o dog e a owl, à toa, pensando, felizes e dormindo](screenshots/gallery.gif)
 

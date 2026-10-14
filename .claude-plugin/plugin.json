@@ -26,6 +26,7 @@
         "capybara",
         "kaomoji",
         "wizard",
+        "duck",
         "custom"
       ]
     },
