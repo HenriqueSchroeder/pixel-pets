@@ -20,6 +20,8 @@ Pets are plain JSON files, so you can draw your own or use one someone else made
 
 ![pixel-pets: the wizard in the same scene, drawn in text, vanishing in a swirl of sparkles and brewing potions](screenshots/wizard.gif)
 
+![pixel-pets: the duck in the same scene, a yellow duckling waddling, flapping its wings and quacking](screenshots/duck.gif)
+
 ## What it shows
 
 | Mood | When | Borrows from |
@@ -121,6 +123,7 @@ Shipped pets:
 - [`capybara`](pets/capybara.json), the calmest of them all: it chews grass, lets a bird sit on its head and balances an orange. It draws no mini pets.
 - [`kaomoji`](pets/kaomoji.json), a little face drawn in text that hums as it strolls and never turns its back on you.
 - [`wizard`](pets/wizard.json), a wizard drawn in text: instead of walking it vanishes in a swirl of sparkles and turns up elsewhere. It brews potions, juggles orbs, plays with its bat and zaps the sky with its staff, startling its agents, who are little apprentices.
+- [`duck`](pets/duck.json), a yellow duckling that waddles and quacks, splashes in puddles, pecks at crumbs, chases butterflies, trips over its own feet and talks things through with a rubber duck. Its agents are ducklings in their colours.
 
 ![The cat, slime, dog and owl, idle, thinking, happy and asleep](screenshots/gallery.gif)
 
