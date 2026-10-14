@@ -154,7 +154,8 @@ F = {
     'happy': [d(JOY, BLUSH)] * 2 + [u(JOY, BLUSH, FLAP)] * 2,
     # a long job done: quacking and hopping in falling confetti
     'celebrating': [u(JOY, BLUSH, QUACK, FLAP, props=CONFETTI[0]), d(JOY, BLUSH, FLAP_MID, props=CONFETTI[1])] * 4,
-    'sad': [lo(DOWN, props=tear(r)) for r in (5, 5, 6, 6, 7, 7)],
+    # crouched, its eye a row lower: the tear starts under it
+    'sad': [lo(DOWN, props=tear(r)) for r in (6, 6, 7, 7, 8, 8)],
 }
 V = {
     'thinking': [[d(LOOK_UP)] * 8],
@@ -179,7 +180,8 @@ T = {
 }
 T['celebrating>sleeping'] = T['happy>sleeping']
 
-OPEN_EYED = ['idle', 'thinking', 'supervising', 'searching', 'reading', 'compacting', 'watching', 'typing', 'running', 'writing']
+# not running or compacting: a blink would drop its wings and land it mid-hop
+OPEN_EYED = ['idle', 'thinking', 'supervising', 'searching', 'reading', 'watching', 'typing', 'writing']
 A = {
     'blink': {'frames': [d(SHUT)], 'moods': OPEN_EYED, 'every': [3, 8]},
     'blinkWorried': {'frames': [d(SHUT)], 'moods': ['worried', 'sweating'], 'every': [2, 5]},
@@ -201,8 +203,15 @@ PUDDLE_SMALL = px('a', *((12, c) for c in range(3, 11)))
 PUDDLE = px('a', *((12, c) for c in range(0, 14)))
 SPLASH = (px('a', (11, 0), (11, 13)) + px('w', (10, 0), (10, 14)),
           px('a', (10, 0), (10, 14)) + px('w', (9, 14), (8, 15)))
+
+
+def wet(frame, water=PUDDLE):
+    """`water` under the duck: only where the frame is blank, so its feet stand in it."""
+    return paint(frame, [(r, c, l) for r, c, l in water if frame[r][c] == '.'])
+
+
 # crumbs of bread before it, one fewer each time it pecks
-CRUMBS = [px('c', (12, 12), (12, 14), (11, 15)), px('c', (12, 14), (11, 15)), px('c', (11, 15)), []]
+CRUMBS = [px('c', (12, 12), (12, 14), (12, 15)), px('c', (12, 14), (12, 15)), px('c', (12, 15)), []]
 # a rubber duck before it, looking back at it; it squeaks
 RUBBER = px('y', (9, 13), (9, 14), (11, 13), (11, 14), (11, 15), (12, 13), (12, 14), (10, 14)) + px('k', (10, 12)) + px('e', (10, 13))
 SQUEAK = px('w', (7, 14), (8, 15))
@@ -219,11 +228,11 @@ STARS = (px('y', (0, 5), (1, 11)), px('y', (0, 10), (1, 4)))
 DUST = (px('w', (12, 0)), px('w', (11, 1), (12, 2)))
 ACT = {
     # a puddle wells up at its feet: it stamps, hops and splashes, quacking
-    'puddle': {'start': [d(), d(DOWN, props=PUDDLE_SMALL), d(DOWN, props=PUDDLE)],
-               'loop': [u(JOY, FLAP, props=PUDDLE), d(JOY, QUACK, props=PUDDLE + SPLASH[0]), d(JOY, props=PUDDLE + SPLASH[1]),
-                        d(DOWN, props=PUDDLE), d(DOWN, feet(4, 5), props=PUDDLE), d(DOWN, props=PUDDLE + SPLASH[0]),
-                        d(DOWN, feet(8, 9), props=PUDDLE), d(JOY, props=PUDDLE + SPLASH[0]), d(JOY, BLUSH, props=PUDDLE)],
-               'end': [d(FLUFF, props=PUDDLE_SMALL), d(FLAP), d()],
+    'puddle': {'start': [d(), wet(d(DOWN), PUDDLE_SMALL), wet(d(DOWN))],
+               'loop': [wet(u(JOY, FLAP)), wet(d(JOY, QUACK), PUDDLE + SPLASH[0]), wet(d(JOY), PUDDLE + SPLASH[1]),
+                        wet(d(DOWN)), wet(d(DOWN, feet(4, 5))), wet(d(DOWN), PUDDLE + SPLASH[0]),
+                        wet(d(DOWN, feet(8, 9))), wet(d(JOY), PUDDLE + SPLASH[0]), wet(d(JOY, BLUSH))],
+               'end': [wet(d(FLUFF), PUDDLE_SMALL), d(FLAP), d()],
                'seconds': [12, 30], 'every': [60, 150], 'label': {'en': 'splashing in a puddle', 'pt-BR': 'chapinhando numa poça'}},
     # bread crumbs before it: it pecks them up one by one, and looks round for more
     'crumbs': {'start': [d(props=CRUMBS[0]), d(DOWN, props=CRUMBS[0])],

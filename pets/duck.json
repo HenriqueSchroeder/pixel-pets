@@ -2261,36 +2261,6 @@
           "......oooo......",
           ".....oyyyyo.....",
           ".....oylyyo.....",
-          ".....oyyytkk....",
-          "o....oyyyyk.....",
-          "oo..oyyyyyo.....",
-          "oyoooyyyyyo.....",
-          "oyysssyyyyo.....",
-          "oysssyyyyyo.....",
-          "..oooooooo......",
-          "....kk..kk......"
-        ],
-        [
-          "................",
-          "................",
-          "......oooo......",
-          ".....oyyyyo.....",
-          ".....oylyyo.....",
-          ".....oyyytkk....",
-          "o....oyyyyk.....",
-          "oo..oyyyyyo.....",
-          "oyoooyyyyyo.....",
-          "oyysssyyyyo.....",
-          "oysssyyyyyo.....",
-          "..oooooooo......",
-          "....kk..kk......"
-        ],
-        [
-          "................",
-          "................",
-          "......oooo......",
-          ".....oyyyyo.....",
-          ".....oylyyo.....",
           ".....oyyyekk....",
           "o....oyyytk.....",
           "oo..oyyyyyo.....",
@@ -2340,6 +2310,36 @@
           "o....oyyyyk.....",
           "oo..oyyyyto.....",
           "oyoooyyyyyo.....",
+          "oyysssyyyyo.....",
+          "oysssyyyyyo.....",
+          "..oooooooo......",
+          "....kk..kk......"
+        ],
+        [
+          "................",
+          "................",
+          "......oooo......",
+          ".....oyyyyo.....",
+          ".....oylyyo.....",
+          ".....oyyyekk....",
+          "o....oyyyyk.....",
+          "oo..oyyyyyo.....",
+          "oyoooyyyyto.....",
+          "oyysssyyyyo.....",
+          "oysssyyyyyo.....",
+          "..oooooooo......",
+          "....kk..kk......"
+        ],
+        [
+          "................",
+          "................",
+          "......oooo......",
+          ".....oyyyyo.....",
+          ".....oylyyo.....",
+          ".....oyyyekk....",
+          "o....oyyyyk.....",
+          "oo..oyyyyyo.....",
+          "oyoooyyyyto.....",
           "oyysssyyyyo.....",
           "oysssyyyyyo.....",
           "..oooooooo......",
@@ -3299,10 +3299,8 @@
           "supervising",
           "searching",
           "reading",
-          "compacting",
           "watching",
           "typing",
-          "running",
           "writing"
         ],
         "every": [
@@ -3910,7 +3908,7 @@
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "...aaaaaaaa....."
+            "...akkaakka....."
           ],
           [
             "................",
@@ -3925,7 +3923,7 @@
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ]
         ],
         "loop": [
@@ -3957,7 +3955,7 @@
             "oysssyyyyyo.....",
             "woyssyyyyo....w.",
             "a.oooooooo...a..",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ],
           [
             "................",
@@ -3972,7 +3970,7 @@
             "oysssyyyyyo...w.",
             "aoyssyyyyo....a.",
             "..oooooooo......",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ],
           [
             "................",
@@ -3987,7 +3985,7 @@
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ],
           [
             "................",
@@ -4002,7 +4000,7 @@
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "aaaaaaaaaaaaaa.."
+            "aaaaaaaakkaaaa.."
           ],
           [
             "................",
@@ -4017,7 +4015,7 @@
             "oysssyyyyyo.....",
             "woyssyyyyo....w.",
             "a.oooooooo...a..",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ],
           [
             "................",
@@ -4032,7 +4030,7 @@
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaaaaaaaa.."
           ],
           [
             "................",
@@ -4047,7 +4045,7 @@
             "oysssyyyyyo.....",
             "woyssyyyyo....w.",
             "a.oooooooo...a..",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ],
           [
             "................",
@@ -4062,7 +4060,7 @@
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "aaaaaaaaaaaaaa.."
+            "aaaakkaakkaaaa.."
           ]
         ],
         "end": [
@@ -4079,7 +4077,7 @@
             "oysssylyyyo.....",
             ".oyssyyyyo......",
             "..oooooooo......",
-            "...aaaaaaaa....."
+            "...akkaakka....."
           ],
           [
             "................",
@@ -4142,8 +4140,8 @@
             "oyysssyyyyo.....",
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
-            "..oooooooo.....c",
-            "....kk..kk..c.c."
+            "..oooooooo......",
+            "....kk..kk..c.cc"
           ],
           [
             "................",
@@ -4157,8 +4155,8 @@
             "oyysssyyyyo.....",
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
-            "..oooooooo.....c",
-            "....kk..kk..c.c."
+            "..oooooooo......",
+            "....kk..kk..c.cc"
           ]
         ],
         "loop": [
@@ -4189,8 +4187,8 @@
             "oyysssyyyyo.....",
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
-            "..oooooooo.....c",
-            "....kk..kk....c."
+            "..oooooooo......",
+            "....kk..kk....cc"
           ],
           [
             "................",
@@ -4204,8 +4202,8 @@
             "oyysssyyyyo.....",
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
-            "..oooooooo.....c",
-            "....kk..kk....c."
+            "..oooooooo......",
+            "....kk..kk....cc"
           ],
           [
             "................",
@@ -4219,8 +4217,8 @@
             "oysssyyyyoooo...",
             ".oysssyyyyyyyo..",
             ".oyyssyyyylyeo..",
-            "..oooooooyyyyokc",
-            "....kk..kk.oooo."
+            "..oooooooyyyyokk",
+            "....kk..kk.ooooc"
           ],
           [
             "................",
@@ -4234,8 +4232,8 @@
             "oyysssyyyyo.....",
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
-            "..oooooooo.....c",
-            "....kk..kk......"
+            "..oooooooo......",
+            "....kk..kk.....c"
           ],
           [
             "................",
@@ -4309,8 +4307,8 @@
             "oyysssyyyyo.....",
             "oysssyyyyyo.....",
             ".oyssyyyyo......",
-            "..oooooooo.....c",
-            "....kk..kk..c.c."
+            "..oooooooo......",
+            "....kk..kk..c.cc"
           ]
         ],
         "end": [
